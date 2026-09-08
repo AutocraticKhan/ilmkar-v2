@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducatePulse - Parent Portal Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        parent: {
+                            50: '#f4f5ff',
+                            100: '#eef0fe',
+                            200: '#d9ddfd',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .nav-item.active {
+            background-color: #eef0fe;
+            color: #4338ca;
+            font-weight: 600;
+            border-right: 3px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            
+            <!-- Left Side: Mobile Menu & Logo -->
+            <div class="flex items-center space-x-3">
+                <button id="mobile-menu-toggle" class="md:hidden text-slate-500 hover:text-slate-700 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-parent-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-parent-500/20">
+                        <i class="fa-solid fa-people-roof"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-900 tracking-tight text-lg leading-none block">Educate<span class="text-parent-600">Pulse</span></span>
+                        <span class="text-xs text-slate-400 font-medium leading-none">Parent & Family Hub</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center/Right Side: Child Switcher & Parent Profile -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                
+                <!-- Child Switcher Component -->
+                <div class="relative">
+                    <div class="bg-indigo-50/80 border border-indigo-200 hover:border-indigo-400 rounded-xl px-3 py-1.5 flex items-center space-x-2 cursor-pointer transition" onclick="toggleChildDropdown()">
+                        <img id="active-child-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" class="w-7 h-7 rounded-full object-cover ring-2 ring-parent-500/30" alt="Child Avatar">
+                        <div class="text-left hidden xs:block">
+                            <p class="text-xs font-bold text-slate-800 leading-none flex items-center gap-1">
+                                <span id="active-child-name">Alex Johnson</span>
+                                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+                            </p>
+                            <p id="active-child-grade" class="text-[10px] text-indigo-600 font-semibold leading-none mt-0.5">Grade 8-A • Springfield</p>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Options -->
+                    <div id="child-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 space-y-1">
+                        <div class="px-3 py-2 border-b border-slate-100">
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Select Child Profile</p>
+                        </div>
+                        
+                        <button onclick="selectChild('alex')" class="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center space-x-3 transition">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" class="w-8 h-8 rounded-full object-cover ring-2 ring-parent-500" alt="Alex">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">Alex Johnson</span>
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Present</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Grade 8-A • Roll No 01</p>
+                            </div>
+                        </button>
+
+                        <button onclick="selectChild('maya')" class="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-center space-x-3 transition">
+                            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150" class="w-8 h-8 rounded-full object-cover ring-2 ring-slate-200" alt="Maya">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">Maya Johnson</span>
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Present</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Grade 5-B • Roll No 14</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notifications Button -->
+                <button onclick="showToast('You have 3 school alerts for Alex & Maya.')" class="relative p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-regular fa-bell text-lg"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+                </button>
+
+                <!-- Parent Profile Header -->
+                <div class="flex items-center space-x-3 border-l border-slate-200 pl-3 sm:pl-4">
+                    <div class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs ring-2 ring-slate-200">
+                        AJ
+                    </div>
+                    <div class="hidden lg:block">
+                        <p class="text-sm font-semibold text-slate-800 leading-tight">Arthur Johnson</p>
+                        <p class="text-xs text-slate-500">Parent ID: #P-8820</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex-shrink-0 hidden md:flex flex-col justify-between z-20">
+            <div class="py-4">
+                <div class="px-4 mb-2">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Parent Controls</p>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="switchView('digest')" id="nav-digest" class="nav-item active w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-calendar-check w-6 text-center mr-2 text-parent-600"></i>
+                        <span>Today at School</span>
+                        <span class="ml-auto bg-parent-100 text-parent-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">Digest</span>
+                    </button>
+                    <button onclick="switchView('attendance')" id="nav-attendance" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-clipboard-user w-6 text-center mr-2"></i>
+                        <span>Attendance & Alerts</span>
+                    </button>
+                    <button onclick="switchView('fee')" id="nav-fee" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-wallet w-6 text-center mr-2"></i>
+                        <span>Fee Status & Pay</span>
+                        <span id="sidebar-fee-badge" class="ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">$200</span>
+                    </button>
+                    <button onclick="switchView('results')" id="nav-results" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-chart-line w-6 text-center mr-2"></i>
+                        <span>Grades & Report Card</span>
+                    </button>
+                    <button onclick="switchView('homework')" id="nav-homework" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-book-open-reader w-6 text-center mr-2"></i>
+                        <span>Homework & Tasks</span>
+                    </button>
+                    <button onclick="switchView('messages')" id="nav-messages" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-comments w-6 text-center mr-2"></i>
+                        <span>Teacher Messages</span>
+                        <span class="ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">1 New</span>
+                    </button>
+                    <button onclick="switchView('notices')" id="nav-notices" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-bullhorn w-6 text-center mr-2"></i>
+                        <span>School Notices</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Active Child Quick Card Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 m-3 rounded-xl space-y-2">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-700">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-graduation-cap text-parent-600"></i> Active Profile</span>
+                    <span class="text-[10px] bg-parent-100 text-parent-800 px-2 py-0.5 rounded-full font-bold" id="sidebar-child-tag">Alex</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Homeroom: <strong id="sidebar-teacher-name" class="text-slate-800">Ms. Sarah Jenkins</strong></p>
+                <button onclick="openMessageModal()" class="w-full text-center py-1.5 bg-white border border-slate-300 hover:border-parent-500 text-parent-700 text-xs font-bold rounded-lg shadow-2xs transition">
+                    <i class="fa-regular fa-paper-plane mr-1"></i> Quick Note to Teacher
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Scroll Area -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+
+            <!-- Toast Container -->
+            <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 border border-slate-700 pointer-events-none">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span id="toast-msg" class="text-sm font-medium">Notification message</span>
+            </div>
+
+            <!-- ================= VIEW 1: TODAY AT SCHOOL DIGEST ================= -->
+            <section id="view-digest" class="space-y-6">
+                
+                <!-- Child Switcher Banner Alert -->
+                <div class="bg-gradient-to-r from-parent-900 via-parent-800 to-indigo-950 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute -right-8 -bottom-8 opacity-10 text-9xl">
+                        <i class="fa-solid fa-child-reaching"></i>
+                    </div>
+                    <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-[11px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
+                                    Single-Screen Parent Digest
+                                </span>
+                                <span class="text-xs text-indigo-300">• Today, Oct 12</span>
+                            </div>
+                            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                                Today at School for <span id="digest-child-fullname" class="text-indigo-200 underline decoration-indigo-400">Alex Johnson</span>
+                            </h1>
+                            <p class="text-indigo-100/90 text-sm max-w-2xl pt-1">
+                                No need to search through multiple sub-menus! Here is the complete consolidated report for <span id="digest-child-firstname">Alex</span>’s school day today.
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-2 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/10">
+                            <button onclick="selectChild('alex')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 bg-white text-parent-900 shadow">
+                                <span>Alex (8-A)</span>
+                            </button>
+                            <button onclick="selectChild('maya')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-2 text-white hover:bg-white/10">
+                                <span>Maya (5-B)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- The 3 Core Pillars of "Today at School" Digest -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- 1. Today's Attendance Mark -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3 relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                                    <i class="fa-solid fa-user-check"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-sm">Attendance Mark</h3>
+                                    <p class="text-[10px] text-slate-400">Marked at 08:25 AM</p>
+                                </div>
+                            </div>
+                            <span id="digest-attendance-badge" class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                                <i class="fa-solid fa-circle-check"></i> Present Today
+                            </span>
+                        </div>
+                        <div id="digest-attendance-desc" class="text-xs text-slate-600 space-y-1">
+                            <p>Arrived on time via School Bus #04.</p>
+                            <p class="text-[11px] text-slate-400">Monthly Attendance: <strong class="text-emerald-700" id="digest-monthly-att">94.2% (26/28 days)</strong></p>
+                        </div>
+                        <div class="pt-2">
+                            <button onclick="openLeaveModal()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                                <i class="fa-regular fa-calendar-minus"></i>
+                                <span>Notify Absence / Apply Leave</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Today's Homework Given -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                                    <i class="fa-solid fa-pen-ruler"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-sm">Homework Assigned Today</h3>
+                                    <p class="text-[10px] text-slate-400">2 Tasks Due This Week</p>
+                                </div>
+                            </div>
+                            <span id="digest-hw-count" class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">2 Given</span>
+                        </div>
+                        <div id="digest-hw-list" class="space-y-2 text-xs">
+                            <!-- Injected by JS -->
+                        </div>
+                        <button onclick="switchView('homework')" class="text-xs font-bold text-parent-600 hover:underline block text-right pt-1">View Full Task Details &rarr;</button>
+                    </div>
+
+                    <!-- 3. Today's Note from Teacher -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3 border-l-4 border-l-parent-600">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg bg-parent-100 text-parent-700 flex items-center justify-center font-bold">
+                                    <i class="fa-solid fa-comment-dots"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-sm">Today's Teacher Note</h3>
+                                    <p id="digest-note-teacher" class="text-[10px] text-slate-400">From Ms. Sarah Jenkins</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-slate-400">10:45 AM</span>
+                        </div>
+                        <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-xs italic text-slate-700 leading-relaxed" id="digest-teacher-note-text">
+                            <!-- Injected by JS -->
+                        </div>
+                        <button onclick="openReplyTeacherModal()" class="w-full bg-parent-600 hover:bg-parent-700 text-white font-bold py-2 rounded-xl text-xs shadow transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-reply"></i>
+                            <span>Reply directly to Teacher</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Quick Operational Cards: Fee Due & Recent Exam Performance -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Quick Fee Banner -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-700 uppercase bg-amber-100 px-2 py-0.5 rounded">Fee Alert</span>
+                                <h4 class="font-bold text-slate-900 text-sm mt-1" id="digest-fee-title">Term 2 Remaining Balance</h4>
+                                <p class="text-xs text-slate-500">Due Date: <strong class="text-slate-800" id="digest-fee-duedate">Oct 31, 2026</strong></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-0 border-slate-100 pt-3 sm:pt-0">
+                            <div class="text-right">
+                                <p class="text-xs text-slate-400">Balance</p>
+                                <p class="text-lg font-bold text-amber-600" id="digest-fee-amount">$200.00</p>
+                            </div>
+                            <button onclick="openPayFeeModal()" class="bg-parent-600 hover:bg-parent-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow transition">
+                                Pay Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Academic Performance Quick Pulse -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-award"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-emerald-800 uppercase bg-emerald-100 px-2 py-0.5 rounded">Term 2 Academic Standings</span>
+                                <h4 class="font-bold text-slate-900 text-sm mt-1" id="digest-gpa-title">Current GPA: 3.8 / 4.0</h4>
+                                <p class="text-xs text-slate-500" id="digest-gpa-rank">Rank: Top 10% of class</p>
+                            </div>
+                        </div>
+                        <button onclick="switchView('results')" class="text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl transition w-full sm:w-auto text-center">
+                            View Report Card
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: ATTENDANCE & ALERTS ================= -->
+            <section id="view-attendance" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Attendance Log & Leave Applications</h1>
+                        <p class="text-xs text-slate-500">Monitor daily entry/exit timestamps, absence alerts, and submit official leave requests.</p>
+                    </div>
+                    <button onclick="openLeaveModal()" class="bg-parent-600 hover:bg-parent-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Submit Absence Note / Leave Request</span>
+                    </button>
+                </div>
+
+                <!-- Stats summary -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-xs text-slate-400 uppercase font-bold">Total Term Days</span>
+                        <p class="text-2xl font-extrabold text-slate-800 mt-1">28 Days</p>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm">
+                        <span class="text-xs text-emerald-700 uppercase font-bold">Present</span>
+                        <p class="text-2xl font-extrabold text-emerald-700 mt-1" id="att-present-count">26 Days</p>
+                    </div>
+                    <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 shadow-sm">
+                        <span class="text-xs text-rose-700 uppercase font-bold">Absent</span>
+                        <p class="text-2xl font-extrabold text-rose-700 mt-1" id="att-absent-count">1 Day</p>
+                    </div>
+                    <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm">
+                        <span class="text-xs text-amber-700 uppercase font-bold">Late Arrival</span>
+                        <p class="text-2xl font-extrabold text-amber-700 mt-1" id="att-late-count">1 Day</p>
+                    </div>
+                </div>
+
+                <!-- Attendance History Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm">Daily Attendance Register</h3>
+                        <span class="text-xs text-slate-400">October 2026</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
+                                    <th class="p-3">Date</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Arrival Time</th>
+                                    <th class="p-3">Method / Bus</th>
+                                    <th class="p-3">Remarks / Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-log-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: FEE STATUS & ONLINE PAYMENT ================= -->
+            <section id="view-fee" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">School Fee & Online Payments</h1>
+                        <p class="text-xs text-slate-500">View detailed fee breakdowns, download payment receipts, and settle dues online.</p>
+                    </div>
+                    <button onclick="openPayFeeModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Pay Balance Fee Online</span>
+                    </button>
+                </div>
+
+                <!-- Fee Overview Banner -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Total Term Fee</span>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1" id="fee-total-amount">$1,200.00</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Term 2 Academic Session</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-emerald-600 uppercase">Paid Amount</span>
+                        <h3 class="text-2xl font-extrabold text-emerald-600 mt-1" id="fee-paid-amount">$1,000.00</h3>
+                        <p class="text-xs text-emerald-600 mt-0.5"><i class="fa-solid fa-circle-check"></i> Verified via Online Receipt</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-amber-600 uppercase">Pending Due</span>
+                        <h3 class="text-2xl font-extrabold text-amber-600 mt-1" id="fee-due-amount">$200.00</h3>
+                        <p class="text-xs text-amber-600 mt-0.5">Due by Oct 31, 2026</p>
+                    </div>
+                </div>
+
+                <!-- Fee Itemization Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm">Fee Breakdown Details</h3>
+                    </div>
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
+                                <th class="p-3">Fee Particulars</th>
+                                <th class="p-3">Amount</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-center">Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fee-table-body" class="divide-y divide-slate-100">
+                            <!-- JS Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 4: RESULTS & REPORT CARDS ================= -->
+            <section id="view-results" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Academic Results & Report Cards</h1>
+                        <p class="text-xs text-slate-500">Track academic progress, midterm marks, and official school transcripts.</p>
+                    </div>
+                    <button onclick="openReportModal()" class="bg-parent-600 hover:bg-parent-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>Download Official Report Card PDF</span>
+                    </button>
+                </div>
+
+                <!-- Marks Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Subject Performance Breakdown</h3>
+                        <span class="text-xs font-semibold text-parent-600" id="results-gpa-badge">Term 2 Aggregate: 88.5% (GPA 3.8)</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Subject</th>
+                                    <th class="p-3">Teacher</th>
+                                    <th class="p-3 text-center">Marks (/100)</th>
+                                    <th class="p-3 text-center">Grade</th>
+                                    <th class="p-3">Teacher Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-table-body" class="divide-y divide-slate-100">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 5: HOMEWORK & TASKS ================= -->
+            <section id="view-homework" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Homework & Task Tracker</h1>
+                        <p class="text-xs text-slate-500">Monitor assignments given to your child, submission status, and teacher feedback.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                    <div id="homework-full-list" class="space-y-3">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 6: DIRECT TEACHER MESSAGES ================= -->
+            <section id="view-messages" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h1 class="text-xl font-bold text-slate-900">Direct Teacher Messaging</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Simple, dedicated 1-on-1 communication threads with your child's subject teachers.</p>
+                </div>
+
+                <!-- Chat Layout Grid -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[500px]">
+                    
+                    <!-- Left: Teacher Thread List -->
+                    <div class="border-r border-slate-200 bg-slate-50/50 p-3 space-y-2">
+                        <p class="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">Subject Teachers</p>
+                        
+                        <button onclick="selectChatThread('jenkins')" id="chat-thread-jenkins" class="chat-thread-btn active w-full p-3 rounded-xl text-left bg-indigo-50 border border-indigo-200 transition flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-full bg-parent-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                SJ
+                            </div>
+                            <div class="flex-1 overflow-hidden">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-bold text-xs text-slate-900 truncate">Ms. Sarah Jenkins</h4>
+                                    <span class="text-[10px] text-slate-400">10:45 AM</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 truncate">Physical Science • Grade 8-A</p>
+                                <p class="text-[11px] text-parent-700 font-medium truncate mt-0.5">"Alex did great in today's lab..."</p>
+                            </div>
+                        </button>
+
+                        <button onclick="selectChatThread('miller')" id="chat-thread-miller" class="chat-thread-btn w-full p-3 rounded-xl text-left hover:bg-slate-100 transition flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                DM
+                            </div>
+                            <div class="flex-1 overflow-hidden">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-bold text-xs text-slate-900 truncate">Mr. David Miller</h4>
+                                    <span class="text-[10px] text-slate-400">Yesterday</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 truncate">Mathematics • Grade 8-A</p>
+                                <p class="text-[11px] text-slate-400 truncate">"Quarterly algebra worksheet attached..."</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Right: Message View & Input -->
+                    <div class="md:col-span-2 flex flex-col justify-between bg-white">
+                        
+                        <!-- Thread Header -->
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-parent-600 text-white flex items-center justify-center font-bold text-xs">
+                                    SJ
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-xs" id="chat-active-teacher-name">Ms. Sarah Jenkins</h3>
+                                    <p class="text-[10px] text-slate-400" id="chat-active-subject">Physical Science • Homeroom Teacher</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-circle text-[8px] text-emerald-500 mr-1"></i> Active Thread</span>
+                        </div>
+
+                        <!-- Chat Messages Container -->
+                        <div id="chat-messages-container" class="p-4 space-y-3 flex-1 overflow-y-auto text-xs max-h-[380px]">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <!-- Chat Input Box -->
+                        <div class="p-3 border-t border-slate-200 bg-slate-50 flex items-center space-x-2">
+                            <input type="text" id="chat-input-text" placeholder="Type a private note to the teacher..." class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-parent-500">
+                            <button onclick="sendParentMessage()" class="bg-parent-600 hover:bg-parent-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow transition flex items-center space-x-1">
+                                <span>Send</span>
+                                <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ================= VIEW 7: SCHOOL NOTICES ================= -->
+            <section id="view-notices" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h1 class="text-xl font-bold text-slate-900">School Notices & Circulars</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Official updates, calendar announcements, and principal's circulars.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="bg-parent-100 text-parent-800 font-bold px-2.5 py-0.5 rounded-full">Academic Announcement</span>
+                            <span class="text-slate-400">Oct 10, 2026</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-base">Term 2 Parent-Teacher Conference Scheduled</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Springfield Academy will host the Term 2 Parent-Teacher Conference on November 15, 2026. Time slots can be booked via this portal starting next week.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">Health & Safety</span>
+                            <span class="text-slate-400">Oct 01, 2026</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-base">Annual Health Checkup & Dental Screening</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            A team of certified pediatricians will visit the school campus on Oct 25 for routine health checkups for Grades 1 through 8.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal: Request Leave / Notify Absence -->
+    <div id="modal-leave" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Submit Leave Application</h3>
+                <button onclick="closeModal('modal-leave')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Child Name</label>
+                    <input type="text" id="leave-modal-child" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">From Date</label>
+                        <input type="date" value="2026-10-15" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">To Date</label>
+                        <input type="date" value="2026-10-16" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Reason for Absence</label>
+                    <textarea rows="3" placeholder="e.g. Medical appointment / Mild fever..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-parent-500"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal('modal-leave')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="submitLeaveAction()" class="px-4 py-2 rounded-xl bg-parent-600 hover:bg-parent-700 text-white text-xs font-bold shadow">Submit to Homeroom Teacher</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Pay School Fee -->
+    <div id="modal-fee" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Pay Outstanding School Fee</h3>
+                <button onclick="closeModal('modal-fee')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl flex justify-between items-center">
+                    <div>
+                        <span class="text-slate-500 block">Child: <strong id="fee-modal-child-name">Alex Johnson</strong></span>
+                        <span class="font-bold text-slate-800">Term 2 Balance Due</span>
+                    </div>
+                    <span class="text-base font-extrabold text-amber-700" id="fee-modal-amount">$200.00</span>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Select Payment Method</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800">
+                        <option>Credit / Debit Card (Visa/Mastercard)</option>
+                        <option>Online Bank Direct Transfer</option>
+                        <option>Digital Wallet / Apple Pay</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Cardholder Name</label>
+                    <input type="text" value="Arthur Johnson" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal('modal-fee')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="processFeePaymentAction()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">Pay Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Download/Preview Official Report Card -->
+    <div id="modal-report" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-graduation-cap text-parent-600 text-2xl"></i>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">Springfield Academy - Parent Report Card Copy</h3>
+                        <p class="text-xs text-slate-400">Term 2 Examination Session</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Report Body -->
+            <div class="space-y-4 text-xs">
+                <div class="bg-slate-50 p-4 rounded-xl grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div><span class="text-slate-400 block">Student:</span><strong class="text-slate-800" id="report-modal-name">Alex Johnson</strong></div>
+                    <div><span class="text-slate-400 block">Grade/Section:</span><strong class="text-slate-800" id="report-modal-grade">Grade 8-A</strong></div>
+                    <div><span class="text-slate-400 block">Overall GPA:</span><strong class="text-emerald-600 font-bold" id="report-modal-gpa">3.8 / 4.0</strong></div>
+                    <div><span class="text-slate-400 block">Status:</span><strong class="text-parent-700">Passed with Distinction</strong></div>
+                </div>
+
+                <table class="w-full text-left border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <th class="p-2 border-r border-slate-200">Subject</th>
+                            <th class="p-2 border-r border-slate-200 text-center">Marks</th>
+                            <th class="p-2 text-center">Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-modal-table" class="divide-y divide-slate-200">
+                        <!-- JS Injected -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-report')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Close</button>
+                <button onclick="showToast('Official PDF report card downloaded.'); closeModal('modal-report');" class="px-4 py-2 rounded-xl bg-parent-600 text-white text-xs font-bold shadow"><i class="fa-solid fa-print mr-1"></i> Print / Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // Children Database State
+        const childrenData = {
+            alex: {
+                id: 'alex',
+                firstName: 'Alex',
+                fullName: 'Alex Johnson',
+                grade: 'Grade 8-A',
+                school: 'Springfield Academy',
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+                homeroomTeacher: 'Ms. Sarah Jenkins',
+                todayAttendance: {
+                    status: 'Present Today',
+                    time: '08:25 AM',
+                    desc: 'Arrived on time via School Bus #04.',
+                    monthly: '94.2% (26/28 days)',
+                    presentCount: '26 Days',
+                    absentCount: '1 Day',
+                    lateCount: '1 Day'
+                },
+                todayHomework: [
+                    { title: 'Newton\'s Law Practice Sheet', subject: 'Physical Science', due: 'Tomorrow' },
+                    { title: 'Algebra Chapter 4 Problems', subject: 'Mathematics', due: 'Oct 15' }
+                ],
+                todayNote: {
+                    teacher: 'Ms. Sarah Jenkins',
+                    text: '"Alex did exceptionally well in today\'s science experiment on kinetics! Please ensure the practice sheet on page 48 is signed tonight."'
+                },
+                fee: {
+                    total: '$1,200.00',
+                    paid: '$1,000.00',
+                    due: '$200.00',
+                    dueDate: 'Oct 31, 2026',
+                    items: [
+                        { name: 'Tuition Fee (Term 2)', amount: '$850.00', status: 'Paid', receipt: '#RCT-9021' },
+                        { name: 'Computer & Science Lab Fee', amount: '$150.00', status: 'Paid', receipt: '#RCT-9022' },
+                        { name: 'Sports & Extra-Curricular Fee', amount: '$200.00', status: 'Pending', receipt: 'Pending' }
+                    ]
+                },
+                academics: {
+                    gpa: '3.8 / 4.0',
+                    rank: 'Top 10% of class',
+                    subjects: [
+                        { name: 'Physical Science', teacher: 'Ms. Sarah Jenkins', score: 92, grade: 'A', remark: 'Exceptional lab skills and theory comprehension.' },
+                        { name: 'General Mathematics', teacher: 'Mr. David Miller', score: 88, grade: 'A-', remark: 'Strong problem-solving capability.' },
+                        { name: 'English Literature', teacher: 'Mrs. Clara Vance', score: 85, grade: 'B+', remark: 'Good essay structure and articulation.' },
+                        { name: 'World History', teacher: 'Mr. Robert Vance', score: 89, grade: 'A-', remark: 'Active participation during discussions.' }
+                    ]
+                },
+                attendanceLog: [
+                    { date: 'Oct 12, 2026', status: 'Present', time: '08:25 AM', method: 'School Bus #04', remark: 'On Time' },
+                    { date: 'Oct 11, 2026', status: 'Present', time: '08:22 AM', method: 'School Bus #04', remark: 'On Time' },
+                    { date: 'Oct 08, 2026', status: 'Late', time: '08:45 AM', method: 'Parent Dropoff', remark: 'Traffic Delay (15m late)' },
+                    { date: 'Oct 01, 2026', status: 'Absent', time: '-', method: 'N/A', remark: 'Excused Leave (Sick)' }
+                ],
+                chatHistory: [
+                    { sender: 'teacher', text: 'Hello Mr. Johnson, Alex performed very well in today\'s physics lab exercise.', time: '10:45 AM' },
+                    { sender: 'teacher', text: 'Please ensure the Newton Law worksheet is completed for tomorrow.', time: '10:46 AM' }
+                ]
+            },
+            maya: {
+                id: 'maya',
+                firstName: 'Maya',
+                fullName: 'Maya Johnson',
+                grade: 'Grade 5-B',
+                school: 'Springfield Elementary',
+                avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150',
+                homeroomTeacher: 'Mrs. Emily Watson',
+                todayAttendance: {
+                    status: 'Present Today',
+                    time: '08:15 AM',
+                    desc: 'Arrived on time via Parent Dropoff.',
+                    monthly: '98.0% (27/28 days)',
+                    presentCount: '27 Days',
+                    absentCount: '0 Days',
+                    lateCount: '1 Day'
+                },
+                todayHomework: [
+                    { title: 'Reading Logs: Chapter 3 Story', subject: 'English Reading', due: 'Tomorrow' },
+                    { title: 'Plant Cells Drawing Worksheet', subject: 'Elementary Science', due: 'Oct 16' }
+                ],
+                todayNote: {
+                    teacher: 'Mrs. Emily Watson',
+                    text: '"Maya was chosen as class monitor today! She helped organize the school art display wonderfully."'
+                },
+                fee: {
+                    total: '$950.00',
+                    paid: '$950.00',
+                    due: '$0.00',
+                    dueDate: 'Fully Paid',
+                    items: [
+                        { name: 'Tuition Fee (Term 2)', amount: '$750.00', status: 'Paid', receipt: '#RCT-8810' },
+                        { name: 'Art & Craft Materials', amount: '$100.00', status: 'Paid', receipt: '#RCT-8811' },
+                        { name: 'Junior Field Trip Fee', amount: '$100.00', status: 'Paid', receipt: '#RCT-8812' }
+                    ]
+                },
+                academics: {
+                    gpa: '3.9 / 4.0',
+                    rank: 'Top 5% of class',
+                    subjects: [
+                        { name: 'English Reading & Writing', teacher: 'Mrs. Emily Watson', score: 95, grade: 'A', remark: 'Outstanding reading speed and vocabulary.' },
+                        { name: 'Elementary Science', teacher: 'Mr. Mark Gable', score: 91, grade: 'A', remark: 'Enthusiastic curiosity during experiments.' },
+                        { name: 'Basic Mathematics', teacher: 'Mrs. Emily Watson', score: 90, grade: 'A', remark: 'Consistently completes math drills accurately.' },
+                        { name: 'Art & Music', teacher: 'Ms. Clara Bell', score: 96, grade: 'A+', remark: 'Exceptionally creative!' }
+                    ]
+                },
+                attendanceLog: [
+                    { date: 'Oct 12, 2026', status: 'Present', time: '08:15 AM', method: 'Parent Dropoff', remark: 'On Time' },
+                    { date: 'Oct 11, 2026', status: 'Present', time: '08:18 AM', method: 'Parent Dropoff', remark: 'On Time' },
+                    { date: 'Oct 05, 2026', status: 'Late', time: '08:35 AM', method: 'Parent Dropoff', remark: 'Weather Delay (10m late)' }
+                ],
+                chatHistory: [
+                    { sender: 'teacher', text: 'Good morning Mr. Johnson! Maya was wonderful during art class today.', time: '09:30 AM' }
+                ]
+            }
+        };
+
+        let currentChildId = 'alex';
+
+        function selectChild(childId) {
+            currentChildId = childId;
+            const child = childrenData[childId];
+
+            // Update Header Switcher UI
+            document.getElementById('active-child-avatar').src = child.avatar;
+            document.getElementById('active-child-name').innerText = child.fullName;
+            document.getElementById('active-child-grade').innerText = `${child.grade} • ${child.school}`;
+            
+            // Sidebar updates
+            document.getElementById('sidebar-child-tag').innerText = child.firstName;
+            document.getElementById('sidebar-teacher-name').innerText = child.homeroomTeacher;
+            
+            const sidebarFeeBadge = document.getElementById('sidebar-fee-badge');
+            if (child.fee.due === '$0.00') {
+                sidebarFeeBadge.className = "ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full";
+                sidebarFeeBadge.innerText = "Paid";
+            } else {
+                sidebarFeeBadge.className = "ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full";
+                sidebarFeeBadge.innerText = child.fee.due;
+            }
+
+            // Digest updates
+            document.getElementById('digest-child-fullname').innerText = child.fullName;
+            document.getElementById('digest-child-firstname').innerText = child.firstName;
+            document.getElementById('digest-attendance-desc').querySelector('p').innerText = child.todayAttendance.desc;
+            document.getElementById('digest-monthly-att').innerText = child.todayAttendance.monthly;
+            document.getElementById('digest-teacher-note-text').innerText = child.todayNote.text;
+            document.getElementById('digest-note-teacher').innerText = `From ${child.todayNote.teacher}`;
+            
+            // Digest HW list
+            const hwListContainer = document.getElementById('digest-hw-list');
+            hwListContainer.innerHTML = '';
+            child.todayHomework.forEach(hw => {
+                const item = document.createElement('div');
+                item.className = "p-2 bg-amber-50/60 border border-amber-200 rounded-lg flex justify-between items-center";
+                item.innerHTML = `
+                    <div>
+                        <p class="font-bold text-slate-800">${hw.title}</p>
+                        <p class="text-[10px] text-slate-500">${hw.subject}</p>
+                    </div>
+                    <span class="text-[10px] bg-amber-200 text-amber-800 font-bold px-2 py-0.5 rounded">Due ${hw.due}</span>
+                `;
+                hwListContainer.appendChild(item);
+            });
+
+            // Digest Fee & GPA cards
+            document.getElementById('digest-fee-amount').innerText = child.fee.due;
+            document.getElementById('digest-fee-duedate').innerText = child.fee.dueDate;
+            document.getElementById('digest-gpa-title').innerText = `Current GPA: ${child.academics.gpa}`;
+            document.getElementById('digest-gpa-rank').innerText = child.academics.rank;
+
+            // Attendance Tab updates
+            document.getElementById('att-present-count').innerText = child.todayAttendance.presentCount;
+            document.getElementById('att-absent-count').innerText = child.todayAttendance.absentCount;
+            document.getElementById('att-late-count').innerText = child.todayAttendance.lateCount;
+
+            const attBody = document.getElementById('attendance-log-body');
+            attBody.innerHTML = '';
+            child.attendanceLog.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${row.date}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded font-bold text-[10px] ${row.status === 'Present' ? 'bg-emerald-100 text-emerald-800' : (row.status === 'Late' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">${row.status}</span>
+                    </td>
+                    <td class="p-3 text-slate-600">${row.time}</td>
+                    <td class="p-3 text-slate-500">${row.method}</td>
+                    <td class="p-3 text-slate-600 italic">${row.remark}</td>
+                `;
+                attBody.appendChild(tr);
+            });
+
+            // Fee Tab updates
+            document.getElementById('fee-total-amount').innerText = child.fee.total;
+            document.getElementById('fee-paid-amount').innerText = child.fee.paid;
+            document.getElementById('fee-due-amount').innerText = child.fee.due;
+
+            const feeTableBody = document.getElementById('fee-table-body');
+            feeTableBody.innerHTML = '';
+            child.fee.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${item.name}</td>
+                    <td class="p-3 font-semibold text-slate-700">${item.amount}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${item.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${item.status}</span></td>
+                    <td class="p-3 text-center"><span class="text-slate-500 font-mono text-[11px]">${item.receipt}</span></td>
+                `;
+                feeTableBody.appendChild(tr);
+            });
+
+            // Results Tab updates
+            document.getElementById('results-gpa-badge').innerText = `Term 2 Aggregate GPA: ${child.academics.gpa}`;
+            const resultsBody = document.getElementById('results-table-body');
+            resultsBody.innerHTML = '';
+            child.academics.subjects.forEach(sub => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${sub.name}</td>
+                    <td class="p-3 text-slate-600 text-xs">${sub.teacher}</td>
+                    <td class="p-3 text-center font-bold text-slate-800">${sub.score}</td>
+                    <td class="p-3 text-center"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">${sub.grade}</span></td>
+                    <td class="p-3 text-slate-600 italic">${sub.remark}</td>
+                `;
+                resultsBody.appendChild(tr);
+            });
+
+            // Homework Full Tab updates
+            const hwFullContainer = document.getElementById('homework-full-list');
+            hwFullContainer.innerHTML = '';
+            child.todayHomework.forEach(hw => {
+                const div = document.createElement('div');
+                div.className = "p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3";
+                div.innerHTML = `
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Assigned Today</span>
+                            <span class="text-xs text-slate-500">${hw.subject}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-sm mt-1">${hw.title}</h4>
+                        <p class="text-xs text-slate-600 mt-0.5">Assigned by teacher. Please check child's school diary for reference.</p>
+                    </div>
+                    <span class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg whitespace-nowrap">Due ${hw.due}</span>
+                `;
+                hwFullContainer.appendChild(div);
+            });
+
+            // Chat View updates
+            document.getElementById('chat-active-teacher-name').innerText = child.homeroomTeacher;
+            renderChatMessages();
+
+            // Close dropdown
+            document.getElementById('child-dropdown').classList.add('hidden');
+            showToast(`Switched active profile to ${child.fullName}`);
+        }
+
+        function switchView(viewId) {
+            const views = ['digest', 'attendance', 'fee', 'results', 'homework', 'messages', 'notices'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+                
+                const navEl = document.getElementById(`nav-${v}`);
+                if (navEl) navEl.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${viewId}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) activeNav.classList.add('active');
+        }
+
+        function toggleChildDropdown() {
+            document.getElementById('child-dropdown').classList.toggle('hidden');
+        }
+
+        // Chat helper functions
+        function renderChatMessages() {
+            const child = childrenData[currentChildId];
+            const chatContainer = document.getElementById('chat-messages-container');
+            chatContainer.innerHTML = '';
+            
+            child.chatHistory.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                if (msg.sender === 'teacher') {
+                    msgDiv.className = "flex items-start space-x-2";
+                    msgDiv.innerHTML = `
+                        <div class="w-7 h-7 rounded-full bg-parent-600 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">T</div>
+                        <div class="bg-slate-100 text-slate-800 p-3 rounded-2xl rounded-tl-none max-w-xs sm:max-w-md shadow-2xs">
+                            <p>${msg.text}</p>
+                            <span class="text-[9px] text-slate-400 block mt-1">${msg.time}</span>
+                        </div>
+                    `;
+                } else {
+                    msgDiv.className = "flex items-start justify-end space-x-2";
+                    msgDiv.innerHTML = `
+                        <div class="bg-parent-600 text-white p-3 rounded-2xl rounded-tr-none max-w-xs sm:max-w-md shadow-2xs">
+                            <p>${msg.text}</p>
+                            <span class="text-[9px] text-indigo-200 block mt-1 text-right">${msg.time}</span>
+                        </div>
+                    `;
+                }
+                chatContainer.appendChild(msgDiv);
+            });
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function sendParentMessage() {
+            const input = document.getElementById('chat-input-text');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const child = childrenData[currentChildId];
+            child.chatHistory.push({
+                sender: 'parent',
+                text: text,
+                time: 'Just now'
+            });
+
+            input.value = '';
+            renderChatMessages();
+            showToast('Message sent to teacher.');
+        }
+
+        function selectChatThread(teacherKey) {
+            document.querySelectorAll('.chat-thread-btn').forEach(b => {
+                b.className = "chat-thread-btn w-full p-3 rounded-xl text-left hover:bg-slate-100 transition flex items-center space-x-3";
+            });
+            const activeThread = document.getElementById(`chat-thread-${teacherKey}`);
+            if (activeThread) activeThread.className = "chat-thread-btn active w-full p-3 rounded-xl text-left bg-indigo-50 border border-indigo-200 transition flex items-center space-x-3";
+            
+            if (teacherKey === 'miller') {
+                document.getElementById('chat-active-teacher-name').innerText = "Mr. David Miller";
+                document.getElementById('chat-active-subject').innerText = "General Mathematics";
+            } else {
+                document.getElementById('chat-active-teacher-name').innerText = childrenData[currentChildId].homeroomTeacher;
+                document.getElementById('chat-active-subject').innerText = "Physical Science • Homeroom Teacher";
+            }
+        }
+
+        function openLeaveModal() {
+            document.getElementById('leave-modal-child').value = childrenData[currentChildId].fullName;
+            openModal('modal-leave');
+        }
+
+        function submitLeaveAction() {
+            closeModal('modal-leave');
+            showToast('Absence note submitted to homeroom teacher.');
+        }
+
+        function openPayFeeModal() {
+            const child = childrenData[currentChildId];
+            document.getElementById('fee-modal-child-name').innerText = child.fullName;
+            document.getElementById('fee-modal-amount').innerText = child.fee.due;
+            openModal('modal-fee');
+        }
+
+        function processFeePaymentAction() {
+            const child = childrenData[currentChildId];
+            child.fee.paid = child.fee.total;
+            child.fee.due = "$0.00";
+            child.fee.items.forEach(i => i.status = "Paid");
+            selectChild(currentChildId);
+            closeModal('modal-fee');
+            showToast(`Fee payment of $200.00 for ${child.firstName} processed successfully! Receipt issued.`);
+        }
+
+        function openReportModal() {
+            const child = childrenData[currentChildId];
+            document.getElementById('report-modal-name').innerText = child.fullName;
+            document.getElementById('report-modal-grade').innerText = child.grade;
+            document.getElementById('report-modal-gpa').innerText = child.academics.gpa;
+
+            const modalTable = document.getElementById('report-modal-table');
+            modalTable.innerHTML = '';
+            child.academics.subjects.forEach(sub => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2 border-r border-slate-200 font-medium">${sub.name}</td>
+                    <td class="p-2 border-r border-slate-200 text-center font-bold">${sub.score}</td>
+                    <td class="p-2 text-center font-bold text-emerald-600">${sub.grade}</td>
+                `;
+                modalTable.appendChild(tr);
+            });
+
+            openModal('modal-report');
+        }
+
+        function openReplyTeacherModal() {
+            switchView('messages');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Initialize default child load
+        window.onload = function() {
+            selectChild('alex');
+        };
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

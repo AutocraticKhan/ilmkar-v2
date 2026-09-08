@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducatePulse - Teacher & Staff Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbars and Transitions */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #0d9488;
+            color: #0d9488;
+            font-weight: 600;
+        }
+        .nav-item.active {
+            background-color: #f0fdfa;
+            color: #0d9488;
+            font-weight: 600;
+            border-right: 3px solid #0d9488;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button id="mobile-menu-toggle" class="md:hidden text-slate-500 hover:text-slate-700 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-brand-500/20">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-900 tracking-tight text-lg leading-none block">Educate<span class="text-brand-600">Pulse</span></span>
+                        <span class="text-xs text-slate-400 font-medium leading-none">Teacher Hub</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Quick Context & Profile -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex items-center bg-slate-100 rounded-lg px-3 py-1.5 text-xs text-slate-600">
+                    <i class="fa-solid fa-school text-brand-600 mr-2"></i>
+                    <span class="font-semibold">Springfield Academy</span>
+                    <span class="mx-2 text-slate-300">|</span>
+                    <span>Term 2 (2026)</span>
+                </div>
+
+                <!-- Notifications -->
+                <button onclick="showToast('No new unread system alerts.')" class="relative p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-regular fa-bell text-lg"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+                </button>
+
+                <!-- Profile Badge -->
+                <div class="flex items-center space-x-3 border-l border-slate-200 pl-4">
+                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150" alt="Ms. Sarah Jenkins" class="w-9 h-9 rounded-full object-cover ring-2 ring-brand-500/20">
+                    <div class="hidden md:block">
+                        <p class="text-sm font-semibold text-slate-800 leading-tight">Ms. Sarah Jenkins</p>
+                        <p class="text-xs text-slate-500">Grade 8 & 9 Science / Math</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar Navigation (Max 5-7 Core Items) -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex-shrink-0 hidden md:flex flex-col justify-between z-20">
+            <div class="py-4">
+                <div class="px-4 mb-2">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Main Navigation</p>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-house w-6 text-center mr-2"></i>
+                        <span>Today's Overview</span>
+                    </button>
+                    <button onclick="switchView('attendance')" id="nav-attendance" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-clipboard-user w-6 text-center mr-2"></i>
+                        <span>Mark Attendance</span>
+                    </button>
+                    <button onclick="switchView('diary-homework')" id="nav-diary-homework" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-book-open w-6 text-center mr-2"></i>
+                        <span>Diary & Homework</span>
+                    </button>
+                    <button onclick="switchView('marks')" id="nav-marks" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-graduation-cap w-6 text-center mr-2"></i>
+                        <span>Marks & Report AI</span>
+                    </button>
+                    <button onclick="switchView('student-notes')" id="nav-student-notes" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-user-pen w-6 text-center mr-2"></i>
+                        <span>Student Notes & Risk</span>
+                    </button>
+                    <button onclick="switchView('inbox')" id="nav-inbox" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-comments w-6 text-center mr-2"></i>
+                        <span>Inbox</span>
+                        <span class="ml-auto bg-brand-100 text-brand-800 text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+                    </button>
+
+                    <div class="px-4 pt-4 pb-2">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">More Tools</p>
+                    </div>
+                    <button onclick="switchView('substitute')" id="nav-substitute" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-user-clock w-6 text-center mr-2"></i>
+                        <span>Substitute Finder</span>
+                    </button>
+                    <button onclick="switchView('resources')" id="nav-resources" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-folder-open w-6 text-center mr-2"></i>
+                        <span>Resource Library</span>
+                    </button>
+                    <button onclick="switchView('hr')" id="nav-hr" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-wallet w-6 text-center mr-2"></i>
+                        <span>Leave & Payslips</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Bottom Quick Status Card -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 m-3 rounded-xl">
+                <div class="flex items-center space-x-2 text-xs font-semibold text-emerald-700 mb-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>System Status: Optimal</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Curriculum progress: <strong class="text-slate-700">68%</strong> completed on schedule.</p>
+            </div>
+        </aside>
+
+        <!-- Main Scrollable Dashboard Content View -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+
+            <!-- Toast Notification Container -->
+            <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 border border-slate-700 pointer-events-none">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span id="toast-msg" class="text-sm font-medium">Action completed successfully.</span>
+            </div>
+
+            <!-- ================= VIEW 1: HOME / TODAY'S OVERVIEW ================= -->
+            <section id="view-dashboard" class="space-y-6">
+                <!-- Top Plain-English Summary Header Banner -->
+                <div class="bg-gradient-to-r from-brand-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
+                        <i class="fa-solid fa-chalkboard"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <span class="bg-brand-500/20 text-brand-200 border border-brand-400/30 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Today's Snapshot</span>
+                                <h1 class="text-2xl sm:text-3xl font-bold mt-2">Good morning, Ms. Jenkins!</h1>
+                                <p class="text-brand-100/90 text-sm mt-1 max-w-2xl">
+                                    <strong class="text-white">Plain-English Summary:</strong> You have 4 periods today. Grade 8-A morning attendance is <strong>Pending</strong>, and 2 students require an early-warning academic check.
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <button onclick="switchView('attendance')" class="bg-white text-brand-800 hover:bg-brand-50 font-bold px-4 py-2.5 rounded-xl shadow transition text-sm flex items-center space-x-2">
+                                    <i class="fa-solid fa-check-double text-brand-600"></i>
+                                    <span>Mark Attendance Now</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actionable Stats Bar -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Today's Classes</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1">4 Periods</h3>
+                            <p class="text-xs text-emerald-600 mt-1"><i class="fa-solid fa-clock"></i> Next: Period 2 (10:15 AM)</p>
+                        </div>
+                        <div class="w-12 h-12 bg-teal-50 text-brand-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Attendance Status</p>
+                            <h3 class="text-2xl font-bold text-amber-600 mt-1">1 / 4 Marked</h3>
+                            <p class="text-xs text-slate-500 mt-1">Grade 8-A is next</p>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-user-clock"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Pending Homework</p>
+                            <h3 class="text-2xl font-bold text-indigo-600 mt-1">18 To Grade</h3>
+                            <p class="text-xs text-slate-500 mt-1">Physics Lab Report #3</p>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-file-signature"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Risk Alerts</p>
+                            <h3 class="text-2xl font-bold text-rose-600 mt-1">2 Students</h3>
+                            <p class="text-xs text-rose-500 mt-1"><i class="fa-solid fa-triangle-exclamation"></i> Low attendance & grades</p>
+                        </div>
+                        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column Main Layout: Timetable & Quick Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: Today's Schedule -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-900">Today's Class Timetable</h2>
+                                <p class="text-xs text-slate-500">Monday, October 12 • 4 Total Periods</p>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-medium">Room 304</span>
+                        </div>
+
+                        <!-- Timetable List -->
+                        <div class="space-y-3">
+                            <!-- Class 1 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+                                        08:30 - 09:30 AM
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Grade 9-B • General Science</h4>
+                                        <p class="text-xs text-slate-500">Topic: Photosynthesis & Light Reactions</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check mr-1"></i> Marked</span>
+                                    <button onclick="switchView('diary-homework')" class="text-xs bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-lg font-medium">Log Diary</button>
+                                </div>
+                            </div>
+
+                            <!-- Class 2 (Current Active) -->
+                            <div class="p-4 rounded-xl border-2 border-brand-500 bg-brand-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative">
+                                <div class="absolute -top-2.5 left-4 bg-brand-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    Upcoming Next
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="bg-brand-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+                                        10:15 - 11:15 AM
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 text-sm">Grade 8-A • Physical Science</h4>
+                                        <p class="text-xs text-slate-600">Topic: Introduction to Newton's First Law</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="switchView('attendance')" class="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-semibold shadow">
+                                        Mark Attendance
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Class 3 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+                                        11:30 - 12:30 PM
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Grade 10-C • Advanced Physics</h4>
+                                        <p class="text-xs text-slate-500">Topic: Electromagnetic Induction Basics</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-medium text-slate-400">Scheduled</span>
+                                </div>
+                            </div>
+
+                            <!-- Class 4 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+                                        01:30 - 02:30 PM
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Grade 8-B • General Science</h4>
+                                        <p class="text-xs text-slate-500">Topic: Chemical Symbols & Periodic Table</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-medium text-slate-400">Scheduled</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Quick Action Cards & Risk Preview -->
+                    <div class="space-y-6">
+                        <!-- Quick Actions Box -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="font-bold text-slate-900 text-sm mb-3">Primary Quick Actions</h3>
+                            <div class="space-y-2">
+                                <button onclick="switchView('attendance')" class="w-full bg-brand-50 hover:bg-brand-100 text-brand-800 p-3 rounded-xl flex items-center justify-between transition text-xs font-bold">
+                                    <span class="flex items-center"><i class="fa-solid fa-clipboard-check text-brand-600 mr-2 text-base"></i> Mark Class Attendance</span>
+                                    <i class="fa-solid fa-chevron-right text-brand-400"></i>
+                                </button>
+                                <button onclick="switchView('diary-homework')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 p-3 rounded-xl flex items-center justify-between transition text-xs font-bold">
+                                    <span class="flex items-center"><i class="fa-solid fa-pen-to-square text-indigo-600 mr-2 text-base"></i> Post Homework / Diary</span>
+                                    <i class="fa-solid fa-chevron-right text-slate-400"></i>
+                                </button>
+                                <button onclick="switchView('marks')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 p-3 rounded-xl flex items-center justify-between transition text-xs font-bold">
+                                    <span class="flex items-center"><i class="fa-solid fa-wand-magic-sparkles text-amber-600 mr-2 text-base"></i> Generate AI Comments</span>
+                                    <i class="fa-solid fa-chevron-right text-slate-400"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Early Warning Quick Card -->
+                        <div class="bg-rose-50/70 rounded-2xl border border-rose-200 p-5 shadow-sm">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2 text-rose-800">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <h3 class="font-bold text-sm">Early Warning Alerts</h3>
+                                </div>
+                                <button onclick="switchView('student-notes')" class="text-xs text-rose-700 underline font-semibold">View All</button>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="bg-white p-3 rounded-xl border border-rose-100 text-xs shadow-xs">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Leo Miller (Grade 8-A)</span>
+                                        <span class="text-rose-600">High Risk</span>
+                                    </div>
+                                    <p class="text-slate-500 mt-1">Attendance: <strong class="text-rose-600">71%</strong> • Science: <strong class="text-rose-600">54%</strong></p>
+                                    <span class="inline-block mt-1 text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-medium">3 missed labs consecutively</span>
+                                </div>
+                                <div class="bg-white p-3 rounded-xl border border-rose-100 text-xs shadow-xs">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Sophia Davis (Grade 9-B)</span>
+                                        <span class="text-amber-600">Moderate Risk</span>
+                                    </div>
+                                    <p class="text-slate-500 mt-1">Attendance: <strong class="text-emerald-600">92%</strong> • Physics: <strong class="text-amber-600">59%</strong></p>
+                                    <span class="inline-block mt-1 text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-medium">Midterm score dropped 20%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: ONE-TAP ATTENDANCE ================= -->
+            <section id="view-attendance" class="space-y-6 hidden">
+                <!-- Summary Header -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">One-Tap Class Attendance</h1>
+                        <p class="text-xs text-slate-500 mt-0.5">Quickly toggle attendance per student or batch select. Instant sync with school database.</p>
+                    </div>
+                    <!-- Single Primary CTA -->
+                    <button onclick="saveAttendance()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save & Submit Attendance</span>
+                    </button>
+                </div>
+
+                <!-- Filters Bar -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Class</label>
+                            <select id="attendance-class-select" onchange="loadAttendanceList()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <option value="8A">Grade 8-A (Physical Science)</option>
+                                <option value="9B">Grade 9-B (General Science)</option>
+                                <option value="10C">Grade 10-C (Advanced Physics)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Date</label>
+                            <input type="date" value="2026-10-12" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Batch Controls -->
+                    <div class="flex items-center space-x-2">
+                        <button onclick="setAllAttendance('P')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-check mr-1"></i> All Present
+                        </button>
+                        <button onclick="setAllAttendance('A')" class="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-xmark mr-1"></i> All Absent
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Attendance Counters -->
+                <div class="grid grid-cols-4 gap-3 text-center">
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                        <span class="text-xs text-slate-400 uppercase font-bold">Total</span>
+                        <p id="cnt-total" class="text-lg font-bold text-slate-800">28</p>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 shadow-xs">
+                        <span class="text-xs text-emerald-700 uppercase font-bold">Present</span>
+                        <p id="cnt-present" class="text-lg font-bold text-emerald-700">26</p>
+                    </div>
+                    <div class="bg-rose-50 p-3 rounded-xl border border-rose-200 shadow-xs">
+                        <span class="text-xs text-rose-700 uppercase font-bold">Absent</span>
+                        <p id="cnt-absent" class="text-lg font-bold text-rose-700">1</p>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 shadow-xs">
+                        <span class="text-xs text-amber-700 uppercase font-bold">Late</span>
+                        <p id="cnt-late" class="text-lg font-bold text-amber-700">1</p>
+                    </div>
+                </div>
+
+                <!-- Student Grid / List -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-semibold uppercase">
+                                    <th class="p-4">Roll #</th>
+                                    <th class="p-4">Student Name</th>
+                                    <th class="p-4">Overall Attendance</th>
+                                    <th class="p-4 text-center">Status Toggle (One Tap)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body" class="divide-y divide-slate-100 text-sm">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: CLASS DIARY & HOMEWORK ================= -->
+            <section id="view-diary-homework" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Class Diary & Homework Manager</h1>
+                        <p class="text-xs text-slate-500">Post what was taught today for parents/admin, and track homework submissions.</p>
+                    </div>
+                    <!-- Action Bar -->
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openModal('modal-diary')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">
+                            + Log Class Diary
+                        </button>
+                        <button onclick="openModal('modal-homework')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">
+                            + Post Homework
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Class Diary Timeline -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h2 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-book text-brand-600 mr-2"></i> Class Diary Log (Parents Visible)
+                            </h2>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">Grade 8-A</span>
+                        </div>
+
+                        <div class="space-y-4" id="diary-list">
+                            <!-- Entry 1 -->
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                <div class="flex justify-between items-center text-xs text-slate-500">
+                                    <span class="font-bold text-brand-700">Today • Oct 12, 2026</span>
+                                    <span>Period 2 (Science)</span>
+                                </div>
+                                <h4 class="font-bold text-slate-800 text-sm">Newton's Laws of Motion - Intro</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    Covered inertia, balanced vs unbalanced forces, and everyday examples. Conducted quick friction experiment with ramps.
+                                </p>
+                                <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                                    <span class="text-slate-500"><i class="fa-solid fa-paperclip text-slate-400 mr-1"></i> Handout_LawsOfMotion.pdf</span>
+                                    <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-eye"></i> Visible to 28 Parents</span>
+                                </div>
+                            </div>
+
+                            <!-- Entry 2 -->
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                                <div class="flex justify-between items-center text-xs text-slate-500">
+                                    <span class="font-bold text-slate-600">Oct 10, 2026</span>
+                                    <span>Period 4 (Science)</span>
+                                </div>
+                                <h4 class="font-bold text-slate-800 text-sm">States of Matter & Phase Transitions</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed">
+                                    Reviewed latent heat and phase diagrams. Solved practice workbook page 42 questions 1 through 8.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Homework Submission Tracker -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h2 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-list-check text-indigo-600 mr-2"></i> Active Homework & Submissions
+                            </h2>
+                            <span class="text-xs text-slate-500">2 Active Tasks</span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Homework 1 -->
+                            <div class="p-4 rounded-xl border border-indigo-100 bg-indigo-50/20 space-y-3">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Due Tomorrow</span>
+                                        <h4 class="font-bold text-slate-900 text-sm mt-1">Newton's Law Practice Sheet</h4>
+                                        <p class="text-xs text-slate-500">Grade 8-A • Physical Science</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-lg font-bold text-indigo-600">22 / 28</span>
+                                        <p class="text-[10px] text-slate-400 uppercase font-semibold">Submitted</p>
+                                    </div>
+                                </div>
+
+                                <!-- Progress bar -->
+                                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-indigo-600 h-full" style="w-78%; width: 78%;"></div>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-1">
+                                    <button onclick="showToast('Loading submission list...')" class="text-xs text-indigo-600 font-bold hover:underline">
+                                        View Submissions List <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                                    </button>
+                                    <span class="text-xs text-slate-400">6 Pending</span>
+                                </div>
+                            </div>
+
+                            <!-- Homework 2 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Due Oct 15</span>
+                                        <h4 class="font-bold text-slate-900 text-sm mt-1">Photosynthesis Diagrams & Summary</h4>
+                                        <p class="text-xs text-slate-500">Grade 9-B • General Science</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-lg font-bold text-emerald-600">14 / 30</span>
+                                        <p class="text-[10px] text-slate-400 uppercase font-semibold">Submitted</p>
+                                    </div>
+                                </div>
+
+                                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full" style="width: 46%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 4: MARKS GRID & AUTO REPORT COMMENTS ================= -->
+            <section id="view-marks" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Simple Marks Entry & AI Report Comments</h1>
+                        <p class="text-xs text-slate-500">Clean spreadsheet-style grid for fast grading + AI auto-drafted report card comments.</p>
+                    </div>
+                    <button onclick="saveMarks()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save All Marks</span>
+                    </button>
+                </div>
+
+                <!-- One Line Plain-English Summary Banner -->
+                <div class="bg-teal-50 border border-brand-200 rounded-xl p-4 text-xs text-brand-900 flex items-center justify-between">
+                    <span><strong>Grade Summary:</strong> Class average for Midterm Assessment is <strong>78.4%</strong> (B+ average). 3 students achieved A+ scores.</span>
+                    <span class="text-brand-700 font-bold">28/28 Graded</span>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Class</label>
+                            <select class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800">
+                                <option>Grade 8-A Physical Science</option>
+                                <option>Grade 9-B General Science</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Assessment</label>
+                            <select class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800">
+                                <option>Midterm Exam (Max 100)</option>
+                                <option>Lab Assignment #1 (Max 50)</option>
+                                <option>Quiz 1 (Max 20)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marks Table & AI Comment Generator Split View -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left: Marks Entry Grid -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-sm">Marks Entry Grid</h3>
+                            <span class="text-xs text-slate-400">Auto-saves locally as you type</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+                                        <th class="p-3">Student</th>
+                                        <th class="p-3 text-center">Score (/100)</th>
+                                        <th class="p-3 text-center">Grade</th>
+                                        <th class="p-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="marks-table-body" class="divide-y divide-slate-100">
+                                    <!-- JS populated -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right: AI Auto-Generated Report Card Comment Box -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <div class="flex items-center space-x-2 text-brand-700 border-b border-slate-100 pb-3">
+                            <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                            <h3 class="font-bold text-slate-900 text-base">AI Report Comment Generator</h3>
+                        </div>
+
+                        <p class="text-xs text-slate-500">Generates draft report card comments based on marks + private behavior notes. You can edit before finalizing.</p>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Selected Student</label>
+                                <select id="comment-student-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold text-slate-800">
+                                    <option value="1">Alex Johnson (Score: 92% - Grade A)</option>
+                                    <option value="2">Leo Miller (Score: 54% - Grade D)</option>
+                                    <option value="3">Maya Lin (Score: 88% - Grade A-)</option>
+                                    <option value="4">Ethan Hunt (Score: 78% - Grade B+)</option>
+                                </select>
+                            </div>
+
+                            <button onclick="generateAIComment()" class="w-full bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white font-bold py-2 rounded-xl text-xs shadow flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-sparkles"></i>
+                                <span>Generate Smart Comment</span>
+                            </button>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Generated Draft (Editable)</label>
+                                <textarea id="ai-comment-output" rows="6" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 leading-relaxed" placeholder="Click 'Generate Smart Comment' above to draft..."></textarea>
+                            </div>
+
+                            <button onclick="copyAIComment()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center space-x-2">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>Copy Comment to Clipboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 5: PRIVATE STUDENT NOTES & EARLY WARNING ANALYTICS ================= -->
+            <section id="view-student-notes" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Private Student Notes & Risk Analytics</h1>
+                        <p class="text-xs text-slate-500"><strong class="text-slate-700">Teacher/Admin Only:</strong> Notes are confidential and NOT visible to parents. Used for PTM preparation and early interventions.</p>
+                    </div>
+                    <span class="text-xs bg-amber-50 text-amber-800 border border-amber-200 font-semibold px-3 py-1.5 rounded-lg flex items-center">
+                        <i class="fa-solid fa-lock mr-1.5"></i> Staff Confidential
+                    </span>
+                </div>
+
+                <!-- Layout Split: Student Directory & Private Notes File -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left: Student List -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+                        <h3 class="font-bold text-slate-800 text-sm">Student Roster</h3>
+                        <div class="space-y-2" id="student-roster-list">
+                            <!-- Populated JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Selected Student Deep-Dive Profile & Notes -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+                        <div class="flex items-start justify-between border-b border-slate-100 pb-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h2 id="student-detail-name" class="text-xl font-bold text-slate-900">Leo Miller</h2>
+                                    <span id="student-detail-risk" class="bg-rose-100 text-rose-700 font-bold text-xs px-2.5 py-0.5 rounded-full">High Risk</span>
+                                </div>
+                                <p id="student-detail-sub" class="text-xs text-slate-500 mt-1">Grade 8-A • Roll No. 04 • Parent: Arthur Miller</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-slate-400">Attendance: <strong id="student-detail-att" class="text-rose-600">71%</strong></span>
+                                <br>
+                                <span class="text-xs text-slate-400">Avg Grade: <strong id="student-detail-grade" class="text-rose-600">54% (D)</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Early Warning Trend Box -->
+                        <div class="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs space-y-1">
+                            <h4 class="font-bold text-rose-800 flex items-center">
+                                <i class="fa-solid fa-chart-line mr-2"></i> Early Warning System Insight
+                            </h4>
+                            <p class="text-slate-700 leading-relaxed">
+                                Leo's attendance has dropped by 18% over the past month, accompanied by missing 3 practical lab submissions. Immediate teacher check-in recommended prior to parent meeting.
+                            </p>
+                        </div>
+
+                        <!-- Private Notes Section -->
+                        <div class="space-y-3">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center justify-between">
+                                <span>Private Behavioral & Academic Notes Log</span>
+                                <span class="text-[11px] font-normal text-slate-400">(Only visible to teachers/principal)</span>
+                            </h3>
+
+                            <!-- Add Note Form -->
+                            <div class="space-y-2">
+                                <textarea id="new-private-note" rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Add confidential observation note (e.g. behavior in class, strengths, concerns for PTM)..."></textarea>
+                                <div class="flex justify-end">
+                                    <button onclick="addPrivateNote()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">
+                                        + Save Private Note
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Past Notes Container -->
+                            <div id="private-notes-container" class="space-y-3 pt-2">
+                                <!-- JS Populated -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 6: MESSAGES INBOX ================= -->
+            <section id="view-inbox" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm h-[600px] flex overflow-hidden">
+                    <!-- Conversations Sidebar -->
+                    <div class="w-1/3 border-r border-slate-200 flex flex-col bg-slate-50">
+                        <div class="p-4 border-b border-slate-200 bg-white">
+                            <h2 class="font-bold text-slate-900 text-base">Unified Inbox</h2>
+                            <p class="text-xs text-slate-400">Parents & Admin Messages</p>
+                        </div>
+                        <div class="p-2 space-y-1 overflow-y-auto flex-1">
+                            <div onclick="selectChat('Arthur Miller (Leo\'s Parent)', 'Regarding Leo\'s Science Project', 'parent')" class="p-3 rounded-xl bg-white border border-brand-200 shadow-xs cursor-pointer hover:bg-brand-50/50">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-bold text-slate-800">Arthur Miller (Parent)</span>
+                                    <span class="text-[10px] text-slate-400">10:14 AM</span>
+                                </div>
+                                <p class="text-xs font-semibold text-slate-700 mt-0.5 truncate">Regarding Leo's Science Project</p>
+                                <p class="text-[11px] text-slate-400 truncate">Hello Ms. Jenkins, I wanted to ask about...</p>
+                            </div>
+
+                            <div onclick="selectChat('Principal Davis', 'Staff Meeting Rescheduled', 'admin')" class="p-3 rounded-xl bg-transparent hover:bg-white cursor-pointer transition">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-bold text-slate-800">Principal Davis (Admin)</span>
+                                    <span class="text-[10px] text-slate-400">Yesterday</span>
+                                </div>
+                                <p class="text-xs font-semibold text-slate-700 mt-0.5 truncate">Staff Meeting Rescheduled</p>
+                                <p class="text-[11px] text-slate-400 truncate">The Thursday curriculum meeting is moved to...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Window -->
+                    <div class="flex-1 flex flex-col bg-white">
+                        <!-- Chat Header -->
+                        <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 id="chat-header-name" class="font-bold text-slate-900 text-sm">Arthur Miller (Parent of Leo Miller - 8A)</h3>
+                                <p id="chat-header-subject" class="text-xs text-slate-500">Subject: Regarding Leo's Science Project</p>
+                            </div>
+                            <span class="text-xs bg-brand-100 text-brand-800 px-2.5 py-1 rounded-full font-medium">Parent Thread</span>
+                        </div>
+
+                        <!-- Chat Messages Thread -->
+                        <div class="flex-1 p-4 overflow-y-auto space-y-3 text-xs" id="chat-thread">
+                            <div class="flex flex-col items-start max-w-md">
+                                <div class="bg-slate-100 text-slate-800 p-3 rounded-2xl rounded-tl-none">
+                                    Hello Ms. Jenkins, I noticed Leo's grades in the recent physics quiz dropped. Is there anything specific we should review with him at home?
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1">Arthur Miller • 10:14 AM</span>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input -->
+                        <div class="p-3 border-t border-slate-200 bg-white flex items-center space-x-2">
+                            <input id="chat-input" type="text" placeholder="Type your response..." class="flex-1 bg-slate-100 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <button onclick="sendChatMessage()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow">
+                                <i class="fa-solid fa-paper-plane mr-1"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 7: SUBSTITUTE TEACHER FINDER ================= -->
+            <section id="view-substitute" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h1 class="text-xl font-bold text-slate-900">Substitute-Teacher Finder</h1>
+                    <p class="text-xs text-slate-500 mt-1">If taking leave, the system automatically suggests available free teachers for your specific periods.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Request Sub Form -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">Select Period to Cover</h3>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Date</label>
+                            <input type="date" value="2026-10-14" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Period / Class</label>
+                            <select id="sub-period-select" onchange="searchSubstitutes()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+                                <option value="p2">Period 2: Grade 8-A Physical Science (10:15 AM)</option>
+                                <option value="p1">Period 1: Grade 9-B General Science (08:30 AM)</option>
+                            </select>
+                        </div>
+                        <button onclick="searchSubstitutes()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs shadow">
+                            Find Free Teachers
+                        </button>
+                    </div>
+
+                    <!-- Available Free Teachers List -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">Available Free Teachers During Period 2</h3>
+                        
+                        <div class="space-y-3" id="sub-list">
+                            <div class="p-4 rounded-xl border border-slate-200 flex items-center justify-between bg-slate-50">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-sm">
+                                        DM
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Mr. David Miller</h4>
+                                        <p class="text-xs text-slate-500">Subject: Chemistry / Science • Free Period 2</p>
+                                    </div>
+                                </div>
+                                <button onclick="requestSubstitute('Mr. David Miller')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">
+                                    Send Sub Request
+                                </button>
+                            </div>
+
+                            <div class="p-4 rounded-xl border border-slate-200 flex items-center justify-between bg-slate-50">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-sm">
+                                        ER
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">Ms. Emily Roberts</h4>
+                                        <p class="text-xs text-slate-500">Subject: Mathematics • Free Period 2</p>
+                                    </div>
+                                </div>
+                                <button onclick="requestSubstitute('Ms. Emily Roberts')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">
+                                    Send Sub Request
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 8: SHARED RESOURCE LIBRARY ================= -->
+            <section id="view-resources" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Shared Teacher Resource Library</h1>
+                        <p class="text-xs text-slate-500">Shared materials between Science department teachers. Reuse lesson materials, worksheets, and quizzes.</p>
+                    </div>
+                    <button onclick="showToast('Upload modal opened.')" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow">
+                        + Share New Material
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Resource Card 1 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">Newton's Laws Lab Worksheet & Answer Key</h3>
+                        <p class="text-xs text-slate-500">Grade 8 • Science Department • Added by Mr. Miller</p>
+                        <div class="pt-2 flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Used by 4 teachers</span>
+                            <button onclick="showToast('Resource downloaded!')" class="text-brand-600 font-bold hover:underline">Download</button>
+                        </div>
+                    </div>
+
+                    <!-- Resource Card 2 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold">
+                            <i class="fa-solid fa-file-powerpoint"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">Photosynthesis & Light Reactions Deck</h3>
+                        <p class="text-xs text-slate-500">Grade 9 • Biology • Added by Ms. Jenkins</p>
+                        <div class="pt-2 flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Used by 6 teachers</span>
+                            <button onclick="showToast('Resource downloaded!')" class="text-brand-600 font-bold hover:underline">Download</button>
+                        </div>
+                    </div>
+
+                    <!-- Resource Card 3 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">Midterm Physics Review Quiz Bank</h3>
+                        <p class="text-xs text-slate-500">Grade 10 • Advanced Physics • Shared</p>
+                        <div class="pt-2 flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Used by 2 teachers</span>
+                            <button onclick="showToast('Resource downloaded!')" class="text-brand-600 font-bold hover:underline">Download</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 9: LEAVE & PAYSLIPS ================= -->
+            <section id="view-hr" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h1 class="text-xl font-bold text-slate-900">Leave Requests & Payslips</h1>
+                    <p class="text-xs text-slate-500">View personal leave balances, apply for leave, and view salary history.</p>
+                </div>
+
+                <!-- Leave Balances -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Casual Leave</span>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1">4 Days Left</h3>
+                        <p class="text-xs text-slate-400 mt-1">Out of 10 days annual</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Sick Leave</span>
+                        <h3 class="text-2xl font-bold text-emerald-600 mt-1">8 Days Left</h3>
+                        <p class="text-xs text-slate-400 mt-1">Out of 10 days annual</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Earned Leave</span>
+                        <h3 class="text-2xl font-bold text-brand-600 mt-1">12 Days Left</h3>
+                        <p class="text-xs text-slate-400 mt-1">Accumulated balance</p>
+                    </div>
+                </div>
+
+                <!-- Salary History -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3">Monthly Payslip History</h3>
+                    
+                    <div class="space-y-2">
+                        <div class="p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                            <div>
+                                <span class="font-bold text-slate-800">September 2026 Salary Slip</span>
+                                <p class="text-slate-400">Paid on Oct 1, 2026 • Net: $3,850.00</p>
+                            </div>
+                            <button onclick="showToast('Opening Payslip PDF...')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg">
+                                <i class="fa-solid fa-download mr-1"></i> Payslip
+                            </button>
+                        </div>
+
+                        <div class="p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
+                            <div>
+                                <span class="font-bold text-slate-800">August 2026 Salary Slip</span>
+                                <p class="text-slate-400">Paid on Sep 1, 2026 • Net: $3,850.00</p>
+                            </div>
+                            <button onclick="showToast('Opening Payslip PDF...')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg">
+                                <i class="fa-solid fa-download mr-1"></i> Payslip
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal: Log Class Diary -->
+    <div id="modal-diary" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Log Today's Class Diary</h3>
+                <button onclick="closeModal('modal-diary')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Class Period</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                        <option>Grade 8-A Physical Science</option>
+                        <option>Grade 9-B General Science</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Topic Taught Today</label>
+                    <input type="text" id="diary-topic-input" placeholder="e.g. Newton's First Law of Motion" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Summary / Highlights for Parents</label>
+                    <textarea id="diary-desc-input" rows="3" placeholder="Brief summary of concepts covered..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal('modal-diary')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="saveDiaryEntry()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow">Save & Publish Diary</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Post Homework -->
+    <div id="modal-homework" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Post Homework Assignment</h3>
+                <button onclick="closeModal('modal-homework')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Target Class</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                        <option>Grade 8-A Physical Science</option>
+                        <option>Grade 9-B General Science</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Assignment Title</label>
+                    <input type="text" placeholder="e.g. Kinetic Energy Workbook Exercises" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Due Date</label>
+                    <input type="date" value="2026-10-15" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal('modal-homework')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="closeModal('modal-homework'); showToast('Homework posted successfully!')" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow">Post Homework</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // Mock State Data
+        const attendanceData = {
+            '8A': [
+                { id: 1, roll: '01', name: 'Alex Johnson', overall: '96%', status: 'P' },
+                { id: 2, roll: '02', name: 'Emma Watson', overall: '92%', status: 'P' },
+                { id: 3, roll: '03', name: 'Jacob Smith', overall: '88%', status: 'P' },
+                { id: 4, roll: '04', name: 'Leo Miller', overall: '71%', status: 'A' },
+                { id: 5, roll: '05', name: 'Maya Lin', overall: '94%', status: 'P' },
+                { id: 6, roll: '06', name: 'Noah Davis', overall: '85%', status: 'L' },
+            ],
+            '9B': [
+                { id: 7, roll: '01', name: 'Sophia Davis', overall: '92%', status: 'P' },
+                { id: 8, roll: '02', name: 'Ethan Hunt', overall: '89%', status: 'P' },
+                { id: 9, roll: '03', name: 'Olivia Martinez', overall: '98%', status: 'P' },
+            ]
+        };
+
+        const marksData = [
+            { id: 1, name: 'Alex Johnson', score: 92, grade: 'A' },
+            { id: 2, name: 'Leo Miller', score: 54, grade: 'D' },
+            { id: 3, name: 'Maya Lin', score: 88, grade: 'A-' },
+            { id: 4, name: 'Ethan Hunt', score: 78, grade: 'B+' },
+            { id: 5, name: 'Emma Watson', score: 95, grade: 'A+' },
+        ];
+
+        const studentsPrivateNotes = {
+            '1': {
+                name: 'Alex Johnson',
+                risk: 'Low Risk',
+                riskClass: 'bg-emerald-100 text-emerald-800',
+                att: '96%',
+                grade: '92% (A)',
+                notes: [
+                    { date: 'Oct 02, 2026', author: 'Ms. Jenkins', text: 'Exceptionally strong in physics problem solving. Acts as peer helper.' }
+                ]
+            },
+            '2': {
+                name: 'Leo Miller',
+                risk: 'High Risk',
+                riskClass: 'bg-rose-100 text-rose-700',
+                att: '71%',
+                grade: '54% (D)',
+                notes: [
+                    { date: 'Oct 08, 2026', author: 'Ms. Jenkins', text: 'Struggles with concentration during group labs. Recommended 1-on-1 tutoring.' },
+                    { date: 'Sep 25, 2026', author: 'Principal Davis', text: 'Spoke with father Arthur. Agreed to monitor homework at home.' }
+                ]
+            }
+        };
+
+        let currentSelectedStudentForNotes = '2';
+
+        function switchView(viewId) {
+            const views = ['dashboard', 'attendance', 'diary-homework', 'marks', 'student-notes', 'inbox', 'substitute', 'resources', 'hr'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+                
+                const navEl = document.getElementById(`nav-${v}`);
+                if (navEl) navEl.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${viewId}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) activeNav.classList.add('active');
+
+            if (viewId === 'attendance') loadAttendanceList();
+            if (viewId === 'marks') renderMarksTable();
+            if (viewId === 'student-notes') renderStudentRoster();
+        }
+
+        function loadAttendanceList() {
+            const classVal = document.getElementById('attendance-class-select').value;
+            const list = attendanceData[classVal] || attendanceData['8A'];
+            const tbody = document.getElementById('attendance-table-body');
+            tbody.innerHTML = '';
+
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-500">${item.roll}</td>
+                    <td class="p-4 font-bold text-slate-800">${item.name}</td>
+                    <td class="p-4"><span class="text-xs px-2 py-1 rounded font-semibold ${parseInt(item.overall) < 80 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}">${item.overall}</span></td>
+                    <td class="p-4 text-center">
+                        <div class="inline-flex rounded-xl shadow-xs border border-slate-200 bg-slate-100 p-1 space-x-1">
+                            <button onclick="toggleStudentAttendance('${classVal}', ${item.id}, 'P')" class="px-3 py-1 rounded-lg text-xs font-bold transition ${item.status === 'P' ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">Present</button>
+                            <button onclick="toggleStudentAttendance('${classVal}', ${item.id}, 'A')" class="px-3 py-1 rounded-lg text-xs font-bold transition ${item.status === 'A' ? 'bg-rose-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">Absent</button>
+                            <button onclick="toggleStudentAttendance('${classVal}', ${item.id}, 'L')" class="px-3 py-1 rounded-lg text-xs font-bold transition ${item.status === 'L' ? 'bg-amber-500 text-white shadow' : 'text-slate-600 hover:text-slate-900'}">Late</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateAttendanceCounters(list);
+        }
+
+        function toggleStudentAttendance(classVal, studentId, status) {
+            const list = attendanceData[classVal] || attendanceData['8A'];
+            const st = list.find(s => s.id === studentId);
+            if (st) {
+                st.status = status;
+                loadAttendanceList();
+            }
+        }
+
+        function setAllAttendance(status) {
+            const classVal = document.getElementById('attendance-class-select').value;
+            const list = attendanceData[classVal] || attendanceData['8A'];
+            list.forEach(s => s.status = status);
+            loadAttendanceList();
+            showToast(`Marked all students as ${status === 'P' ? 'Present' : 'Absent'}`);
+        }
+
+        function updateAttendanceCounters(list) {
+            document.getElementById('cnt-total').innerText = list.length;
+            document.getElementById('cnt-present').innerText = list.filter(s => s.status === 'P').length;
+            document.getElementById('cnt-absent').innerText = list.filter(s => s.status === 'A').length;
+            document.getElementById('cnt-late').innerText = list.filter(s => s.status === 'L').length;
+        }
+
+        function saveAttendance() {
+            showToast('Attendance records saved & synced to school database!');
+        }
+
+        function renderMarksTable() {
+            const tbody = document.getElementById('marks-table-body');
+            tbody.innerHTML = '';
+            marksData.forEach((st, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${st.name}</td>
+                    <td class="p-3 text-center">
+                        <input type="number" value="${st.score}" onchange="updateScore(${idx}, this.value)" class="w-16 bg-slate-50 border border-slate-300 rounded-lg p-1 text-center font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </td>
+                    <td class="p-3 text-center font-bold text-brand-700">${st.grade}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="selectForAIComment(${st.id})" class="text-xs text-brand-600 hover:text-brand-800 font-bold">Draft Comment</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateScore(idx, val) {
+            val = parseInt(val) || 0;
+            marksData[idx].score = val;
+            if (val >= 90) marksData[idx].grade = 'A';
+            else if (val >= 80) marksData[idx].grade = 'B';
+            else if (val >= 70) marksData[idx].grade = 'C';
+            else if (val >= 60) marksData[idx].grade = 'D';
+            else marksData[idx].grade = 'F';
+            renderMarksTable();
+        }
+
+        function saveMarks() {
+            showToast('Marks grid saved successfully!');
+        }
+
+        function selectForAIComment(studentId) {
+            const select = document.getElementById('comment-student-select');
+            if (select) {
+                select.value = studentId;
+            }
+            generateAIComment();
+        }
+
+        function generateAIComment() {
+            const studentVal = document.getElementById('comment-student-select').value;
+            const output = document.getElementById('ai-comment-output');
+            const st = marksData.find(s => s.id == studentVal);
+            const name = st ? st.name : "The student";
+
+            if (studentVal === '1') {
+                output.value = `${name} consistently demonstrates an exceptional grasp of physical science principles. ${name.split(' ')[0]} actively contributes to class discussions and maintains a top grade of 92%. A pleasure to have in class!`;
+            } else if (studentVal === '2') {
+                output.value = `${name} shows potential when engaged, but recent absences have impacted his understanding of foundational physics concepts. With steady homework completion and targeted review, ${name.split(' ')[0]} can regain strong academic standing.`;
+            } else if (st) {
+                output.value = `${name} demonstrates solid analytical skills and strong participation during practical lab experiments. Consistently turns in assignments on schedule with a score of ${st.score}%.`;
+            } else {
+                output.value = "Demonstrates solid analytical skills and strong participation during practical lab experiments. Consistently turns in assignments on schedule.";
+            }
+
+            showToast('AI report comment generated!');
+        }
+
+        function copyAIComment() {
+            const text = document.getElementById('ai-comment-output').value;
+            if (!text) {
+                showToast('No comment text to copy!');
+                return;
+            }
+            document.execCommand('copy');
+            showToast('Comment copied to clipboard!');
+        }
+
+        function renderStudentRoster() {
+            const container = document.getElementById('student-roster-list');
+            container.innerHTML = '';
+            Object.keys(studentsPrivateNotes).forEach(key => {
+                const s = studentsPrivateNotes[key];
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl border cursor-pointer transition ${key === currentSelectedStudentForNotes ? 'border-brand-500 bg-brand-50/40' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`;
+                item.onclick = () => loadStudentPrivateProfile(key);
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-800 text-xs">${s.name}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${s.riskClass}">${s.risk}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+            loadStudentPrivateProfile(currentSelectedStudentForNotes);
+        }
+
+        function loadStudentPrivateProfile(key) {
+            currentSelectedStudentForNotes = key;
+            const s = studentsPrivateNotes[key] || studentsPrivateNotes['2'];
+            document.getElementById('student-detail-name').innerText = s.name;
+            document.getElementById('student-detail-risk').innerText = s.risk;
+            document.getElementById('student-detail-risk').className = `text-xs font-bold px-2.5 py-0.5 rounded-full ${s.riskClass}`;
+            document.getElementById('student-detail-att').innerText = s.att;
+            document.getElementById('student-detail-grade').innerText = s.grade;
+
+            const notesContainer = document.getElementById('private-notes-container');
+            notesContainer.innerHTML = '';
+            s.notes.forEach(n => {
+                const card = document.createElement('div');
+                card.className = "p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1";
+                card.innerHTML = `
+                    <div class="flex justify-between font-bold text-slate-500 text-[11px]">
+                        <span>${n.author}</span>
+                        <span>${n.date}</span>
+                    </div>
+                    <p class="text-slate-800 leading-relaxed">${n.text}</p>
+                `;
+                notesContainer.appendChild(card);
+            });
+        }
+
+        function addPrivateNote() {
+            const txt = document.getElementById('new-private-note').value;
+            if (!txt) return;
+            const s = studentsPrivateNotes[currentSelectedStudentForNotes];
+            if (s) {
+                s.notes.unshift({
+                    date: 'Today',
+                    author: 'Ms. Sarah Jenkins',
+                    text: txt
+                });
+                document.getElementById('new-private-note').value = '';
+                loadStudentPrivateProfile(currentSelectedStudentForNotes);
+                showToast('Private note added!');
+            }
+        }
+
+        function saveDiaryEntry() {
+            const topic = document.getElementById('diary-topic-input').value;
+            const desc = document.getElementById('diary-desc-input').value;
+            if (!topic) {
+                showToast('Please enter a topic!');
+                return;
+            }
+            const diaryList = document.getElementById('diary-list');
+            const entry = document.createElement('div');
+            entry.className = "p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2";
+            entry.innerHTML = `
+                <div class="flex justify-between items-center text-xs text-slate-500">
+                    <span class="font-bold text-brand-700">Today • Oct 12, 2026</span>
+                    <span>Period 2</span>
+                </div>
+                <h4 class="font-bold text-slate-800 text-sm">${topic}</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">${desc || 'Class overview completed.'}</p>
+            `;
+            diaryList.prepend(entry);
+            closeModal('modal-diary');
+            showToast('Class diary logged for parents!');
+        }
+
+        function searchSubstitutes() {
+            showToast('Loaded available free teachers for selected period.');
+        }
+
+        function requestSubstitute(teacherName) {
+            showToast(`Substitute request sent to ${teacherName}!`);
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const txt = input.value;
+            if (!txt) return;
+            const thread = document.getElementById('chat-thread');
+            const msg = document.createElement('div');
+            msg.className = "flex flex-col items-end max-w-md ml-auto";
+            msg.innerHTML = `
+                <div class="bg-brand-600 text-white p-3 rounded-2xl rounded-tr-none">
+                    ${txt}
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1">Ms. Jenkins • Just now</span>
+            `;
+            thread.appendChild(msg);
+            input.value = '';
+            thread.scrollTop = thread.scrollHeight;
+        }
+
+        function selectChat(name, subject, type) {
+            document.getElementById('chat-header-name').innerText = name;
+            document.getElementById('chat-header-subject').innerText = `Subject: ${subject}`;
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

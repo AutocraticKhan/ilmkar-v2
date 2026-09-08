@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducatePulse - HR & People Operations Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        hr: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                        },
+                        brand: {
+                            50: '#f5f3ff',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .nav-item.active {
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: 600;
+            border-right: 3px solid #0284c7;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            
+            <!-- Left Side: Mobile Toggle & Brand -->
+            <div class="flex items-center space-x-3">
+                <button id="mobile-menu-toggle" class="md:hidden text-slate-500 hover:text-slate-700 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-sky-500/20">
+                        <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-900 tracking-tight text-lg leading-none block">Educate<span class="text-sky-600">Pulse</span></span>
+                        <span class="text-xs text-slate-400 font-medium leading-none">HR & People Operations</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center / Right Actions -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <!-- Document Expiry Warning Badge -->
+                <button onclick="switchView('expiries')" class="relative p-2 text-slate-500 hover:text-amber-600 transition" title="Document Expiry Alerts">
+                    <i class="fa-solid fa-bell text-lg"></i>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+                </button>
+
+                <!-- Onboard Staff Action -->
+                <button onclick="openModal('modal-add-staff')" class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span class="hidden sm:inline">Add / Onboard Staff</span>
+                </button>
+
+                <!-- HR Manager Profile -->
+                <div class="flex items-center space-x-3 border-l border-slate-200 pl-3 sm:pl-4">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs">
+                        MV
+                    </div>
+                    <div class="hidden lg:block text-left">
+                        <p class="text-xs font-bold text-slate-800 leading-tight">Marcus Vance</p>
+                        <p class="text-[10px] text-slate-400">Head of Human Resources</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex-shrink-0 hidden md:flex flex-col justify-between z-20">
+            <div class="py-4">
+                <div class="px-4 mb-2">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">People Management</p>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="switchView('overview')" id="nav-overview" class="nav-item active w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-chart-line w-6 text-center mr-2 text-sky-600"></i>
+                        <span>HR Dashboard & Pulse</span>
+                    </button>
+
+                    <button onclick="switchView('directory')" id="nav-directory" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-address-book w-6 text-center mr-2"></i>
+                        <span>Staff Directory & Contracts</span>
+                    </button>
+
+                    <button onclick="switchView('leave')" id="nav-leave" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-calendar-check w-6 text-center mr-2"></i>
+                        <span>Attendance & Leave</span>
+                        <span class="ml-auto bg-sky-100 text-sky-800 text-xs font-extrabold px-2 py-0.5 rounded-full" id="pending-leave-badge">3</span>
+                    </button>
+
+                    <button onclick="switchView('recruitment')" id="nav-recruitment" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-briefcase w-6 text-center mr-2"></i>
+                        <span>Recruitment & ATS</span>
+                        <span class="ml-auto bg-purple-100 text-purple-800 text-xs font-extrabold px-2 py-0.5 rounded-full">12</span>
+                    </button>
+
+                    <button onclick="switchView('onboarding')" id="nav-onboarding" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-clipboard-check w-6 text-center mr-2"></i>
+                        <span>Onboarding Checklists</span>
+                    </button>
+
+                    <button onclick="switchView('payroll-feed')" id="nav-payroll-feed" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-calculator w-6 text-center mr-2"></i>
+                        <span>Payroll Input Feeds</span>
+                        <i class="fa-solid fa-link text-[10px] text-emerald-600 ml-auto" title="Auto-synced to Finance"></i>
+                    </button>
+
+                    <button onclick="switchView('appraisals')" id="nav-appraisals" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-award w-6 text-center mr-2"></i>
+                        <span>Performance Appraisals</span>
+                    </button>
+
+                    <button onclick="switchView('expiries')" id="nav-expiries" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-triangle-exclamation w-6 text-center mr-2 text-amber-600"></i>
+                        <span>Document Expiry Alerts</span>
+                        <span class="ml-auto bg-amber-100 text-amber-800 text-xs font-extrabold px-2 py-0.5 rounded-full">5</span>
+                    </button>
+
+                    <button onclick="switchView('training')" id="nav-training" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-graduation-cap w-6 text-center mr-2"></i>
+                        <span>Training & Development</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- HR Quick Sync Status -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 m-3 rounded-xl space-y-2">
+                <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Finance Payroll Sync</span>
+                    <span class="text-emerald-600 font-extrabold flex items-center"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Active</span>
+                </div>
+                <p class="text-[10px] text-slate-500">Attendance & Leave feeds automatically calculate salary deductions for finance.</p>
+            </div>
+        </aside>
+
+        <!-- Main Application View Area -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+
+            <!-- Toast Alert Container -->
+            <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 border border-slate-700 pointer-events-none">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-sky-400"></i>
+                <span id="toast-msg" class="text-sm font-medium">Action completed successfully</span>
+            </div>
+
+            <!-- ================= VIEW 1: HR OVERVIEW DASHBOARD ================= -->
+            <section id="view-overview" class="space-y-6">
+                <!-- Summary Banner -->
+                <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-sky-950 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+                        <div class="space-y-1 max-w-2xl">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider">
+                                    HR Operations Pulse
+                                </span>
+                                <span class="text-xs text-slate-400">• September 2026 Cycle</span>
+                            </div>
+                            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
+                                Total Active Workforce: <span class="text-sky-400">72 Staff Members</span>
+                            </h1>
+                            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                                48 Teaching Faculty, 24 Administrative & Operations Staff. 97.2% overall attendance today. 3 leave requests pending approval.
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="switchView('leave')" class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition flex items-center space-x-2">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>Review Pending Leaves</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Top HR KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-400 uppercase">
+                            <span>Active Contracts</span>
+                            <i class="fa-solid fa-file-signature text-sky-600 text-base"></i>
+                        </div>
+                        <p class="text-2xl font-extrabold text-slate-900">68 Full-Time</p>
+                        <p class="text-[11px] text-slate-500">4 Part-time / Visiting</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-400 uppercase">
+                            <span>Open Job Vacancies</span>
+                            <i class="fa-solid fa-briefcase text-purple-600 text-base"></i>
+                        </div>
+                        <p class="text-2xl font-extrabold text-slate-900">3 Roles</p>
+                        <p class="text-[11px] text-purple-700 font-semibold">12 Applicants in ATS</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-400 uppercase">
+                            <span>New Onboarding</span>
+                            <i class="fa-solid fa-user-clock text-emerald-600 text-base"></i>
+                        </div>
+                        <p class="text-2xl font-extrabold text-slate-900">4 Joiners</p>
+                        <p class="text-[11px] text-emerald-700 font-semibold">Checklists 78% complete</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-400 uppercase">
+                            <span>Expiring Documents</span>
+                            <i class="fa-solid fa-triangle-exclamation text-amber-600 text-base"></i>
+                        </div>
+                        <p class="text-2xl font-extrabold text-amber-600">5 Alerts</p>
+                        <p class="text-[11px] text-amber-700 font-semibold">Due within 30 days</p>
+                    </div>
+                </div>
+
+                <!-- Department Overview & Quick Actions Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-900 text-sm">Workforce Distribution by Department</h3>
+                            <button onclick="switchView('directory')" class="text-xs font-bold text-sky-600 hover:underline">View All Staff Directory</button>
+                        </div>
+                        <div class="space-y-3" id="dept-distribution-container">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Urgent Expiries Quick List -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-900 text-sm">Urgent Expiry Alerts</h3>
+                            <button onclick="switchView('expiries')" class="text-xs font-bold text-sky-600 hover:underline">View All</button>
+                        </div>
+                        <div id="urgent-expiries-preview" class="space-y-3 text-xs">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: STAFF DIRECTORY & CONTRACTS ================= -->
+            <section id="view-directory" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Staff Directory & Employment Contracts</h1>
+                        <p class="text-xs text-slate-500">Manage teacher and administrative profiles, contracts, and salary bands.</p>
+                    </div>
+                    <button onclick="openModal('modal-add-staff')" class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Add New Staff Member</span>
+                    </button>
+                </div>
+
+                <!-- Directory Table Container -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="directory-search" oninput="filterStaffDirectory()" placeholder="Search staff name, designation, or ID..." class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 w-64">
+                            <select id="directory-dept-filter" onchange="filterStaffDirectory()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700">
+                                <option value="all">All Departments</option>
+                                <option value="Science">Science Dept</option>
+                                <option value="Mathematics">Mathematics Dept</option>
+                                <option value="Primary Education">Primary Education</option>
+                                <option value="Administration">Administration</option>
+                            </select>
+                        </div>
+                        <span class="text-xs text-slate-400 font-medium" id="directory-count">Showing 4 Staff Members</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Staff Member</th>
+                                    <th class="p-3">Department & Role</th>
+                                    <th class="p-3">Contract Type</th>
+                                    <th class="p-3">Contract Expiry</th>
+                                    <th class="p-3">Monthly Base Salary</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="directory-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: ATTENDANCE & LEAVE APPROVALS ================= -->
+            <section id="view-leave" class="space-y-6 hidden">
+                <div class="bg-sky-50 border border-sky-200 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-sky-800 bg-sky-200 px-2.5 py-0.5 rounded-full">Leave Management & Attendance</span>
+                        <h2 class="text-lg font-bold text-slate-900 mt-1">
+                            3 pending leave applications requiring approval
+                        </h2>
+                        <p class="text-xs text-sky-900/80 mt-0.5">
+                            Approved unpaid leaves are automatically fed into monthly payroll salary calculations.
+                        </p>
+                    </div>
+                    <button onclick="openModal('modal-apply-leave')" class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition whitespace-nowrap flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Apply Leave on Behalf</span>
+                    </button>
+                </div>
+
+                <!-- Leave Requests Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Staff Leave Request Applications</h3>
+                        <span class="text-xs text-slate-400">Current Cycle</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Staff Name</th>
+                                    <th class="p-3">Leave Type</th>
+                                    <th class="p-3">Dates & Duration</th>
+                                    <th class="p-3">Reason</th>
+                                    <th class="p-3">Payroll Effect</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leave-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 4: RECRUITMENT & APPLICANT TRACKING ================= -->
+            <section id="view-recruitment" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-full">Recruitment Pipeline</span>
+                        <h2 class="text-lg font-bold text-slate-900 mt-1">Active Job Postings & ATS Pipeline</h2>
+                        <p class="text-xs text-slate-500">Track applicants from initial screening to interview and final job offer.</p>
+                    </div>
+                    <button onclick="openModal('modal-post-job')" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>+ Create New Job Vacancy</span>
+                    </button>
+                </div>
+
+                <!-- Active Job Postings Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="job-postings-grid">
+                    <!-- JS Injected -->
+                </div>
+
+                <!-- Applicant ATS Kanban Pipeline Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Applicant Tracking Register</h3>
+                        <span class="text-xs text-slate-400">12 Total Applicants</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Applicant Name</th>
+                                    <th class="p-3">Applied Position</th>
+                                    <th class="p-3">Applied Date</th>
+                                    <th class="p-3">Interview Stage</th>
+                                    <th class="p-3">Rating</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicant-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 5: ONBOARDING CHECKLISTS ================= -->
+            <section id="view-onboarding" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                    <h1 class="text-xl font-bold text-slate-900">New Staff Onboarding Checklists</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Ensure all statutory compliance, IT setup, and orientation tasks are completed for new hires.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="onboarding-cards-container">
+                    <!-- JS Injected -->
+                </div>
+            </section>
+
+            <!-- ================= VIEW 6: PAYROLL INPUT FEEDS ================= -->
+            <section id="view-payroll-feed" class="space-y-6 hidden">
+                <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-200 px-2.5 py-0.5 rounded-full">Live Finance Data Integration</span>
+                            <span class="text-xs text-emerald-700 font-bold"><i class="fa-solid fa-sync fa-spin"></i> Auto-Feeding to Bursar Dashboard</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-900 mt-1">September 2026 Payroll Attendance Feed</h2>
+                        <p class="text-xs text-emerald-900/80">Calculates unpaid leave deductions and overtime allowances automatically before final payroll locking.</p>
+                    </div>
+                    <button onclick="syncToFinanceNow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition whitespace-nowrap flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Force Push Sync to Finance</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Monthly Payroll Input Computation Log</h3>
+                        <span class="text-xs text-slate-400">September 2026</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Staff Name</th>
+                                    <th class="p-3">Working Days</th>
+                                    <th class="p-3">Unpaid Leave Days</th>
+                                    <th class="p-3">Salary Deduction</th>
+                                    <th class="p-3">Overtime Hours</th>
+                                    <th class="p-3">Net Payroll Adjustment</th>
+                                    <th class="p-3">Sync Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payroll-feed-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 7: PERFORMANCE APPRAISALS ================= -->
+            <section id="view-appraisals" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Performance Appraisals & Reviews</h1>
+                        <p class="text-xs text-slate-500">Termly teaching evaluation scorecards, peer feedback, and principal ratings.</p>
+                    </div>
+                    <button onclick="showToast('Annual Appraisal Cycle initiated for all staff.')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition">
+                        Start Term 2 Review Cycle
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Faculty Performance Scorecard Register</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Staff Member</th>
+                                    <th class="p-3">Role & Dept</th>
+                                    <th class="p-3">Student Feedback</th>
+                                    <th class="p-3">Peer Evaluation</th>
+                                    <th class="p-3">Overall Rating</th>
+                                    <th class="p-3">Appraisal Status</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appraisals-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 8: DOCUMENT EXPIRY ALERTS ================= -->
+            <section id="view-expiries" class="space-y-6 hidden">
+                <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-full">Compliance Risk Alert</span>
+                        <h2 class="text-lg font-bold text-slate-900 mt-1">
+                            5 staff credentials / contracts expiring in the next 30 days
+                        </h2>
+                        <p class="text-xs text-amber-900/80 mt-0.5">
+                            Automated renewal notifications sent to staff email addresses.
+                        </p>
+                    </div>
+                    <button onclick="sendExpiryReminders()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Send Email Expiry Reminders</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm">Expiring Certifications & Contracts Log</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Staff Name</th>
+                                    <th class="p-3">Document / Credential</th>
+                                    <th class="p-3">Expiry Date</th>
+                                    <th class="p-3">Days Remaining</th>
+                                    <th class="p-3">Urgency</th>
+                                    <th class="p-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expiries-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 9: TRAINING & PROFESSIONAL DEVELOPMENT ================= -->
+            <section id="view-training" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Training & Professional Development</h1>
+                        <p class="text-xs text-slate-500">Track staff workshop attendance, teaching certifications, and CPE credit hours.</p>
+                    </div>
+                    <button onclick="openModal('modal-add-training')" class="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Log Training Workshop</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div class="p-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm">Professional Development Workshop Log</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                                    <th class="p-3">Workshop Title</th>
+                                    <th class="p-3">Trainer / Provider</th>
+                                    <th class="p-3">Date</th>
+                                    <th class="p-3">Enrolled Staff</th>
+                                    <th class="p-3">CPE Hours</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="training-table-body" class="divide-y divide-slate-100">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: ADD STAFF MEMBER -->
+    <div id="modal-add-staff" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Add New Staff Member</h3>
+                <button onclick="closeModal('modal-add-staff')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Full Name</label>
+                    <input type="text" id="staff-name-input" placeholder="e.g. Dr. Arthur Pendelton" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Department</label>
+                        <select id="staff-dept-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                            <option value="Science">Science Dept</option>
+                            <option value="Mathematics">Mathematics Dept</option>
+                            <option value="Primary Education">Primary Education</option>
+                            <option value="Administration">Administration</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Role Title</label>
+                        <input type="text" id="staff-role-input" placeholder="e.g. Senior Physics Teacher" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Base Salary ($/mo)</label>
+                        <input type="number" id="staff-salary-input" placeholder="4200.00" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Contract Expiry</label>
+                        <input type="date" id="staff-contract-input" value="2027-08-31" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-add-staff')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="submitNewStaffAction()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow">Save Staff & Start Onboarding</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: APPLY LEAVE ON BEHALF -->
+    <div id="modal-apply-leave" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Submit Leave Application</h3>
+                <button onclick="closeModal('modal-apply-leave')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Staff Member</label>
+                    <select id="leave-staff-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                        <option value="Ms. Sarah Jenkins">Ms. Sarah Jenkins (Science)</option>
+                        <option value="Mr. David Miller">Mr. David Miller (Math)</option>
+                        <option value="Mrs. Emily Watson">Mrs. Emily Watson (Primary)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Leave Type</label>
+                        <select id="leave-type-select" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                            <option value="Medical Sick Leave">Medical Sick Leave (Paid)</option>
+                            <option value="Casual Personal Leave">Casual Personal Leave (Paid)</option>
+                            <option value="Unpaid Leave">Unpaid Emergency Leave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Duration (Days)</label>
+                        <input type="number" id="leave-days-input" value="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Reason / Note</label>
+                    <textarea id="leave-reason-input" rows="2" placeholder="e.g. Attending family medical emergency..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-apply-leave')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="submitLeaveAction()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow">Submit Application</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CREATE JOB POSTING -->
+    <div id="modal-post-job" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Create New Job Opening</h3>
+                <button onclick="closeModal('modal-post-job')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Job Title</label>
+                    <input type="text" id="job-title-input" placeholder="e.g. High School Biology Specialist" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Department</label>
+                        <select id="job-dept-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                            <option value="Science">Science Dept</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Languages">Languages</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Employment Type</label>
+                        <select id="job-type-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                            <option value="Full-Time">Full-Time</option>
+                            <option value="Part-Time">Part-Time</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-post-job')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="submitJobPostingAction()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow">Publish Vacancy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: LOG TRAINING WORKSHOP -->
+    <div id="modal-add-training" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Log Professional Workshop</h3>
+                <button onclick="closeModal('modal-add-training')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Workshop Title</label>
+                    <input type="text" id="training-title-input" placeholder="e.g. Modern STEM Pedagogies & Interactive Labs" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Provider / Trainer</label>
+                        <input type="text" id="training-provider-input" placeholder="e.g. National EdTech Institute" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">CPE Credit Hours</label>
+                        <input type="number" id="training-hours-input" value="12" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-add-training')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="submitTrainingAction()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow">Save Workshop Log</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic & Interactive State Script -->
+    <script>
+        // Central HR Data State
+        const hrData = {
+            departments: [
+                { name: 'Science Faculty', count: 18, total: 20, pct: 90 },
+                { name: 'Mathematics Department', count: 14, total: 15, pct: 93.3 },
+                { name: 'Primary School Education', count: 16, total: 16, pct: 100 },
+                { name: 'Administrative & Ops Staff', count: 24, total: 25, pct: 96 },
+            ],
+            staff: [
+                { id: 'EMP-101', name: 'Ms. Sarah Jenkins', dept: 'Science', role: 'Senior Physics Teacher', contract: 'Permanent', expiry: 'Aug 31, 2028', salary: '$4,200.00', status: 'Active' },
+                { id: 'EMP-102', name: 'Mr. David Miller', dept: 'Mathematics', role: 'Math Dept Head', contract: '3-Year Fixed', expiry: 'Oct 15, 2026', salary: '$4,500.00', status: 'Active' },
+                { id: 'EMP-103', name: 'Mrs. Emily Watson', dept: 'Primary Education', role: 'Grade 3 Class Teacher', contract: 'Permanent', expiry: 'Jun 30, 2029', salary: '$3,800.00', status: 'Active' },
+                { id: 'EMP-104', name: 'Mr. Robert Vance', dept: 'Administration', role: 'IT Network Specialist', contract: '1-Year Fixed', expiry: 'Sept 30, 2026', salary: '$3,600.00', status: 'Expiring Soon' },
+            ],
+            leaveRequests: [
+                { id: 'LV-201', name: 'Mr. David Miller', type: 'Medical Sick Leave', dates: 'Sept 14 - Sept 15 (2 days)', reason: 'Fever & Doctor Consultation', payrollEffect: 'Paid Leave (0 Deduct)', status: 'Pending Approval' },
+                { id: 'LV-202', name: 'Ms. Sarah Jenkins', type: 'Unpaid Emergency Leave', dates: 'Sept 18 (1 day)', reason: 'Personal Urgent Matters', payrollEffect: '1 Day Unpaid (-$140)', status: 'Pending Approval' },
+                { id: 'LV-203', name: 'Mr. Robert Vance', type: 'Casual Leave', dates: 'Sept 22 (1 day)', reason: 'Family Event', payrollEffect: 'Paid Leave (0 Deduct)', status: 'Approved' },
+            ],
+            jobs: [
+                { id: 'JOB-01', title: 'Senior Physics Teacher', dept: 'Science', type: 'Full-Time', applicants: 6, status: 'Active Recruiting' },
+                { id: 'JOB-02', title: 'Grade 4 Assistant Teacher', dept: 'Primary Education', type: 'Full-Time', applicants: 4, status: 'Interviewing' },
+                { id: 'JOB-03', title: 'IT Systems Admin', dept: 'Administration', type: 'Part-Time', applicants: 2, status: 'Screening' },
+            ],
+            applicants: [
+                { name: 'Dr. Rebecca Vance', role: 'Senior Physics Teacher', date: 'Sept 02, 2026', stage: 'Final Panel Interview', rating: '4.8 / 5.0' },
+                { name: 'Michael Thorne', role: 'Senior Physics Teacher', date: 'Sept 04, 2026', stage: 'Initial Phone Screen', rating: '4.2 / 5.0' },
+                { name: 'Claire Dupont', role: 'Grade 4 Assistant Teacher', date: 'Sept 05, 2026', stage: 'Teaching Demo Scheduled', rating: '4.6 / 5.0' },
+            ],
+            onboarding: [
+                { staff: 'Dr. Arthur Pendelton', role: 'Chemistry Teacher', startDate: 'Sept 15, 2026', progress: 80, tasks: [
+                    { title: 'Identity & Background Verification', done: true },
+                    { title: 'Employment Contract Signing', done: true },
+                    { title: 'School Laptop & IT Account Setup', done: true },
+                    { title: 'Orientation & Mentor Assignment', done: false }
+                ]},
+                { staff: 'Laura Higgins', role: 'Lab Assistant', startDate: 'Sept 20, 2026', progress: 50, tasks: [
+                    { title: 'Identity & Background Verification', done: true },
+                    { title: 'Employment Contract Signing', done: true },
+                    { title: 'School Laptop & IT Account Setup', done: false },
+                    { title: 'Orientation & Mentor Assignment', done: false }
+                ]}
+            ],
+            payrollFeeds: [
+                { name: 'Ms. Sarah Jenkins', workingDays: 22, unpaidDays: 1, salaryDeduct: '-$140.00', overtimeHours: '4 hrs', netAdjustment: '-$40.00', status: 'Synced to Finance' },
+                { name: 'Mr. David Miller', workingDays: 22, unpaidDays: 0, salaryDeduct: '$0.00', overtimeHours: '0 hrs', netAdjustment: '$0.00', status: 'Synced to Finance' },
+                { name: 'Mrs. Emily Watson', workingDays: 22, unpaidDays: 0, salaryDeduct: '$0.00', overtimeHours: '6 hrs', netAdjustment: '+$150.00', status: 'Synced to Finance' },
+            ],
+            appraisals: [
+                { name: 'Ms. Sarah Jenkins', dept: 'Science', studentRating: '4.9 / 5.0', peerRating: '4.8 / 5.0', overall: '4.85 (Exceeds Expectations)', status: 'Review Completed' },
+                { name: 'Mr. David Miller', dept: 'Mathematics', studentRating: '4.6 / 5.0', peerRating: '4.5 / 5.0', overall: '4.55 (Meets Expectations)', status: 'Pending Principal Sign-off' },
+            ],
+            expiries: [
+                { staff: 'Mr. Robert Vance', doc: 'Employment Contract Renewal', expiry: 'Sept 30, 2026', days: 23, urgency: 'High' },
+                { staff: 'Ms. Sarah Jenkins', doc: 'State Teacher License', expiry: 'Oct 12, 2026', days: 35, urgency: 'Medium' },
+                { staff: 'Mr. David Miller', doc: 'First Aid CPR Certification', expiry: 'Oct 18, 2026', days: 41, urgency: 'Medium' },
+            ],
+            training: [
+                { title: 'Interactive Science Pedagogy Workshop', provider: 'National EdTech Council', date: 'Sept 08, 2026', enrolled: '12 Faculty', hours: '16 CPE Hrs', status: 'Completed' },
+                { title: 'Classroom Management & Safety', provider: 'Springfield Training Org', date: 'Sept 25, 2026', enrolled: '24 Staff', hours: '8 CPE Hrs', status: 'Upcoming' },
+            ]
+        };
+
+        // Render Overview Distribution
+        function renderDeptDistribution() {
+            const container = document.getElementById('dept-distribution-container');
+            container.innerHTML = '';
+            hrData.departments.forEach(d => {
+                const item = document.createElement('div');
+                item.className = "space-y-1.5";
+                item.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-800">${d.name}</span>
+                        <span class="text-slate-500 font-medium">${d.count} / ${d.total} Present (<strong class="text-sky-700">${d.pct}%</strong>)</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-sky-600 h-full rounded-full transition-all duration-500" style="width: ${d.pct}%"></div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Render Urgent Expiries Preview
+        function renderExpiriesPreview() {
+            const container = document.getElementById('urgent-expiries-preview');
+            container.innerHTML = '';
+            hrData.expiries.forEach(ex => {
+                const item = document.createElement('div');
+                item.className = "p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center";
+                item.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-900 block">${ex.staff}</span>
+                        <span class="text-[10px] text-amber-800">${ex.doc}</span>
+                    </div>
+                    <span class="font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg text-[10px]">${ex.days} days left</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Render Staff Directory
+        function renderStaffDirectory() {
+            const body = document.getElementById('directory-table-body');
+            body.innerHTML = '';
+            hrData.staff.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${s.name} <span class="block text-[10px] text-slate-400 font-mono">${s.id}</span></td>
+                    <td class="p-3 text-slate-600">${s.role} <span class="block text-[10px] text-sky-600 font-semibold">${s.dept}</span></td>
+                    <td class="p-3 font-semibold text-slate-700">${s.contract}</td>
+                    <td class="p-3 text-slate-500">${s.expiry}</td>
+                    <td class="p-3 font-bold text-slate-900">${s.salary}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${s.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.status}</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="showToast('Opened profile & contract details for ${s.name}')" class="bg-slate-100 hover:bg-sky-100 text-slate-700 hover:text-sky-800 font-bold px-2.5 py-1 rounded-lg text-[11px] transition">
+                            View Contract
+                        </button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+            document.getElementById('directory-count').innerText = `Showing ${hrData.staff.length} Staff Members`;
+        }
+
+        // Render Leave Requests Table
+        function renderLeaveTable() {
+            const body = document.getElementById('leave-table-body');
+            body.innerHTML = '';
+            hrData.leaveRequests.forEach((l, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${l.name}</td>
+                    <td class="p-3 font-semibold text-slate-700">${l.type}</td>
+                    <td class="p-3 text-slate-600">${l.dates}</td>
+                    <td class="p-3 text-slate-500 italic">${l.reason}</td>
+                    <td class="p-3 font-mono font-bold text-slate-700">${l.payrollEffect}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${l.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}" id="leave-status-${idx}">${l.status}</span></td>
+                    <td class="p-3 text-right">
+                        ${l.status !== 'Approved' ? `<button onclick="approveLeaveItem(${idx})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition">Approve</button>` : `<span class="text-emerald-600 font-bold text-[10px]"><i class="fa-solid fa-check"></i> Processed</span>`}
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Render Job Postings & ATS
+        function renderRecruitment() {
+            const grid = document.getElementById('job-postings-grid');
+            grid.innerHTML = '';
+            hrData.jobs.forEach(j => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-slate-900 text-sm">${j.title}</h4>
+                        <span class="bg-purple-100 text-purple-800 font-bold text-[10px] px-2 py-0.5 rounded-full">${j.status}</span>
+                    </div>
+                    <p class="text-xs text-slate-500">${j.dept} • ${j.type}</p>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100 text-xs">
+                        <span class="font-bold text-purple-700">${j.applicants} Applicants</span>
+                        <button onclick="showToast('Viewing candidates for ${j.title}')" class="text-sky-600 font-bold hover:underline">Review Candidates</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            const body = document.getElementById('applicant-table-body');
+            body.innerHTML = '';
+            hrData.applicants.forEach(a => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${a.name}</td>
+                    <td class="p-3 text-slate-600">${a.role}</td>
+                    <td class="p-3 text-slate-500">${a.date}</td>
+                    <td class="p-3 font-semibold text-purple-700">${a.stage}</td>
+                    <td class="p-3 font-bold text-slate-900">${a.rating}</td>
+                    <td class="p-3 text-right">
+                        <button onclick="showToast('Interview feedback logged for ${a.name}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1 rounded-lg text-[11px] transition">
+                            Schedule Next
+                        </button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Render Onboarding Checklists
+        function renderOnboarding() {
+            const container = document.getElementById('onboarding-cards-container');
+            container.innerHTML = '';
+            hrData.onboarding.forEach((o, oIdx) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4";
+                
+                let tasksHtml = '';
+                o.tasks.forEach((t, tIdx) => {
+                    tasksHtml += `
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="text-xs text-slate-700 ${t.done ? 'line-through text-slate-400' : 'font-semibold'}">${t.title}</span>
+                            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleOnboardingTask(${oIdx}, ${tIdx})" class="w-4 h-4 accent-sky-600 rounded cursor-pointer">
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-sm">${o.staff}</h3>
+                            <p class="text-xs text-slate-400">${o.role} • Start: ${o.startDate}</p>
+                        </div>
+                        <span class="text-xs font-bold bg-sky-100 text-sky-800 px-3 py-1 rounded-full">${o.progress}% Complete</span>
+                    </div>
+                    <div class="space-y-2">
+                        ${tasksHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Toggle Task Completion
+        function toggleOnboardingTask(oIdx, tIdx) {
+            const staffObj = hrData.onboarding[oIdx];
+            staffObj.tasks[tIdx].done = !staffObj.tasks[tIdx].done;
+            
+            const completedCount = staffObj.tasks.filter(t => t.done).length;
+            staffObj.progress = Math.round((completedCount / staffObj.tasks.length) * 100);
+            renderOnboarding();
+            showToast(`Onboarding task updated for ${staffObj.staff}`);
+        }
+
+        // Render Payroll Input Feeds
+        function renderPayrollFeeds() {
+            const body = document.getElementById('payroll-feed-table-body');
+            body.innerHTML = '';
+            hrData.payrollFeeds.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${p.name}</td>
+                    <td class="p-3 text-slate-600">${p.workingDays} Days</td>
+                    <td class="p-3 text-slate-600">${p.unpaidDays} Days</td>
+                    <td class="p-3 font-bold text-rose-600">${p.salaryDeduct}</td>
+                    <td class="p-3 text-slate-600">${p.overtimeHours}</td>
+                    <td class="p-3 font-extrabold text-slate-900">${p.netAdjustment}</td>
+                    <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-check mr-1"></i> ${p.status}</span></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Render Appraisals
+        function renderAppraisals() {
+            const body = document.getElementById('appraisals-table-body');
+            body.innerHTML = '';
+            hrData.appraisals.forEach(a => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${a.name}</td>
+                    <td class="p-3 text-slate-600">${a.dept}</td>
+                    <td class="p-3 font-semibold text-slate-700">${a.studentRating}</td>
+                    <td class="p-3 font-semibold text-slate-700">${a.peerRating}</td>
+                    <td class="p-3 font-bold text-sky-700">${a.overall}</td>
+                    <td class="p-3"><span class="bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold text-[10px]">${a.status}</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="showToast('Appraisal Scorecard opened for ${a.name}')" class="bg-slate-100 hover:bg-sky-100 text-sky-800 font-bold px-2.5 py-1 rounded-lg text-[11px] transition">View Scorecard</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Render Expiries Table
+        function renderExpiriesTable() {
+            const body = document.getElementById('expiries-table-body');
+            body.innerHTML = '';
+            hrData.expiries.forEach(ex => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${ex.staff}</td>
+                    <td class="p-3 font-semibold text-slate-700">${ex.doc}</td>
+                    <td class="p-3 text-slate-500">${ex.expiry}</td>
+                    <td class="p-3 font-bold text-amber-600">${ex.days} Days</td>
+                    <td class="p-3"><span class="bg-amber-100 text-amber-800 font-bold text-[10px] px-2 py-0.5 rounded-full">${ex.urgency} Urgency</span></td>
+                    <td class="p-3 text-right">
+                        <button onclick="showToast('Renewal alert dispatched to ${ex.staff}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition">
+                            Trigger Renewal
+                        </button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Render Training Table
+        function renderTrainingTable() {
+            const body = document.getElementById('training-table-body');
+            body.innerHTML = '';
+            hrData.training.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-800">${t.title}</td>
+                    <td class="p-3 text-slate-600">${t.provider}</td>
+                    <td class="p-3 text-slate-500">${t.date}</td>
+                    <td class="p-3 font-semibold text-sky-700">${t.enrolled}</td>
+                    <td class="p-3 font-bold text-slate-900">${t.hours}</td>
+                    <td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold text-[10px] px-2 py-0.5 rounded-full">${t.status}</span></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // Action Handlers & Navigation
+        function switchView(viewId) {
+            const views = ['overview', 'directory', 'leave', 'recruitment', 'onboarding', 'payroll-feed', 'appraisals', 'expiries', 'training'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+                
+                const navEl = document.getElementById(`nav-${v}`);
+                if (navEl) navEl.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${viewId}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) activeNav.classList.add('active');
+        }
+
+        function filterStaffDirectory() {
+            const search = document.getElementById('directory-search').value.toLowerCase();
+            const dept = document.getElementById('directory-dept-filter').value;
+            
+            const rows = document.querySelectorAll('#directory-table-body tr');
+            rows.forEach(tr => {
+                const text = tr.innerText.toLowerCase();
+                const matchesSearch = text.includes(search);
+                const matchesDept = (dept === 'all' || text.includes(dept.toLowerCase()));
+                tr.style.display = (matchesSearch && matchesDept) ? '' : 'none';
+            });
+        }
+
+        function approveLeaveItem(idx) {
+            hrData.leaveRequests[idx].status = 'Approved';
+            renderLeaveTable();
+            showToast(`Leave approved for ${hrData.leaveRequests[idx].name}. Payroll synced.`);
+        }
+
+        function submitNewStaffAction() {
+            const name = document.getElementById('staff-name-input').value;
+            const dept = document.getElementById('staff-dept-input').value;
+            const role = document.getElementById('staff-role-input').value;
+            const salary = document.getElementById('staff-salary-input').value;
+
+            if (!name || !role) return;
+
+            hrData.staff.unshift({
+                id: `EMP-${Math.floor(105 + Math.random() * 50)}`,
+                name: name,
+                dept: dept,
+                role: role,
+                contract: '1-Year Fixed',
+                expiry: 'Aug 31, 2027',
+                salary: `$${parseFloat(salary || 3800).toFixed(2)}`,
+                status: 'Active'
+            });
+
+            // Auto create onboarding entry
+            hrData.onboarding.unshift({
+                staff: name,
+                role: role,
+                startDate: 'Oct 01, 2026',
+                progress: 25,
+                tasks: [
+                    { title: 'Identity & Background Verification', done: true },
+                    { title: 'Employment Contract Signing', done: false },
+                    { title: 'School Laptop & IT Account Setup', done: false },
+                    { title: 'Orientation & Mentor Assignment', done: false }
+                ]
+            });
+
+            renderStaffDirectory();
+            renderOnboarding();
+            closeModal('modal-add-staff');
+            showToast(`Staff member ${name} added & onboarding checklist generated!`);
+        }
+
+        function submitLeaveAction() {
+            const name = document.getElementById('leave-staff-select').value;
+            const type = document.getElementById('leave-type-select').value;
+            const days = document.getElementById('leave-days-input').value;
+            const reason = document.getElementById('leave-reason-input').value;
+
+            hrData.leaveRequests.unshift({
+                id: `LV-${Math.floor(204 + Math.random() * 50)}`,
+                name: name,
+                type: type,
+                dates: `Sept 28 (${days} days)`,
+                reason: reason || 'Personal Leave',
+                payrollEffect: type.includes('Unpaid') ? `${days} Days Unpaid` : 'Paid Leave',
+                status: 'Pending Approval'
+            });
+
+            renderLeaveTable();
+            closeModal('modal-apply-leave');
+            showToast(`Leave application submitted for ${name}`);
+        }
+
+        function submitJobPostingAction() {
+            const title = document.getElementById('job-title-input').value;
+            const dept = document.getElementById('job-dept-input').value;
+            const type = document.getElementById('job-type-input').value;
+
+            if (!title) return;
+
+            hrData.jobs.unshift({
+                id: `JOB-0${hrData.jobs.length + 1}`,
+                title: title,
+                dept: dept,
+                type: type,
+                applicants: 0,
+                status: 'Active Recruiting'
+            });
+
+            renderRecruitment();
+            closeModal('modal-post-job');
+            showToast(`Job opening published for ${title}`);
+        }
+
+        function submitTrainingAction() {
+            const title = document.getElementById('training-title-input').value;
+            const provider = document.getElementById('training-provider-input').value;
+            const hours = document.getElementById('training-hours-input').value;
+
+            if (!title) return;
+
+            hrData.training.unshift({
+                title: title,
+                provider: provider || 'External Academy',
+                date: 'Oct 05, 2026',
+                enrolled: '18 Faculty',
+                hours: `${hours} CPE Hrs`,
+                status: 'Upcoming'
+            });
+
+            renderTrainingTable();
+            closeModal('modal-add-training');
+            showToast(`Training workshop ${title} scheduled.`);
+        }
+
+        function syncToFinanceNow() {
+            showToast('Force sync complete: Latest attendance/leave deductions pushed to Finance Payroll.');
+        }
+
+        function sendExpiryReminders() {
+            showToast('Email reminders sent to 5 staff members with expiring credentials.');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Initialize Data Views on Load
+        window.onload = function() {
+            renderDeptDistribution();
+            renderExpiriesPreview();
+            renderStaffDirectory();
+            renderLeaveTable();
+            renderRecruitment();
+            renderOnboarding();
+            renderPayrollFeeds();
+            renderAppraisals();
+            renderExpiriesTable();
+            renderTrainingTable();
+        };
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

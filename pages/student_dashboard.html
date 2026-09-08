@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducatePulse - Student Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        student: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#0a3651',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbars and Layout Tweaks */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .nav-item.active {
+            background-color: #f0f9ff;
+            color: #0369a1;
+            font-weight: 600;
+            border-right: 3px solid #0369a1;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Top Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button id="mobile-menu-toggle" class="md:hidden text-slate-500 hover:text-slate-700 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-9 h-9 rounded-xl bg-student-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-student-500/20">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-900 tracking-tight text-lg leading-none block">Educate<span class="text-student-600">Pulse</span></span>
+                        <span class="text-xs text-slate-400 font-medium leading-none">Student Portal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Student Profile & Term Context -->
+            <div class="flex items-center space-x-4">
+                <div class="hidden sm:flex items-center bg-slate-100 rounded-lg px-3 py-1.5 text-xs text-slate-600">
+                    <i class="fa-solid fa-school text-student-600 mr-2"></i>
+                    <span class="font-semibold">Springfield Academy</span>
+                    <span class="mx-2 text-slate-300">|</span>
+                    <span>Grade 8-A</span>
+                </div>
+
+                <!-- Notifications -->
+                <button onclick="showToast('You have 2 unread school announcements.')" class="relative p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
+                    <i class="fa-regular fa-bell text-lg"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white"></span>
+                </button>
+
+                <!-- Profile Badge -->
+                <div class="flex items-center space-x-3 border-l border-slate-200 pl-4">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Alex Johnson" class="w-9 h-9 rounded-full object-cover ring-2 ring-student-500/20">
+                    <div class="hidden md:block">
+                        <p class="text-sm font-semibold text-slate-800 leading-tight">Alex Johnson</p>
+                        <p class="text-xs text-slate-500">Roll No: 01 • Term 2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar Navigation (Max 6 Core + More Tools) -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex-shrink-0 hidden md:flex flex-col justify-between z-20">
+            <div class="py-4">
+                <div class="px-4 mb-2">
+                    <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Main Navigation</p>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-house w-6 text-center mr-2"></i>
+                        <span>Today's Overview</span>
+                    </button>
+                    <button onclick="switchView('timetable')" id="nav-timetable" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-calendar-days w-6 text-center mr-2"></i>
+                        <span>Class Timetable</span>
+                    </button>
+                    <button onclick="switchView('assignments')" id="nav-assignments" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-file-pen w-6 text-center mr-2"></i>
+                        <span>Assignments & Tasks</span>
+                        <span class="ml-auto bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">2</span>
+                    </button>
+                    <button onclick="switchView('quizzes')" id="nav-quizzes" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-laptop-code w-6 text-center mr-2"></i>
+                        <span>Online Quizzes</span>
+                        <span class="ml-auto bg-student-100 text-student-800 text-xs font-bold px-2 py-0.5 rounded-full">1</span>
+                    </button>
+                    <button onclick="switchView('results')" id="nav-results" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-award w-6 text-center mr-2"></i>
+                        <span>Results & Report Card</span>
+                    </button>
+                    <button onclick="switchView('attendance')" id="nav-attendance" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-user-check w-6 text-center mr-2"></i>
+                        <span>Attendance Record</span>
+                    </button>
+
+                    <div class="px-4 pt-4 pb-2">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">More Tools</p>
+                    </div>
+                    <button onclick="switchView('library')" id="nav-library" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-book-bookmark w-6 text-center mr-2"></i>
+                        <span>Library Books</span>
+                    </button>
+                    <button onclick="switchView('fee')" id="nav-fee" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-receipt w-6 text-center mr-2"></i>
+                        <span>Fee Status</span>
+                    </button>
+                    <button onclick="switchView('notices')" id="nav-notices" class="nav-item w-full flex items-center px-4 py-3 text-sm text-slate-700 transition">
+                        <i class="fa-solid fa-bullhorn w-6 text-center mr-2"></i>
+                        <span>Notices & News</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Quick Academic Badge -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 m-3 rounded-xl">
+                <div class="flex items-center space-x-2 text-xs font-semibold text-emerald-700 mb-1">
+                    <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+                    <span>Academic Status: Excellent</span>
+                </div>
+                <p class="text-[11px] text-slate-500">Term 2 GPA Average: <strong class="text-slate-800">3.8 / 4.0</strong></p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+
+            <!-- Toast Container -->
+            <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 border border-slate-700 pointer-events-none">
+                <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span id="toast-msg" class="text-sm font-medium">Notification message</span>
+            </div>
+
+            <!-- ================= VIEW 1: TODAY'S OVERVIEW ================= -->
+            <section id="view-dashboard" class="space-y-6">
+                <!-- Top Summary Header Banner -->
+                <div class="bg-gradient-to-r from-student-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <span class="bg-student-500/20 text-student-200 border border-student-400/30 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Today's Snapshot</span>
+                                <h1 class="text-2xl sm:text-3xl font-bold mt-2">Welcome back, Alex!</h1>
+                                <p class="text-student-100/90 text-sm mt-1 max-w-2xl">
+                                    <strong class="text-white">Plain-English Summary:</strong> You have 4 classes scheduled today. 2 homework assignments are due this week, 1 science quiz is active, and your overall attendance is <strong>94.2%</strong>.
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <button onclick="switchView('assignments')" class="bg-white text-student-800 hover:bg-student-50 font-bold px-4 py-2.5 rounded-xl shadow transition text-sm flex items-center space-x-2">
+                                    <i class="fa-solid fa-cloud-arrow-up text-student-600"></i>
+                                    <span>Submit Homework</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actionable Stats Bar -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Today's Schedule</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1">4 Classes</h3>
+                            <p class="text-xs text-student-600 mt-1"><i class="fa-solid fa-clock"></i> Next: Physical Science (10:15 AM)</p>
+                        </div>
+                        <div class="w-12 h-12 bg-sky-50 text-student-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Pending Tasks</p>
+                            <h3 class="text-2xl font-bold text-amber-600 mt-1">2 Due Soon</h3>
+                            <p class="text-xs text-amber-600 mt-1"><i class="fa-solid fa-hourglass-half"></i> Newton's Law Practice Sheet</p>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Overall Attendance</p>
+                            <h3 class="text-2xl font-bold text-emerald-600 mt-1">94.2%</h3>
+                            <p class="text-xs text-slate-500 mt-1">26 Present / 28 Days</p>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Books Issued</p>
+                            <h3 class="text-2xl font-bold text-indigo-600 mt-1">2 Books</h3>
+                            <p class="text-xs text-rose-500 mt-1"><i class="fa-solid fa-triangle-exclamation"></i> 1 Due in 3 Days</p>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-book text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout: Today's Schedule & Quick Widgets -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left: Today's Class Schedule -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-900">Today's Class Schedule</h2>
+                                <p class="text-xs text-slate-500">Monday • Springfield Academy Room 304</p>
+                            </div>
+                            <button onclick="switchView('timetable')" class="text-xs font-bold text-student-600 hover:underline">Full Weekly Timetable &rarr;</button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <!-- Class 1 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">08:30 AM</div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">General Mathematics</h4>
+                                        <p class="text-xs text-slate-500">Teacher: Mr. David Miller • Room 201</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full"><i class="fa-solid fa-check mr-1"></i> Attended</span>
+                            </div>
+
+                            <!-- Class 2 (Next Active) -->
+                            <div class="p-4 rounded-xl border-2 border-student-500 bg-student-50/30 flex items-center justify-between relative">
+                                <div class="absolute -top-2.5 left-4 bg-student-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Next Up</div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-student-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold">10:15 AM</div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 text-sm">Physical Science</h4>
+                                        <p class="text-xs text-slate-600">Teacher: Ms. Sarah Jenkins • Room 304</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold text-student-700 bg-student-100 px-3 py-1 rounded-lg">Topic: Newton's Laws</span>
+                            </div>
+
+                            <!-- Class 3 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">11:30 AM</div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">English Literature</h4>
+                                        <p class="text-xs text-slate-500">Teacher: Mrs. Clara Vance • Room 108</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-slate-400">Scheduled</span>
+                            </div>
+
+                            <!-- Class 4 -->
+                            <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold">01:30 PM</div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">World History</h4>
+                                        <p class="text-xs text-slate-500">Teacher: Mr. Robert Vance • Room 210</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-slate-400">Scheduled</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Quick Action Cards -->
+                    <div class="space-y-6">
+                        <!-- Pending Homework Quick Box -->
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <h3 class="font-bold text-slate-900 text-sm">Pending Assignments</h3>
+                                <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">2 Pending</span>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div class="p-3 bg-amber-50/60 border border-amber-200 rounded-xl text-xs space-y-1">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Newton's Law Practice Sheet</span>
+                                        <span class="text-amber-700">Due Tomorrow</span>
+                                    </div>
+                                    <p class="text-slate-500">Science • Worksheet #4</p>
+                                    <button onclick="openSubmitModal('Newton\'s Law Practice Sheet')" class="mt-2 text-xs bg-student-600 hover:bg-student-700 text-white font-bold px-3 py-1 rounded-lg shadow">Submit Work</button>
+                                </div>
+
+                                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+                                    <div class="flex justify-between font-bold text-slate-800">
+                                        <span>Algebra Chapter 4 Problems</span>
+                                        <span class="text-slate-500">Due Oct 15</span>
+                                    </div>
+                                    <p class="text-slate-500">Mathematics • Page 112</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Online Test Card -->
+                        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl p-5 shadow-sm space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="bg-indigo-500/30 text-indigo-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border border-indigo-400/30">Online Assessment</span>
+                                <span class="text-xs text-amber-300 font-semibold"><i class="fa-solid fa-clock mr-1"></i> 15 Mins</span>
+                            </div>
+                            <h3 class="font-bold text-base">Science Practice Quiz #2</h3>
+                            <p class="text-xs text-indigo-200">Test your knowledge on Newton's first & second laws before the midterm.</p>
+                            <button onclick="openQuizModal()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 rounded-xl text-xs shadow transition flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-play text-xs"></i>
+                                <span>Start Quiz Now</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: TIMETABLE ================= -->
+            <section id="view-timetable" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Weekly Class Timetable</h1>
+                        <p class="text-xs text-slate-500">View schedule, room numbers, and subject teachers for Grade 8-A.</p>
+                    </div>
+                    <!-- Primary Single Action -->
+                    <button onclick="showToast('Timetable saved to offline view.')" class="bg-student-600 hover:bg-student-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download Timetable PDF</span>
+                    </button>
+                </div>
+
+                <!-- Day Selector Tabs -->
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-2">
+                    <button onclick="filterDay('Mon')" id="tab-Mon" class="day-tab px-4 py-2 rounded-lg text-xs font-bold bg-student-600 text-white shadow">Monday</button>
+                    <button onclick="filterDay('Tue')" id="tab-Tue" class="day-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Tuesday</button>
+                    <button onclick="filterDay('Wed')" id="tab-Wed" class="day-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Wednesday</button>
+                    <button onclick="filterDay('Thu')" id="tab-Thu" class="day-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Thursday</button>
+                    <button onclick="filterDay('Fri')" id="tab-Fri" class="day-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Friday</button>
+                </div>
+
+                <!-- Timetable Grid -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 font-semibold uppercase">
+                                    <th class="p-4">Time Slot</th>
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4">Teacher</th>
+                                    <th class="p-4">Room No</th>
+                                    <th class="p-4 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timetable-body" class="divide-y divide-slate-100 text-sm">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: ASSIGNMENTS & SUBMISSION ================= -->
+            <section id="view-assignments" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Assignments & Homework</h1>
+                        <p class="text-xs text-slate-500">Upload solutions, view feedback, and keep track of deadlines.</p>
+                    </div>
+                    <!-- Single Primary CTA -->
+                    <button onclick="openSubmitModal('Select Assignment')" class="bg-student-600 hover:bg-student-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Submit Homework</span>
+                    </button>
+                </div>
+
+                <!-- One-Line Summary Banner -->
+                <div class="bg-sky-50 border border-student-200 rounded-xl p-4 text-xs text-student-900 flex items-center justify-between">
+                    <span><strong>Homework Summary:</strong> You have submitted <strong>8 of 10</strong> homework assignments this term. 2 tasks are currently pending.</span>
+                    <span class="font-bold text-student-700">80% Completed</span>
+                </div>
+
+                <!-- Homework List -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-slate-800 text-sm">Active & Recent Assignments</h3>
+                        <div class="flex space-x-2 text-xs">
+                            <button onclick="filterHomework('all')" class="px-3 py-1 rounded-lg bg-slate-100 font-bold text-slate-700">All</button>
+                            <button onclick="filterHomework('pending')" class="px-3 py-1 rounded-lg bg-amber-50 font-bold text-amber-800">Pending (2)</button>
+                            <button onclick="filterHomework('submitted')" class="px-3 py-1 rounded-lg bg-emerald-50 font-bold text-emerald-800">Submitted (8)</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3" id="assignments-list">
+                        <!-- Homework Card 1 -->
+                        <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Pending • Due Oct 13</span>
+                                    <span class="text-xs text-slate-500">Physical Science</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm mt-1">Newton's Law Practice Sheet</h4>
+                                <p class="text-xs text-slate-600 mt-0.5">Solve questions 1 through 10 on page 48. Show step-by-step force calculations.</p>
+                            </div>
+                            <button onclick="openSubmitModal('Newton\'s Law Practice Sheet')" class="bg-student-600 hover:bg-student-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow whitespace-nowrap">
+                                Upload Submission
+                            </button>
+                        </div>
+
+                        <!-- Homework Card 2 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-bold uppercase bg-slate-200 text-slate-700 px-2 py-0.5 rounded">Pending • Due Oct 15</span>
+                                    <span class="text-xs text-slate-500">Mathematics</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm mt-1">Algebra Chapter 4 Practice Problems</h4>
+                                <p class="text-xs text-slate-600 mt-0.5">Complete linear equation exercises from textbook section 4.2.</p>
+                            </div>
+                            <button onclick="openSubmitModal('Algebra Chapter 4 Practice Problems')" class="bg-student-600 hover:bg-student-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow whitespace-nowrap">
+                                Upload Submission
+                            </button>
+                        </div>
+
+                        <!-- Homework Card 3 (Submitted & Graded) -->
+                        <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded"><i class="fa-solid fa-check mr-1"></i> Graded 95/100</span>
+                                    <span class="text-xs text-slate-500">General Science</span>
+                                </div>
+                                <h4 class="font-bold text-slate-900 text-sm mt-1">Photosynthesis Diagram & Summary</h4>
+                                <p class="text-xs text-slate-600 mt-0.5">Teacher Feedback: <em>"Excellent detailed diagram and clear explanation of light reactions!"</em></p>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1.5 rounded-lg whitespace-nowrap">Submitted Oct 05</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 4: ONLINE QUIZZES ================= -->
+            <section id="view-quizzes" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Online Quizzes & Self-Tests</h1>
+                        <p class="text-xs text-slate-500">Practice quizzes assigned by your teachers with instant evaluation and scores.</p>
+                    </div>
+                    <!-- Single Primary CTA -->
+                    <button onclick="openQuizModal()" class="bg-student-600 hover:bg-student-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Take Available Quiz</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Active Quiz Card -->
+                    <div class="bg-white rounded-2xl border-2 border-student-500 p-5 shadow-sm space-y-4 relative">
+                        <span class="absolute top-4 right-4 bg-student-100 text-student-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">Active Now</span>
+                        <div class="w-10 h-10 rounded-xl bg-student-100 text-student-700 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-atom"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base">Physical Science: Newton's Laws Quiz</h3>
+                            <p class="text-xs text-slate-500 mt-1">3 Multiple choice questions • Time Limit: 10 mins • Weight: 5% Term Grade</p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-slate-400">Due: Tonight, 11:59 PM</span>
+                            <button onclick="openQuizModal()" class="bg-student-600 hover:bg-student-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow">Start Quiz</button>
+                        </div>
+                    </div>
+
+                    <!-- Completed Quiz Card -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-calculator"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base">Math Midterm Prep Quiz #1</h3>
+                            <p class="text-xs text-slate-500 mt-1">Completed on Oct 02 • Score: <strong class="text-emerald-600 text-sm">18 / 20 (90%)</strong></p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Grade A recorded</span>
+                            <button onclick="showToast('Loading past quiz question review...')" class="text-xs text-student-600 font-bold hover:underline">Review Answers</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 5: RESULTS & REPORT CARD ================= -->
+            <section id="view-results" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Term Results & Report Cards</h1>
+                        <p class="text-xs text-slate-500">Official grades, teacher remarks, and cumulative report card preview.</p>
+                    </div>
+                    <!-- Single Primary CTA -->
+                    <button onclick="openReportModal()" class="bg-student-600 hover:bg-student-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>View Official Report Card</span>
+                    </button>
+                </div>
+
+                <!-- Plain-English Summary Banner -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-xs text-emerald-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <span><strong>Grade Summary:</strong> Your current Term 2 aggregate score is <strong>88.5% (Grade A-)</strong>. You are currently in the top 10% of Grade 8-A.</span>
+                    <span class="bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">GPA: 3.8 / 4.0</span>
+                </div>
+
+                <!-- Grades Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm">Subject Performance Breakdown</h3>
+                        <span class="text-xs text-slate-400">Term 2 (2026)</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase font-semibold">
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4">Teacher</th>
+                                    <th class="p-4 text-center">Score (/100)</th>
+                                    <th class="p-4 text-center">Grade</th>
+                                    <th class="p-4">Teacher Remark</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-4 font-bold text-slate-800">Physical Science</td>
+                                    <td class="p-4 text-slate-600 text-xs">Ms. Sarah Jenkins</td>
+                                    <td class="p-4 text-center font-bold text-slate-800">92</td>
+                                    <td class="p-4 text-center"><span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">A</span></td>
+                                    <td class="p-4 text-xs text-slate-600 italic">"Consistently demonstrates an exceptional grasp of physical science principles."</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-4 font-bold text-slate-800">General Mathematics</td>
+                                    <td class="p-4 text-slate-600 text-xs">Mr. David Miller</td>
+                                    <td class="p-4 text-center font-bold text-slate-800">88</td>
+                                    <td class="p-4 text-center"><span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">A-</span></td>
+                                    <td class="p-4 text-xs text-slate-600 italic">"Strong algebra skills. Excellent problem-solving during exams."</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-4 font-bold text-slate-800">English Literature</td>
+                                    <td class="p-4 text-slate-600 text-xs">Mrs. Clara Vance</td>
+                                    <td class="p-4 text-center font-bold text-slate-800">85</td>
+                                    <td class="p-4 text-center"><span class="bg-student-100 text-student-800 text-xs font-bold px-2.5 py-1 rounded-full">B+</span></td>
+                                    <td class="p-4 text-xs text-slate-600 italic">"Great essay structure and vocabulary usage."</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-4 font-bold text-slate-800">World History</td>
+                                    <td class="p-4 text-slate-600 text-xs">Mr. Robert Vance</td>
+                                    <td class="p-4 text-center font-bold text-slate-800">89</td>
+                                    <td class="p-4 text-center"><span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">A-</span></td>
+                                    <td class="p-4 text-xs text-slate-600 italic">"Active participant during historical debates."</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 6: ATTENDANCE RECORD ================= -->
+            <section id="view-attendance" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Attendance Record</h1>
+                        <p class="text-xs text-slate-500">Track daily class presence, excused leaves, and overall percentage.</p>
+                    </div>
+                    <button onclick="showToast('Attendance report exported.')" class="bg-student-600 hover:bg-student-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Export Attendance Summary</span>
+                    </button>
+                </div>
+
+                <!-- Counters -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-xs text-slate-400 uppercase font-bold">Total Days</span>
+                        <p class="text-2xl font-bold text-slate-800 mt-1">28</p>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm">
+                        <span class="text-xs text-emerald-700 uppercase font-bold">Present</span>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1">26 Days</p>
+                    </div>
+                    <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 shadow-sm">
+                        <span class="text-xs text-rose-700 uppercase font-bold">Absent</span>
+                        <p class="text-2xl font-bold text-rose-700 mt-1">1 Day</p>
+                    </div>
+                    <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm">
+                        <span class="text-xs text-amber-700 uppercase font-bold">Late</span>
+                        <p class="text-2xl font-bold text-amber-700 mt-1">1 Day</p>
+                    </div>
+                </div>
+
+                <!-- Attendance Log -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">Recent Attendance Log</h3>
+                    <div class="space-y-2 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                            <span class="font-bold text-slate-800">Today • Oct 12, 2026</span>
+                            <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check mr-1"></i> Present</span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                            <span class="font-bold text-slate-800">Oct 11, 2026</span>
+                            <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check mr-1"></i> Present</span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                            <span class="font-bold text-slate-800">Oct 08, 2026</span>
+                            <span class="bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock mr-1"></i> Late (10 mins)</span>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center">
+                            <span class="font-bold text-slate-800">Oct 01, 2026</span>
+                            <span class="bg-rose-100 text-rose-700 font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-xmark mr-1"></i> Absent (Excused Sick)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 7: LIBRARY ================= -->
+            <section id="view-library" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Library Books & Catalog</h1>
+                        <p class="text-xs text-slate-500">Track issued books, return due dates, and search the school library.</p>
+                    </div>
+                    <button onclick="showToast('Library search opened.')" class="bg-student-600 hover:bg-student-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Search Catalog</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Book 1 -->
+                    <div class="bg-white p-5 rounded-2xl border border-rose-200 bg-rose-50/20 shadow-sm flex items-start space-x-4">
+                        <div class="w-14 h-20 bg-indigo-900 text-white rounded-lg shadow-md flex items-center justify-center font-bold text-xs text-center p-2">
+                            PHYSICS FOR BEGINNERS
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <span class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded">Due in 3 Days</span>
+                            <h3 class="font-bold text-slate-900 text-sm">Fundamentals of Physics (Vol 1)</h3>
+                            <p class="text-xs text-slate-500">Author: Halliday & Resnick • Acc No: #BK-9401</p>
+                            <p class="text-xs text-slate-600 pt-1">Issued: Sep 28 • Due: <strong class="text-rose-600">Oct 15, 2026</strong></p>
+                            <button onclick="showToast('Renewal request sent to librarian.')" class="mt-2 text-xs bg-white border border-slate-300 text-slate-700 font-bold px-3 py-1 rounded-lg hover:bg-slate-50">Request Renewal</button>
+                        </div>
+                    </div>
+
+                    <!-- Book 2 -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start space-x-4">
+                        <div class="w-14 h-20 bg-emerald-900 text-white rounded-lg shadow-md flex items-center justify-center font-bold text-xs text-center p-2">
+                            CLASSIC ESSAYS
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Active Issue</span>
+                            <h3 class="font-bold text-slate-900 text-sm">Great Essays in English Literature</h3>
+                            <p class="text-xs text-slate-500">Author: George Orwell • Acc No: #BK-1022</p>
+                            <p class="text-xs text-slate-600 pt-1">Issued: Oct 02 • Due: <strong class="text-slate-800">Oct 22, 2026</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 8: FEE STATUS ================= -->
+            <section id="view-fee" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">School Fee Status</h1>
+                        <p class="text-xs text-slate-500">View term breakdown, payment history, and pay outstanding balances online.</p>
+                    </div>
+                    <!-- Single Primary CTA -->
+                    <button onclick="openFeeModal()" class="bg-student-600 hover:bg-student-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-credit-card"></i>
+                        <span>Pay Outstanding Fee</span>
+                    </button>
+                </div>
+
+                <!-- Fee Overview Banner -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Total Term Fee</span>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1">$1,200.00</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Term 2 (2026)</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-emerald-600 uppercase">Amount Paid</span>
+                        <h3 class="text-2xl font-bold text-emerald-600 mt-1">$1,000.00</h3>
+                        <p class="text-xs text-emerald-600 mt-0.5"><i class="fa-solid fa-circle-check"></i> Paid via Online Transfer</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-amber-600 uppercase">Remaining Balance</span>
+                        <h3 class="text-2xl font-bold text-amber-600 mt-1">$200.00</h3>
+                        <p class="text-xs text-amber-600 mt-0.5">Due by Oct 31, 2026</p>
+                    </div>
+                </div>
+
+                <!-- Fee Breakdown Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm">Fee Breakdown Details</h3>
+                    </div>
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
+                                <th class="p-3">Fee Item</th>
+                                <th class="p-3">Amount</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="p-3 font-bold text-slate-800">Tuition Fee (Term 2)</td>
+                                <td class="p-3">$850.00</td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Paid</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-slate-800">Computer & Science Lab Fee</td>
+                                <td class="p-3">$150.00</td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Paid</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-slate-800">Sports & Extra-Curricular Fee</td>
+                                <td class="p-3">$200.00</td>
+                                <td class="p-3"><span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Pending ($200)</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 9: NOTICES ================= -->
+            <section id="view-notices" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h1 class="text-xl font-bold text-slate-900">School Notices & Announcements</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Official circulars, holiday notices, and upcoming events from Springfield Academy administration.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="bg-student-100 text-student-800 font-bold px-2.5 py-0.5 rounded-full">Academic Alert</span>
+                            <span class="text-slate-400">Posted Yesterday</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-base">Midterm Exam Schedule Announced</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            The Term 2 Midterm Examinations will commence from November 02, 2026. Detailed subject date sheets have been uploaded to the student portal under the Timetable module.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">Event</span>
+                            <span class="text-slate-400">Oct 05, 2026</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-base">Annual Science & Robotics Fair Registration</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Students from Grade 7 through 10 are invited to submit their team science project proposals to Ms. Jenkins before October 20.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal: Submit Homework -->
+    <div id="modal-submit" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Submit Homework Solution</h3>
+                <button onclick="closeModal('modal-submit')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Assignment</label>
+                    <input type="text" id="submit-assignment-title" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Student Comments / Notes</label>
+                    <textarea rows="3" placeholder="Optional notes for teacher..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-student-500"></textarea>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Upload File (PDF / Images / Doc)</label>
+                    <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:border-student-500 bg-slate-50 transition" onclick="document.getElementById('file-upload').click()">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-student-600 mb-1"></i>
+                        <p class="text-xs font-semibold text-slate-700">Click to attach file</p>
+                        <p class="text-[10px] text-slate-400">PDF or JPG up to 10MB</p>
+                        <input type="file" id="file-upload" class="hidden" onchange="showToast('File attached successfully!')">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal('modal-submit')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="submitHomeworkAction()" class="px-4 py-2 rounded-xl bg-student-600 hover:bg-student-700 text-white text-xs font-bold shadow">Submit Assignment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Online Quiz -->
+    <div id="modal-quiz" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Science Practice Quiz #2</h3>
+                    <p class="text-xs text-slate-400">Question <span id="quiz-q-num">1</span> of 2</p>
+                </div>
+                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock mr-1"></i> 09:45 mins</span>
+            </div>
+
+            <!-- Quiz Question Container -->
+            <div id="quiz-content" class="space-y-4 text-xs">
+                <p id="quiz-question-text" class="font-bold text-slate-800 text-sm">Which of Newton's laws is also known as the Law of Inertia?</p>
+                <div class="space-y-2" id="quiz-options">
+                    <label class="flex items-center p-3 rounded-xl border border-slate-200 hover:bg-student-50 cursor-pointer transition">
+                        <input type="radio" name="quiz-opt" value="1" class="text-student-600 mr-3">
+                        <span>Newton's First Law</span>
+                    </label>
+                    <label class="flex items-center p-3 rounded-xl border border-slate-200 hover:bg-student-50 cursor-pointer transition">
+                        <input type="radio" name="quiz-opt" value="2" class="text-student-600 mr-3">
+                        <span>Newton's Second Law</span>
+                    </label>
+                    <label class="flex items-center p-3 rounded-xl border border-slate-200 hover:bg-student-50 cursor-pointer transition">
+                        <input type="radio" name="quiz-opt" value="3" class="text-student-600 mr-3">
+                        <span>Newton's Third Law</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-quiz')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-500">Exit</button>
+                <button onclick="nextQuizQuestion()" class="px-5 py-2 rounded-xl bg-student-600 hover:bg-student-700 text-white text-xs font-bold shadow">Next Question &rarr;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Official Report Card Preview -->
+    <div id="modal-report" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-graduation-cap text-student-600 text-2xl"></i>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">Springfield Academy - Official Report Card</h3>
+                        <p class="text-xs text-slate-400">Term 2 Examination (2026)</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-report')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Report Card Body -->
+            <div class="space-y-4 text-xs">
+                <div class="bg-slate-50 p-4 rounded-xl grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div><span class="text-slate-400 block">Student:</span><strong class="text-slate-800">Alex Johnson</strong></div>
+                    <div><span class="text-slate-400 block">Roll No:</span><strong class="text-slate-800">01 (Grade 8-A)</strong></div>
+                    <div><span class="text-slate-400 block">Overall GPA:</span><strong class="text-emerald-600 font-bold">3.8 / 4.0</strong></div>
+                    <div><span class="text-slate-400 block">Rank in Class:</span><strong class="text-student-700">3rd / 28</strong></div>
+                </div>
+
+                <table class="w-full text-left border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <th class="p-2 border-r border-slate-200">Subject</th>
+                            <th class="p-2 border-r border-slate-200 text-center">Marks</th>
+                            <th class="p-2 text-center">Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr><td class="p-2 border-r border-slate-200">Physical Science</td><td class="p-2 border-r border-slate-200 text-center">92</td><td class="p-2 text-center font-bold text-emerald-600">A</td></tr>
+                        <tr><td class="p-2 border-r border-slate-200">General Mathematics</td><td class="p-2 border-r border-slate-200 text-center">88</td><td class="p-2 text-center font-bold text-emerald-600">A-</td></tr>
+                        <tr><td class="p-2 border-r border-slate-200">English Literature</td><td class="p-2 border-r border-slate-200 text-center">85</td><td class="p-2 text-center font-bold text-student-600">B+</td></tr>
+                        <tr><td class="p-2 border-r border-slate-200">World History</td><td class="p-2 border-r border-slate-200 text-center">89</td><td class="p-2 text-center font-bold text-emerald-600">A-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button onclick="closeModal('modal-report')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Close</button>
+                <button onclick="showToast('Print command initiated.'); closeModal('modal-report');" class="px-4 py-2 rounded-xl bg-student-600 text-white text-xs font-bold shadow"><i class="fa-solid fa-print mr-1"></i> Print / Save PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Fee Payment -->
+    <div id="modal-fee" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-base">Pay Balance School Fee</h3>
+                <button onclick="closeModal('modal-fee')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl flex justify-between items-center">
+                    <span class="font-bold text-slate-800">Outstanding Balance:</span>
+                    <span class="text-base font-bold text-amber-700">$200.00</span>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Payment Method</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800">
+                        <option>Credit / Debit Card</option>
+                        <option>Online Banking Transfer</option>
+                        <option>UPI / Digital Wallet</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Cardholder Name</label>
+                    <input type="text" value="Arthur Johnson" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeModal('modal-fee')" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600">Cancel</button>
+                <button onclick="processFeePayment()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">Pay $200.00 Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const timetableData = {
+            'Mon': [
+                { time: '08:30 - 09:30 AM', subject: 'General Mathematics', teacher: 'Mr. David Miller', room: 'Room 201', status: 'Attended' },
+                { time: '10:15 - 11:15 AM', subject: 'Physical Science', teacher: 'Ms. Sarah Jenkins', room: 'Room 304', status: 'Next Up' },
+                { time: '11:30 - 12:30 PM', subject: 'English Literature', teacher: 'Mrs. Clara Vance', room: 'Room 108', status: 'Scheduled' },
+                { time: '01:30 - 02:30 PM', subject: 'World History', teacher: 'Mr. Robert Vance', room: 'Room 210', status: 'Scheduled' }
+            ],
+            'Tue': [
+                { time: '08:30 - 09:30 AM', subject: 'Physical Science', teacher: 'Ms. Sarah Jenkins', room: 'Room 304', status: 'Scheduled' },
+                { time: '10:15 - 11:15 AM', subject: 'General Mathematics', teacher: 'Mr. David Miller', room: 'Room 201', status: 'Scheduled' },
+                { time: '11:30 - 12:30 PM', subject: 'Physical Education', teacher: 'Coach Davis', room: 'Gymnasium', status: 'Scheduled' }
+            ],
+            'Wed': [
+                { time: '08:30 - 09:30 AM', subject: 'English Literature', teacher: 'Mrs. Clara Vance', room: 'Room 108', status: 'Scheduled' },
+                { time: '10:15 - 11:15 AM', subject: 'World History', teacher: 'Mr. Robert Vance', room: 'Room 210', status: 'Scheduled' }
+            ],
+            'Thu': [
+                { time: '08:30 - 09:30 AM', subject: 'General Mathematics', teacher: 'Mr. David Miller', room: 'Room 201', status: 'Scheduled' },
+                { time: '10:15 - 11:15 AM', subject: 'Physical Science Lab', teacher: 'Ms. Sarah Jenkins', room: 'Lab 2', status: 'Scheduled' }
+            ],
+            'Fri': [
+                { time: '08:30 - 09:30 AM', subject: 'Computer Studies', teacher: 'Mr. Alex Reed', room: 'Comp Lab', status: 'Scheduled' },
+                { time: '10:15 - 11:15 AM', subject: 'Art & Design', teacher: 'Ms. Ellen Smith', room: 'Studio 1', status: 'Scheduled' }
+            ]
+        };
+
+        let currentQuizStep = 1;
+
+        function switchView(viewId) {
+            const views = ['dashboard', 'timetable', 'assignments', 'quizzes', 'results', 'attendance', 'library', 'fee', 'notices'];
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+                
+                const navEl = document.getElementById(`nav-${v}`);
+                if (navEl) navEl.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${viewId}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            if (activeNav) activeNav.classList.add('active');
+
+            if (viewId === 'timetable') filterDay('Mon');
+        }
+
+        function filterDay(day) {
+            document.querySelectorAll('.day-tab').forEach(b => {
+                b.className = "day-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200";
+            });
+            const activeBtn = document.getElementById(`tab-${day}`);
+            if (activeBtn) activeBtn.className = "day-tab px-4 py-2 rounded-lg text-xs font-bold bg-student-600 text-white shadow";
+
+            const tbody = document.getElementById('timetable-body');
+            tbody.innerHTML = '';
+            const list = timetableData[day] || [];
+            
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-700">${item.time}</td>
+                    <td class="p-4 font-bold text-slate-900">${item.subject}</td>
+                    <td class="p-4 text-xs text-slate-600">${item.teacher}</td>
+                    <td class="p-4 text-xs font-semibold text-slate-500">${item.room}</td>
+                    <td class="p-4 text-center">
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-full ${item.status === 'Attended' ? 'bg-emerald-100 text-emerald-800' : (item.status === 'Next Up' ? 'bg-student-100 text-student-800' : 'bg-slate-100 text-slate-600')}">${item.status}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openSubmitModal(title) {
+            document.getElementById('submit-assignment-title').value = title;
+            openModal('modal-submit');
+        }
+
+        function submitHomeworkAction() {
+            closeModal('modal-submit');
+            showToast('Homework submitted successfully to teacher!');
+        }
+
+        function openQuizModal() {
+            currentQuizStep = 1;
+            document.getElementById('quiz-q-num').innerText = '1';
+            document.getElementById('quiz-question-text').innerText = "Which of Newton's laws is also known as the Law of Inertia?";
+            openModal('modal-quiz');
+        }
+
+        function nextQuizQuestion() {
+            if (currentQuizStep === 1) {
+                currentQuizStep = 2;
+                document.getElementById('quiz-q-num').innerText = '2';
+                document.getElementById('quiz-question-text').innerText = "What is the formula for calculating Force in physics?";
+                document.getElementById('quiz-options').innerHTML = `
+                    <label class="flex items-center p-3 rounded-xl border border-slate-200 hover:bg-student-50 cursor-pointer transition">
+                        <input type="radio" name="quiz-opt" value="1" class="text-student-600 mr-3">
+                        <span>F = m × a (Force = Mass × Acceleration)</span>
+                    </label>
+                    <label class="flex items-center p-3 rounded-xl border border-slate-200 hover:bg-student-50 cursor-pointer transition">
+                        <input type="radio" name="quiz-opt" value="2" class="text-student-600 mr-3">
+                        <span>F = m / v (Force = Mass / Velocity)</span>
+                    </label>
+                `;
+            } else {
+                closeModal('modal-quiz');
+                showToast('Quiz submitted! Score: 100% (2/2 correct). Grade saved!');
+            }
+        }
+
+        function openReportModal() {
+            openModal('modal-report');
+        }
+
+        function openFeeModal() {
+            openModal('modal-fee');
+        }
+
+        function processFeePayment() {
+            closeModal('modal-fee');
+            showToast('Fee payment of $200.00 processed! Receipt generated.');
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Mobile Menu Toggle
+        document.getElementById('mobile-menu-toggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
