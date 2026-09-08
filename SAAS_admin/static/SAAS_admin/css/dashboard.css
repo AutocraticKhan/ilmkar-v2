@@ -273,3 +273,81 @@ input:focus, select:focus{ outline:2px solid var(--brass); outline-offset:1px; }
   border-radius:var(--radius-s); padding:14px; font-size:13px; color:var(--red);
 }
 .warning-box p{ margin:0 0 12px; line-height:1.5; }
+
+/* ---------- tabs ---------- */
+.tabs{ display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--line); }
+.tab{
+  background:none; border:none; cursor:pointer; font-family:inherit;
+  font-size:13.5px; color:var(--muted); padding:10px 14px;
+  border-bottom:2px solid transparent; margin-bottom:-1px;
+}
+.tab:hover{ color:var(--ink); }
+.tab.active{ color:var(--ink); font-weight:500; border-bottom-color:var(--brass); }
+.tab-count{ font-size:12px; color:var(--muted); }
+
+/* ---------- invoice badges ---------- */
+.badge.inv-paid{ background:var(--green-soft); color:var(--green); }
+.badge.inv-unpaid{ background:var(--amber-soft); color:var(--amber); }
+.badge.inv-overdue{ background:var(--red-soft); color:var(--red); }
+
+/* ---------- churn risk badges ---------- */
+.risk{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:500; }
+.risk::before{ content:''; width:7px; height:7px; border-radius:50%; }
+.risk.healthy{ color:var(--green); } .risk.healthy::before{ background:var(--green); }
+.risk.watch{ color:var(--amber); } .risk.watch::before{ background:var(--amber); }
+.risk.at_risk{ color:var(--red); } .risk.at_risk::before{ background:var(--red); }
+.risk.no_data{ color:var(--muted); } .risk.no_data::before{ background:#D8D3C4; }
+
+/* ---------- support ticket thread ---------- */
+textarea{
+  width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius-s);
+  font-family:inherit; font-size:13.5px; color:var(--text); background:var(--surface);
+  resize:vertical;
+}
+.thread{ display:flex; flex-direction:column; gap:8px; }
+.msg{
+  padding:10px 12px; border-radius:var(--radius-s); font-size:13px; line-height:1.5;
+  border:1px solid var(--line); background:#FBFAF6; color:var(--text);
+}
+.msg .msg-head{ font-size:11.5px; color:var(--muted); margin-bottom:4px; }
+.msg.staff-msg{ background:var(--brass-soft); border-color:var(--brass); }
+.badge.prio-high{ background:var(--red-soft); color:var(--red); }
+.badge.prio-normal{ background:#EDEAE2; color:#5B5747; }
+.badge.prio-low{ background:#EDEAE2; color:var(--muted); }
+
+/* ---------- impersonation banner (workspace) ---------- */
+.impersonation-banner{
+  position:sticky; top:0; z-index:40;
+  display:flex; justify-content:space-between; align-items:center; gap:16px;
+  background:var(--amber); color:#FFF8E1;
+  padding:10px 24px; font-size:13px;
+}
+
+/* ---------- announcements feed ---------- */
+.announcement-card{
+  background:var(--surface); border:1px solid var(--line);
+  border-left:3px solid var(--line); border-radius:var(--radius-m);
+  padding:18px 20px; margin-bottom:14px;
+}
+.announcement-card.sev-info{ border-left-color:var(--green); }
+.announcement-card.sev-update{ border-left-color:var(--brass); }
+.announcement-card.sev-critical{ border-left-color:var(--red); }
+.ann-head{ display:flex; justify-content:space-between; align-items:flex-start; }
+.ann-head h3{ font-size:16px; }
+.ann-body{ margin:10px 0 8px; font-size:13.5px; color:var(--text); line-height:1.55; }
+.ann-meta{ font-size:12px; color:var(--muted); }
+.badge.ann-info{ background:var(--green-soft); color:var(--green); }
+.badge.ann-update{ background:var(--brass-soft); color:var(--brass); }
+.badge.ann-critical{ background:var(--red-soft); color:var(--red); }
+
+/* ---------- workspace coming-soon modules ---------- */
+.coming-soon-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px;
+}
+@media (max-width:800px){ .coming-soon-grid{ grid-template-columns:1fr; } }
+.coming-soon{
+  background:var(--surface); border:1px dashed var(--line);
+  border-radius:var(--radius-m); padding:18px;
+}
+.coming-soon h3{ font-size:15px; color:var(--ink); margin-bottom:4px; }
+.coming-soon p{ margin:0; font-size:12.5px; color:var(--muted); }

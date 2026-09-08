@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usage — ILMKAR Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "SAAS_admin/_sidebar.html" with nav_active="usage" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Usage &amp; churn signals</h1>
+        <p id="subhead">Loading&hellip;</p>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="Search by school name or city&hellip;">
+      </div>
+      <select id="riskFilter">
+        <option value="all">All schools</option>
+        <option value="at_risk">At risk</option>
+        <option value="watch">Watch</option>
+        <option value="healthy">Healthy</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>School</th>
+            <th>Logins (30d)</th>
+            <th>Active students</th>
+            <th>Storage used</th>
+            <th>Snapshot</th>
+            <th>Churn risk</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty" id="emptyState" style="display:none">
+        <h3 id="emptyTitle">No usage data</h3>
+        <p id="emptyText">Usage snapshots appear here once schools start using the platform.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{{ usage_rows|json_script:"usage-data" }}
+<script src="{% static 'SAAS_admin/js/usage.js' %}"></script>
+
+</body>
+</html>

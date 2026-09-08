@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billing — ILMKAR Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "SAAS_admin/_sidebar.html" with nav_active="billing" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Billing &amp; subscriptions</h1>
+        <p id="subhead">Loading&hellip;</p>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="controls">
+      <select id="schoolFilter" style="min-width:220px">
+        <option value="all">All schools</option>
+      </select>
+      <select id="statusFilter">
+        <option value="all">All statuses</option>
+        <option value="overdue">Overdue</option>
+        <option value="unpaid">Unpaid</option>
+        <option value="paid">Paid</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>School</th>
+            <th>Period</th>
+            <th>Amount</th>
+            <th>Due date</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty" id="emptyState" style="display:none">
+        <h3 id="emptyTitle">No invoices</h3>
+        <p id="emptyText">Invoices appear here once billing periods are generated.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{{ invoices|json_script:"invoices-data" }}
+{{ schools|json_script:"schools-data" }}
+<script src="{% static 'SAAS_admin/js/billing.js' %}"></script>
+
+</body>
+</html>

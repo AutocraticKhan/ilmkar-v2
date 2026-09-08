@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — ILMKAR Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "SAAS_admin/_sidebar.html" with nav_active="support" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Support inbox</h1>
+        <p id="subhead">Loading&hellip;</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="tickets">Tickets <span class="tab-count" id="tabTicketsCount"></span></button>
+      <button class="tab" data-tab="impersonation">Impersonation log</button>
+    </div>
+
+    <div id="tab-tickets">
+      <div class="controls">
+        <select id="statusFilter">
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="pending">Pending</option>
+          <option value="closed">Closed</option>
+        </select>
+        <select id="priorityFilter">
+          <option value="all">All priorities</option>
+          <option value="high">High</option>
+          <option value="normal">Normal</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>School</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Replies</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty" id="emptyState" style="display:none">
+          <h3 id="emptyTitle">No tickets</h3>
+          <p id="emptyText">Support requests from schools will appear here.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-impersonation" style="display:none">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Operator</th>
+              <th>School</th>
+              <th>Signed in as</th>
+              <th>Note</th>
+              <th>Started</th>
+              <th>Ended</th>
+            </tr>
+          </thead>
+          <tbody id="impBody"></tbody>
+        </table>
+        <div class="empty" id="impEmpty" style="display:none">
+          <h3>No impersonation sessions</h3>
+          <p>Sessions started via &ldquo;Log in as school&rdquo; are recorded here.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{{ tickets|json_script:"tickets-data" }}
+{{ impersonations|json_script:"impersonations-data" }}
+<script src="{% static 'SAAS_admin/js/support.js' %}"></script>
+
+</body>
+</html>

@@ -187,6 +187,11 @@ function openDetail(id){
       ${s.status!=='suspended' ? `<button class="btn small danger" onclick="setStatus(${s.id},'suspended')">Suspend</button>` : ''}
     </div>
 
+    <div class="section-title">Support</div>
+    <div class="btn-row">
+      <button class="btn small" id="impersonateBtn" onclick="impersonateSchool(${s.id})">Log in as school</button>
+    </div>
+
     <div class="section-title">Danger zone</div>
     <div class="btn-row">
       <button class="btn small danger" onclick="requestDeleteSchool(${s.id})">Remove from registry</button>
@@ -210,6 +215,31 @@ function requestDeleteSchool(id){
 function cancelDeleteSchool(){
   const box = document.getElementById('deleteConfirm');
   if(box) box.style.display = 'none';
+}
+
+async function impersonateSchool(id){
+  const btn = document.getElementById('impersonateBtn');
+  const s = schools.find(x=>x.id===id);
+  if(!s || !btn) return;
+  if(btn.dataset.armed !== '1'){
+    btn.dataset.armed = '1';
+    btn.textContent = `Confirm: sign in as ${s.name}`;
+    setTimeout(() => {
+      if(btn){ btn.dataset.armed = '0'; btn.textContent = 'Log in as school'; }
+    }, 4000);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Signing in\u2026';
+  try{
+    const data = await apiPost(`/impersonate/${id}/start/`, { note: 'support session from school detail' });
+    window.location.href = data.redirect || '/workspace/';
+  }catch(err){
+    showToast(err.message);
+    btn.disabled = false;
+    btn.dataset.armed = '0';
+    btn.textContent = 'Log in as school';
+  }
 }
 
 async function applyPackage(id){

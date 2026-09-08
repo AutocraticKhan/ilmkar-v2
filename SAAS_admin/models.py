@@ -121,3 +121,221 @@ class SchoolUser(models.Model):
             "role_display": self.get_role_display(),
             "created_at": self.created_at.date().isoformat(),
         }
+
+
+class Invoice(models.Model):
+    """A billing period invoice issued to a school."""
+
+    class Status(models.TextChoices):
+        PAID = "paid", "Paid"
+        UNPAID = "unpaid", "Unpaid"
+        OVERDUE = "overdue", "Overdue"
+
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE, related_name="invoices"
+    )
+    period = models.CharField(max_length=30)  # e.g. "September 2026"
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    due_date = models.DateField()
+    status = models.CharField(
+        max_length=10, choices=Status.choices, default=Status.UNPAID
+    )
+    paid_at = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-due_date"]
+
+    def __str__(self):
+        return f"{self.school.name} \u00b7 {self.period} \u00b7 {self.get_status_display()}"
+
+    def as_dict(self):
+        return {
+            "id": self.pk,
+            "school_id": self.school_id,
+            "school_name": self.school.name,
+            "period": self.period,
+            "amount": float(self.amount),
+            "due_date": self.due_date.isoformat(),
+            "status": self.status,
+            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
+        }
+
+
+class UsageSnapshot(models.Model):
+    """Periodic usage metrics captured for a school.
+
+    Populated with dummy data for now; real values will be written by the
+    school-side dashboards once implemented.
+    """
+
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE, related_name="usage_snapshots"
+    )
+    date = models.DateField()
+    logins = models.PositiveIntegerField(default=0)
+    storage_mb = models.PositiveIntegerField(default=0)
+    active_students = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["school", "date"], name="unique_school_usage_date"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.school.name} \u00b7 {self.date}"
+
+class SupportTicket(models.Model):
+    """A support request opened by a school."""
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        PENDING = "pending", "Pending"
+        CLOSED = "closed", "Closed"
+
+    class Priority(models.TextChoices):
+        LOW = "low", "Low"
+        NORMAL = "normal", "Normal"
+        HIGH = "high", "High"
+
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE, related_name="tickets"
+    )
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    requester = models.CharField(max_length=120)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    priority = models.CharField(
+        max_length=10, choices=Priority.choices, default=Priority.NORMAL
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"[{self.get_status_display()}] {self.subject}"
+
+    def as_dict(self):
+        return {
+            "id": self.pk,
+            "school_id": self.school_id,
+            "school_name": self.school.name,
+            "subject": self.subject,
+            "body": self.body,
+            "requester": self.requester,
+            "status": self.status,
+            "priority": self.priority,
+            "created_at": self.created_at.date().isoformat(),
+            "updated_at": self.updated_at.date().isoformat(),
+            "replies": self.replies.count(),
+        }
+
+
+class SupportReply(models.Model):
+    """A message on a support ticket (from the school or the operator)."""
+
+    ticket = models.ForeignKey(
+        SupportTicket, on_delete=models.CASCADE, related_name="replies"
+    )
+    is_staff = models.BooleanField(default=False)
+    author = models.CharField(max_length=120)
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Reply by {self.author} on {self.ticket.subject}"
+
+    def as_dict(self):
+        return {
+            "id": self.pk,
+            "is_staff": self.is_staff,
+            "author": self.author,
+            "body": self.body,
+            "created_at": self.created_at.strftime("%b %d, %Y %H:%M"),
+        }
+
+class Announcement(models.Model):
+    """A system-wide update posted by the platform operator."""
+
+    class Severity(models.TextChoices):
+        INFO = "info", "Info"
+        UPDATE = "update", "Update"
+        CRITICAL = "critical", "Critical"
+
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    severity = models.CharField(
+        max_length=10, choices=Severity.choices, default=Severity.INFO
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="announcements"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    def as_dict(self):
+        return {
+            "id": self.pk,
+            "title": self.title,
+            "body": self.body,
+            "severity": self.severity,
+            "author": self.created_by.get_username() if self.created_by else "\u2014",
+            "created_at": self.created_at.date().isoformat(),
+        }
+
+
+class ImpersonationLog(models.Model):
+    """Audit trail for operator 'log in as school' support sessions."""
+
+    operator = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="impersonations_given"
+    )
+    school = models.ForeignKey(
+        School, on_delete=models.CASCADE, related_name="impersonations"
+    )
+    # SET_NULL so the audit trail survives the impersonated account being
+    # deleted; user_display keeps a readable snapshot either way.
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="impersonations_of"
+    )
+    user_display = models.CharField(max_length=120, blank=True, default="")
+    note = models.CharField(max_length=200, blank=True, default="")
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-started_at"]
+
+    def __str__(self):
+        return (
+            f"{self.operator.get_username()} as {self.user_display} "
+            f"@ {self.school.name}"
+        )
+
+    def as_dict(self):
+        return {
+            "id": self.pk,
+            "operator": self.operator.get_username(),
+            "school_name": self.school.name,
+            "user_display": self.user_display or "\u2014",
+            "note": self.note or "\u2014",
+            "started_at": self.started_at.strftime("%b %d, %Y %H:%M"),
+            "ended_at": (
+                self.ended_at.strftime("%b %d, %Y %H:%M") if self.ended_at else None
+            ),
+            "active": self.ended_at is None,
+        }

@@ -105,6 +105,7 @@ async function selectSchool(id){
   document.getElementById('panelTitle').textContent = s.name;
   document.getElementById('panelSub').textContent =
     `${s.users ?? 0} user account${(s.users ?? 0) === 1 ? '' : 's'} \u00b7 ${s.city}`;
+  document.getElementById('impersonateSchoolBtn').disabled = !users.length;
 
   try{
     const data = await apiGet(`/schools/${id}/users/`);
@@ -203,6 +204,32 @@ async function removeUser(userId){
   }catch(err){
     showToast(err.message);
     if(btn){ btn.dataset.armed = '0'; btn.textContent = 'Delete'; }
+  }
+}
+
+// ---------- impersonation ----------
+async function impersonateSchool(){
+  if(currentSchoolId === null) return;
+  const btn = document.getElementById('impersonateSchoolBtn');
+  const s = currentSchool();
+  if(btn.dataset.armed !== '1'){
+    btn.dataset.armed = '1';
+    btn.textContent = `Confirm: sign in as ${s.name}`;
+    setTimeout(() => {
+      if(btn){ btn.dataset.armed = '0'; btn.textContent = 'Log in as school'; }
+    }, 4000);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Signing in\u2026';
+  try{
+    const data = await apiPost(`/impersonate/${currentSchoolId}/start/`, { note: 'support session from users page' });
+    window.location.href = data.redirect || '/workspace/';
+  }catch(err){
+    showToast(err.message);
+    btn.disabled = false;
+    btn.dataset.armed = '0';
+    btn.textContent = 'Log in as school';
   }
 }
 

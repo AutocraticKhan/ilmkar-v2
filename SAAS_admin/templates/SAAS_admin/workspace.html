@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ school.name }} — ILMKAR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="impersonation-banner">
+  <span>
+    Support mode &mdash; you are signed in as <strong>{{ user.get_username }}</strong>
+    ({{ role_display }}) @ <strong>{{ school.name }}</strong>.
+    This session is recorded in the impersonation audit log.
+  </span>
+  <button class="btn small" id="endSessionBtn" onclick="endImpersonation()">End session</button>
+</div>
+
+<main class="main" style="max-width:1080px;margin:0 auto">
+
+  <div class="topline">
+    <div>
+      <h1>{{ school.name }}</h1>
+      <p>{{ school.city }} &middot; {{ school.package }} package &middot; {{ school.get_status_display }}</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="label">Active students</div><div class="value">{{ latest_usage.active_students|default:"—" }}</div></div>
+    <div class="stat"><div class="label">Logins (last snapshot)</div><div class="value">{{ latest_usage.logins|default:"—" }}</div></div>
+    <div class="stat"><div class="label">Storage used</div><div class="value mono" style="font-size:22px">{{ latest_usage.storage_mb|default:"—" }} MB</div></div>
+    <div class="stat"><div class="label">Open support tickets</div><div class="value">{{ open_tickets }}</div></div>
+  </div>
+
+  <div class="section-title" style="border:none;padding-top:0">School workspace modules</div>
+  <div class="coming-soon-grid">
+    <div class="coming-soon"><h3>Timetable</h3><p>Classes, sections and weekly schedules.</p></div>
+    <div class="coming-soon"><h3>Attendance</h3><p>Daily attendance and leave tracking.</p></div>
+    <div class="coming-soon"><h3>Exams &amp; grades</h3><p>Assessments, marksheets and report cards.</p></div>
+    <div class="coming-soon"><h3>Fees</h3><p>Fee challans, discounts and collections.</p></div>
+    <div class="coming-soon"><h3>HR &amp; payroll</h3><p>Staff records and salary processing.</p></div>
+    <div class="coming-soon"><h3>Parent portal</h3><p>Updates, results and messaging for families.</p></div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'SAAS_admin/js/workspace.js' %}"></script>
+
+</body>
+</html>

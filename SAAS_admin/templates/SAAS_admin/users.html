@@ -13,45 +13,7 @@
 
 <div class="shell">
 
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="mark">ILMKAR</span>
-      <span class="sub">operator console</span>
-    </div>
-    <nav class="nav">
-      <a href="{% url 'SAAS_admin:dashboard' %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg>
-        Schools
-      </a>
-      <a class="active" href="{% url 'SAAS_admin:users' %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1.3-3.6 4.1-5.5 6.5-5.5s5.2 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.7c2.6.2 4.8 1.9 6 5.3"/></svg>
-        Users
-      </a>
-      <a href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="1.5"/><path d="M3 9h18"/></svg>
-        Packages
-      </a>
-      <a href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M17 5.5c-1-1-2.8-1.5-5-1.5-3 0-5 1.3-5 3.5S9 11 12 11s5 1.3 5 3.5-2 3.5-5 3.5c-2.2 0-4-.5-5-1.5"/></svg>
-        Billing
-      </a>
-      <a href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.2"/><path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
-        Contacts
-      </a>
-      <a href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M4.6 12a7.4 7.4 0 0 1 .3-2.1L3 8.4l1.5-2.6 2.2.8a7.5 7.5 0 0 1 3.6-2.1L11 2h2l.7 2.5a7.5 7.5 0 0 1 3.6 2.1l2.2-.8L21 8.4l-1.9 1.5c.2.7.3 1.4.3 2.1s-.1 1.4-.3 2.1L21 15.6 19.5 18.2l-2.2-.8a7.5 7.5 0 0 1-3.6 2.1L13 22h-2l-.7-2.5a7.5 7.5 0 0 1-3.6-2.1l-2.2.8L3 15.6l1.9-1.5c-.2-.7-.3-1.4-.3-2.1Z"/></svg>
-        Settings
-      </a>
-    </nav>
-    <div class="sidebar-foot">
-      Signed in as {{ user.get_username }}
-      <form class="logout-form" method="post" action="{% url 'SAAS_admin:logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="logout-btn">Log out</button>
-      </form>
-    </div>
-  </aside>
+  {% include "SAAS_admin/_sidebar.html" with nav_active="users" %}
 
   <main class="main">
 
@@ -83,6 +45,7 @@
             <h2 id="panelTitle"></h2>
             <p id="panelSub"></p>
           </div>
+          <button class="btn small" id="impersonateSchoolBtn" onclick="impersonateSchool()" disabled>Log in as school</button>
         </div>
         <table id="usersTable" style="display:none">
           <thead>
