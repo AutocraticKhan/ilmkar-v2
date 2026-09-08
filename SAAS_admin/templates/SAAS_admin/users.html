@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registry — ILMKAR Admin</title>
+<title>Users — ILMKAR Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
@@ -19,11 +19,11 @@
       <span class="sub">operator console</span>
     </div>
     <nav class="nav">
-      <a class="active" href="{% url 'SAAS_admin:dashboard' %}">
+      <a href="{% url 'SAAS_admin:dashboard' %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg>
         Schools
       </a>
-      <a href="{% url 'SAAS_admin:users' %}">
+      <a class="active" href="{% url 'SAAS_admin:users' %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1.3-3.6 4.1-5.5 6.5-5.5s5.2 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.7c2.6.2 4.8 1.9 6 5.3"/></svg>
         Users
       </a>
@@ -57,51 +57,51 @@
 
     <div class="topline">
       <div>
-        <h1>School registry</h1>
-        <p id="subhead">Loading&hellip;</p>
+        <h1>User management</h1>
+        <p id="subhead">Select a school to view and manage its users.</p>
       </div>
-      <button class="btn" onclick="openNewSchoolDrawer()">Add school</button>
+      <button class="btn" id="addUserBtn" onclick="openNewUserDrawer()" disabled>Add user</button>
     </div>
 
-    <div class="stats" id="stats"></div>
+    <div class="split">
 
-    <div class="controls">
-      <div class="search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="searchInput" type="text" placeholder="Search by school name or city&hellip;">
-      </div>
-      <select id="packageFilter">
-        <option value="all">All packages</option>
-        <option value="Starter">Starter</option>
-        <option value="Growth">Growth</option>
-        <option value="Enterprise">Enterprise</option>
-      </select>
-      <select id="statusFilter">
-        <option value="all">All statuses</option>
-        <option value="active">Active</option>
-        <option value="trial">Trial</option>
-        <option value="suspended">Suspended</option>
-      </select>
-    </div>
+      <section class="school-picker">
+        <div class="search" style="margin-bottom:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="schoolSearch" type="text" placeholder="Search schools&hellip;">
+        </div>
+        <div class="picker-list" id="schoolList"></div>
+        <div class="empty" id="pickerEmpty" style="display:none">
+          <h3>No schools found</h3>
+          <p>Register a school from the Schools tab first.</p>
+        </div>
+      </section>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th data-key="name">School <span class="arrow" data-arrow="name"></span></th>
-            <th data-key="package">Package <span class="arrow" data-arrow="package"></span></th>
-            <th data-key="students">Students <span class="arrow" data-arrow="students"></span></th>
-            <th data-key="mrr">MRR <span class="arrow" data-arrow="mrr"></span></th>
-            <th data-key="renewal">Renews <span class="arrow" data-arrow="renewal"></span></th>
-            <th data-key="status">Status <span class="arrow" data-arrow="status"></span></th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-      <div class="empty" id="emptyState" style="display:none">
-        <h3 id="emptyTitle">No schools match this filter</h3>
-        <p id="emptyText">Try a different search term or clear a filter.</p>
-      </div>
+      <section class="table-wrap">
+        <div class="panel-head" id="panelHead" style="display:none">
+          <div>
+            <h2 id="panelTitle"></h2>
+            <p id="panelSub"></p>
+          </div>
+        </div>
+        <table id="usersTable" style="display:none">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Added</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+        <div class="empty" id="usersEmpty" style="display:block">
+          <h3 id="usersEmptyTitle">No school selected</h3>
+          <p id="usersEmptyText">Pick a school from the list to see its users.</p>
+        </div>
+      </section>
+
     </div>
 
   </main>
@@ -114,7 +114,7 @@
 <div class="toast" id="toast"></div>
 
 {{ schools|json_script:"schools-data" }}
-<script src="{% static 'SAAS_admin/js/dashboard.js' %}"></script>
+<script src="{% static 'SAAS_admin/js/users.js' %}"></script>
 
 </body>
 </html>

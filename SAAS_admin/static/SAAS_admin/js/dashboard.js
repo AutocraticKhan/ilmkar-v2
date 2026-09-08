@@ -189,10 +189,27 @@ function openDetail(id){
 
     <div class="section-title">Danger zone</div>
     <div class="btn-row">
-      <button class="btn small ghost" onclick="removeSchool(${s.id})">Remove from registry</button>
+      <button class="btn small danger" onclick="requestDeleteSchool(${s.id})">Remove from registry</button>
+    </div>
+    <div class="warning-box" id="deleteConfirm" style="display:none">
+      <p><strong>Warning:</strong> this permanently deletes <strong>${esc(s.name)}</strong> and everything linked to it &mdash; including <strong>${s.users ?? 0}</strong> user account${(s.users ?? 0) === 1 ? '' : 's'}. This cannot be undone.</p>
+      <div class="btn-row">
+        <button class="btn small danger" onclick="removeSchool(${s.id})">Yes, delete everything</button>
+        <button class="btn small ghost" onclick="cancelDeleteSchool()">Cancel</button>
+      </div>
     </div>
   `;
   overlay.classList.add('open');
+}
+
+function requestDeleteSchool(id){
+  const box = document.getElementById('deleteConfirm');
+  if(box) box.style.display = 'block';
+}
+
+function cancelDeleteSchool(){
+  const box = document.getElementById('deleteConfirm');
+  if(box) box.style.display = 'none';
 }
 
 async function applyPackage(id){
@@ -228,11 +245,12 @@ async function removeSchool(id){
   const s = schools.find(x=>x.id===id);
   if(!s) return;
   try{
-    await apiPost(`/schools/${id}/delete/`);
+    const data = await apiPost(`/schools/${id}/delete/`);
     schools = schools.filter(x=>x.id!==id);
     renderAll();
     closeDrawer();
-    showToast(`${s.name} removed from registry`);
+    const n = data.deleted_users ?? 0;
+    showToast(`${s.name} removed \u2014 ${n} user account${n===1?'':'s'} deleted`);
   }catch(err){
     showToast(err.message);
   }
