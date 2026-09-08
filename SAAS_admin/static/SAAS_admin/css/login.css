@@ -1,0 +1,111 @@
+:root{
+  --ink:#1B2430;
+  --ink-soft:#2B3646;
+  --paper:#F6F4EF;
+  --surface:#FFFFFF;
+  --line:#E4E0D6;
+  --text:#22282F;
+  --muted:#6E6A5F;
+  --brass:#A9803F;
+  --red:#8C3B32;
+  --red-soft:#F3E1DD;
+  --radius-s:3px;
+  --radius-m:6px;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background:var(--paper);
+  color:var(--text);
+  font-family:'IBM Plex Sans', sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.login-wrap{ width:100%; max-width:380px; }
+
+.login-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-m);
+  padding:36px 34px 30px;
+}
+
+.login-brand{ display:flex; flex-direction:column; gap:2px; margin-bottom:26px; }
+.login-brand .mark{
+  font-family:'Source Serif 4', serif;
+  font-size:21px;
+  color:var(--ink);
+}
+.login-brand .sub{ font-size:12px; color:var(--muted); }
+
+h1{
+  font-family:'Source Serif 4', serif;
+  font-weight:600;
+  font-size:24px;
+  margin:0 0 4px;
+  color:var(--ink);
+}
+.hint{ margin:0 0 20px; color:var(--muted); font-size:13px; }
+
+.alert{
+  background:var(--red-soft);
+  color:var(--red);
+  border:1px solid #E5C4BE;
+  border-radius:var(--radius-s);
+  padding:9px 12px;
+  font-size:13px;
+  margin-bottom:16px;
+}
+
+form{ display:flex; flex-direction:column; }
+label{
+  font-size:12px;
+  color:var(--muted);
+  margin:0 0 5px;
+}
+label + input{ margin-bottom:16px; }
+input[type=text], input[type=password]{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:var(--radius-s);
+  font-family:inherit;
+  font-size:13.5px;
+  color:var(--text);
+  background:var(--surface);
+}
+input:focus{
+  outline:2px solid var(--brass);
+  outline-offset:1px;
+}
+
+.btn{
+  margin-top:10px;
+  font-family:'IBM Plex Sans', sans-serif;
+  font-size:13.5px;
+  font-weight:500;
+  border-radius:var(--radius-s);
+  padding:10px 16px;
+  border:1px solid var(--ink);
+  background:var(--ink);
+  color:var(--paper);
+  cursor:pointer;
+  transition:background .15s ease;
+}
+.btn:hover{ background:var(--ink-soft); }
+
+.foot{
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+  margin-top:18px;
+}
+
+::-webkit-scrollbar{ width:9px; }
+::-webkit-scrollbar-thumb{ background:#D8D3C4; border-radius:6px; }
