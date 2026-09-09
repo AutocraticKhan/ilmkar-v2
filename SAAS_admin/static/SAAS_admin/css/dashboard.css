@@ -316,6 +316,7 @@ textarea{
 .badge.prio-low{ background:#EDEAE2; color:var(--muted); }
 
 /* ---------- impersonation banner (workspace) ---------- */
+.badge.chain-tag{ background:#E7EBF0; color:#3E5A75; }
 .impersonation-banner{
   position:sticky; top:0; z-index:40;
   display:flex; justify-content:space-between; align-items:center; gap:16px;

@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transfers — {{ chain.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'school_owner/css/owner.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "school_owner/_owner_sidebar.html" with nav_active="transfers" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Move students &amp; staff between branches</h1>
+        <p>No re-entry of data &mdash; the record moves with its history.</p>
+      </div>
+    </div>
+
+    <div class="split">
+
+      <div class="school-picker">
+        <div class="panel-head" style="padding:8px 4px 14px">
+          <div>
+            <h2 id="pickTitle">Pick a student</h2>
+            <p id="pickSub">Select who to move, then choose the destination.</p>
+          </div>
+        </div>
+        <div class="controls" style="margin-bottom:10px">
+          <select id="typeSelect" style="width:100%">
+            <option value="student">Students</option>
+            <option value="staff">Staff members</option>
+          </select>
+        </div>
+        <div class="search" style="margin-bottom:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="personSearch" type="text" placeholder="Search by name&hellip;">
+        </div>
+        <div class="person-list" id="personList"></div>
+        <div class="empty" id="personEmpty" style="display:none">
+          <h3>Nothing found</h3>
+          <p>Try a different search term.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="table-wrap" style="padding:20px">
+          <div class="panel-head" style="padding:0 0 14px; border-bottom:none">
+            <div>
+              <h2>Move <span id="moveName" style="color:var(--brass)">&mdash;</span></h2>
+              <p id="moveSub">Select a person on the left first.</p>
+            </div>
+          </div>
+
+          <label class="formlabel" for="moveTarget">Destination branch</label>
+          <select id="moveTarget" style="width:100%" disabled>
+            <option value="">Select a branch&hellip;</option>
+            {% for b in branches %}
+              <option value="{{ b.id }}">{{ b.name }} &mdash; {{ b.city }}</option>
+            {% endfor %}
+          </select>
+
+          <label class="formlabel" for="moveNote">Note (optional)</label>
+          <input type="text" id="moveNote" placeholder="e.g. family relocated" disabled>
+
+          <div class="btn-row" style="margin-top:22px">
+            <button class="btn" id="moveBtn" onclick="moveSelected()" disabled>Move to branch</button>
+          </div>
+          <p style="margin-top:14px;font-size:12.5px;color:var(--muted)">
+            The classroom assignment is cleared for students &mdash; the receiving
+            branch assigns a new one. The registry counts stay in sync.
+          </p>
+        </div>
+
+        <div class="section-title">Recent transfers</div>
+        <div class="table-wrap" style="padding:14px 20px" id="historyWrap">
+          {% if history %}
+            {% for t in history %}
+              <div class="log-row">
+                <div>
+                  <div class="who">{{ t.person_display }} <span class="badge one-branch">{{ t.person_type_display }}</span></div>
+                  <div class="route">{{ t.from_school_name }} &rarr; {{ t.to_school_name }}{% if t.note and t.note != "—" %} &middot; {{ t.note }}{% endif %}</div>
+                </div>
+                <div class="route">{{ t.moved_at }}</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p style="color:var(--muted);font-size:13px;margin:4px 0">No transfers yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{{ students|json_script:"students-data" }}
+{{ staff|json_script:"staff-data" }}
+<script src="{% static 'school_owner/js/owner_common.js' %}"></script>
+<script src="{% static 'school_owner/js/owner_transfers.js' %}"></script>
+
+</body>
+</html>

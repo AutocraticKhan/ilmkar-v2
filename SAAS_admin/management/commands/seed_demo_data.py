@@ -24,6 +24,8 @@ from SAAS_admin.models import (
     UsageSnapshot,
 )
 
+# chain demo data is appended below in this same command
+
 TICKETS = [
     ("Cannot upload student photos", "Uploading profile pictures fails with an error after a few students. It worked last week.", "Front Desk", "open", "high"),
     ("Fee report export is blank", "The monthly fee report exports an empty spreadsheet for August.", "Accountant", "open", "normal"),
@@ -68,8 +70,227 @@ class Command(BaseCommand):
         self._seed_usage(schools, today)
         self._seed_tickets(schools)
         self._seed_announcements()
+        self._seed_chain(schools, today)
 
         self.stdout.write(self.style.SUCCESS("Dummy data seeded successfully."))
+
+    # --- chain demo data seeders (part 1) ---------------------------------
+    def _seed_chain(self, schools, today):
+        """Seed one chain demo: owner login, 3 branches, students, staff,
+        classrooms, fee invoices, attendance, exams + chain features.
+
+        TODO(placeholder): student/staff/fee/attendance/exam rows feed the
+        chain owner dashboard. When the real school-side modules land they
+        will own this data — replace this seeding accordingly.
+        """
+        from django.contrib.auth.models import User
+
+        from school_owner.models import (
+            ApprovalRequest,
+            AttendanceSnapshot,
+            BranchAnnouncement,
+            Chain,
+            Classroom,
+            ExamSummary,
+            FeeInvoice,
+            GroupPolicy,
+            JobPosting,
+            Student,
+            StaffMember,
+        )
+
+        import datetime as dt
+
+        from django.utils import timezone
+
+        random.seed(7)
+        owner, owner_created = User.objects.get_or_create(username="groupowner")
+        # Always (re)set the demo password + display fields so the documented
+        # login keeps working even if this command is re-run or the user was
+        # pre-created by something else. Skip superusers to never clobber an
+        # operator account.
+        if not owner.is_superuser:
+            owner.is_active = True
+            owner.email = owner.email or "owner@ilmkar.edu"
+            owner.first_name = owner.first_name or "Group"
+            owner.last_name = owner.last_name or "Owner"
+            owner.set_password("ilmkar-owner-2026")
+            owner.save()
+
+        chain, chain_created = Chain.objects.get_or_create(
+            name="Ilmkar Group of Schools", defaults={"owner": owner}
+        )
+        if not chain_created and chain.owner_id is None:
+            chain.owner = owner
+            chain.save(update_fields=["owner"])
+
+        # Branches: first 3 registry schools (or create them if empty).
+        branches = list(School.objects.filter(chain=chain)[:3])
+        if len(branches) < 3:
+            missing = [s for s in schools if s not in branches]
+            branches += missing[: 3 - len(branches)]
+            for s in branches:
+                if s.chain_id != chain.pk:
+                    s.chain = chain
+                    s.save(update_fields=["chain"])
+        if not branches:
+            self.stdout.write(self.style.WARNING("No schools to seed as branches."))
+            return
+        self.stdout.write(f"Chain branches: {', '.join(s.name for s in branches)}")
+        FIRST = ["Ayesha", "Bilal", "Fatima", "Hamza", "Imran", "Javeria",
+                 "Kamran", "Laiba", "Mahnoor", "Nadia", "Osama", "Paras"]
+        LAST = ["Khan", "Raza", "Sheikh", "Malik", "Qureshi"]
+        DESIG = ["Teacher", "Senior Teacher", "Coordinator", "Librarian",
+                 "Front Desk"]
+
+        for s in branches:
+            if Classroom.objects.filter(school=s).exists():
+                continue
+            rooms = [
+                Classroom.objects.create(school=s, name=f"Room {r}", capacity=cap)
+                for r, cap in zip(("A", "B", "C"), (40, 35, 30))
+            ]
+            for idx in range(random.randint(24, 32)):
+                Student.objects.create(
+                    school=s,
+                    classroom=random.choice(rooms),
+                    full_name=f"{random.choice(FIRST)} {random.choice(LAST)}",
+                    admission_no=f"{s.pk}-{1000 + idx}",
+                    monthly_fee=3500,
+                    status=Student.Status.ACTIVE,
+                )
+            for idx in range(random.randint(12, 18)):
+                StaffMember.objects.create(
+                    school=s,
+                    full_name=f"{random.choice(FIRST)} {random.choice(LAST)}",
+                    designation=random.choice(DESIG),
+                )
+            # 30 days of attendance with a different health per branch.
+            health = (0.96, 0.90, 0.86)[branches.index(s) % 3]
+            total = Student.objects.filter(school=s).count()
+            for back in range(30):
+                date = today - dt.timedelta(days=back)
+                present = int(total * min(1.0, health + random.uniform(-0.02, 0.02)))
+                AttendanceSnapshot.objects.get_or_create(
+                    school=s, date=date,
+                    defaults={"present": present, "absent": max(0, total - present)},
+                )
+            ExamSummary.objects.get_or_create(
+                school=s, term="Mid Term 2026",
+                defaults={
+                    "average_pct": round(random.uniform(52, 82), 1),
+                    "recorded_at": today - dt.timedelta(days=10),
+                },
+            )
+            self.stdout.write(f"Chain demo rows seeded for {s.name}.")
+        # Fees for the current + previous periods across all branches.
+        periods = []
+        back = 0
+        while len(periods) < 4:
+            d = today - dt.timedelta(days=30 * back)
+            periods.append(d.strftime("%B %Y"))
+            back += 1
+        for s in branches:
+            students = list(Student.objects.filter(school=s))
+            if FeeInvoice.objects.filter(school=s, period=periods[0]).exists():
+                continue
+            for p_idx, period in enumerate(periods):
+                due = dt.date(today.year, today.month, 10) - dt.timedelta(days=30 * p_idx)
+                # Different branches collect at different rates.
+                rate = (0.92, 0.71, 0.55)[branches.index(s) % 3]
+                for student in students:
+                    paid = random.random() < rate * (1 - 0.05 * p_idx)
+                    FeeInvoice.objects.create(
+                        school=s, student=student, period=period,
+                        amount=student.monthly_fee, due_date=due,
+                        status=(FeeInvoice.Status.PAID if paid
+                                else FeeInvoice.Status.UNPAID),
+                        paid_at=due if paid else None,
+                    )
+        if not GroupPolicy.objects.filter(chain=chain).exists():
+            GroupPolicy.objects.create(
+                chain=chain, name="Monthly tuition 2026",
+                category=GroupPolicy.Category.FEE_STRUCTURE,
+                default_value="Tuition Rs 3,500/month \u00b7 sibling discount 15% "
+                              "\u00b7 admission fee Rs 5,000 one-time",
+                created_by=owner,
+            )
+            GroupPolicy.objects.create(
+                chain=chain, name="Annual leave policy",
+                category=GroupPolicy.Category.LEAVE_POLICY,
+                default_value="12 paid casual leaves \u00b7 10 sick leaves \u00b7 "
+                              "prior approval required for 3+ days",
+                created_by=owner,
+            )
+
+        if not JobPosting.objects.filter(chain=chain).exists():
+            JobPosting.objects.create(
+                chain=chain, title="Physics teacher \u2014 secondary section",
+                description="MSc Physics, 3+ years experience, O-Level background.",
+                created_by=owner,
+            )
+            filled = JobPosting.objects.create(
+                chain=chain, title="Front desk officer",
+                description="Evening shift, strong communication skills.",
+                created_by=owner,
+            )
+            filled.status = JobPosting.Status.FILLED
+            filled.filled_branch = branches[0]
+            filled.filled_at = timezone.now()
+            filled.save(update_fields=["status", "filled_branch", "filled_at"])
+
+        if not BranchAnnouncement.objects.filter(chain=chain).exists():
+            BranchAnnouncement.objects.create(
+                chain=chain, title="Parent-teacher meeting \u2014 next Friday",
+                body="All branches hold PTM next Friday 16:00-19:00. "
+                     "Prepare result slips before Wednesday.",
+                created_by=owner,
+            )
+            BranchAnnouncement.objects.create(
+                chain=chain, school=branches[0],
+                title="Science lab stock check",
+                body=f"{branches[0].name}: the group office will audit lab "
+                     "inventory this week.",
+                created_by=owner,
+            )
+        if not ApprovalRequest.objects.filter(chain=chain).exists():
+            ApprovalRequest.objects.create(
+                chain=chain, school=branches[1],
+                request_type=ApprovalRequest.Type.BUDGET,
+                title="Computer lab upgrade \u2014 Q3",
+                details="20 machines + networking for the computer lab.",
+                amount=1850000, requested_by=f"Principal ({branches[1].name})",
+            )
+            ApprovalRequest.objects.create(
+                chain=chain, school=branches[2],
+                request_type=ApprovalRequest.Type.NEW_HIRE,
+                title="Extra math teacher for Grade 9",
+                details="Section split pushed class size over 40.",
+                requested_by=f"Principal ({branches[2].name})",
+            )
+            decided = ApprovalRequest.objects.create(
+                chain=chain, school=branches[0], request_type=ApprovalRequest.Type.OTHER,
+                title="Inter-branch sports tournament",
+                details=f"Hosting fee for the annual {chain.name} tournament.",
+                amount=120000, requested_by=f"Principal ({branches[0].name})",
+            )
+            decided.status = ApprovalRequest.Status.APPROVED
+            decided.decision_note = "Approved \u2014 invoice the group office."
+            decided.decided_at = timezone.now()
+            decided.save(update_fields=["status", "decision_note", "decided_at"])
+            ApprovalRequest.objects.create(
+                chain=chain, school=branches[0], request_type=ApprovalRequest.Type.BUDGET,
+                title="Rooftop canteen contract",
+                amount=300000, requested_by=f"Principal ({branches[0].name})",
+                status=ApprovalRequest.Status.REJECTED,
+                decision_note="Revisit next year \u2014 safety concerns.",
+                decided_at=timezone.now(),
+            )
+
+        self.stdout.write(
+            f"Chain demo ready: {chain.name} \u00b7 owner @groupowner "
+            "(password: ilmkar-owner-2026)"
+        )
 
     def _seed_invoices(self, schools, today, year):
         created = 0

@@ -23,6 +23,20 @@ class School(models.Model):
 
     name = models.CharField(max_length=200)
     city = models.CharField(max_length=200)
+    # The account that owns this school. One account can own many schools —
+    # the owner dashboard shows exactly these schools (plus anything in their
+    # group/chain). Assigned by the superuser; setting it auto-links the
+    # school into the owner's chain (school_owner.utils.assign_owner).
+    owner = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="owned_schools",
+    )
+    # Optional chain/group membership: several schools owned by one owner
+    # account (managed from the operator console, used by school_owner).
+    chain = models.ForeignKey(
+        "school_owner.Chain", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="schools",
+    )
     package = models.CharField(
         max_length=20, choices=Package.choices, default=Package.STARTER
     )
@@ -59,6 +73,10 @@ class School(models.Model):
             "id": self.pk,
             "name": self.name,
             "city": self.city,
+            "owner_id": self.owner_id,
+            "owner_username": self.owner.get_username() if self.owner_id else None,
+            "chain_id": self.chain_id,
+            "chain_name": self.chain.name if self.chain_id else None,
             "package": self.package,
             "students": self.students,
             "mrr": self.mrr,

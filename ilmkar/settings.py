@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     # Local apps
     'SAAS_admin',
+    'school_owner',
 ]
 
 MIDDLEWARE = [

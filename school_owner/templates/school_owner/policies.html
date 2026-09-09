@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policies — {{ chain.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'school_owner/css/owner.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "school_owner/_owner_sidebar.html" with nav_active="policies" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Group-wide policies</h1>
+        <p id="subhead">Loading&hellip;</p>
+      </div>
+      <button class="btn" onclick="openNewPolicyDrawer()">New policy</button>
+    </div>
+
+    <div id="feed"></div>
+    <div class="empty" id="emptyState" style="display:none">
+      <h3>No group policies yet</h3>
+      <p>Create one policy and it applies to every branch at once &mdash; individual branches can be overridden below each policy.</p>
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{{ policies|json_script:"policies-data" }}
+{{ branches|json_script:"branches-data" }}
+<script src="{% static 'school_owner/js/owner_common.js' %}"></script>
+<script src="{% static 'school_owner/js/owner_policies.js' %}"></script>
+
+</body>
+</html>

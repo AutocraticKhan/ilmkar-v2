@@ -2,6 +2,11 @@
 const schoolsEl = document.getElementById('schools-data');
 let schools = schoolsEl ? JSON.parse(schoolsEl.textContent) : [];
 
+// Chains (school groups) for the assign-to-chain option in the add-school
+// drawer. Managed fully on the Chains page.
+const chainsEl = document.getElementById('chains-data');
+let chains = chainsEl ? JSON.parse(chainsEl.textContent) : [];
+
 const CSRF = document.body.dataset.csrfToken || '';
 
 function esc(value){
@@ -106,7 +111,7 @@ function renderTable(){
 
   body.innerHTML = list.map(s=>`
     <tr onclick="openDetail(${s.id})">
-      <td class="school-name">${esc(s.name)}<span class="loc">${esc(s.city)}</span></td>
+      <td class="school-name">${esc(s.name)}<span class="loc">${esc(s.city)}${s.chain_name ? ` \u00b7 <span class="badge chain-tag">${esc(s.chain_name)}</span>` : ''}</span></td>
       <td><span class="badge ${esc(s.package.toLowerCase())}">${esc(s.package)}</span></td>
       <td class="mono">${Number(s.students).toLocaleString()}</td>
       <td class="mono">${fmtMoney(s.mrr)}</td>
@@ -161,6 +166,7 @@ function openDetail(id){
     </div>
 
     <div class="field-grid">
+      <div class="field"><span class="k">Chain</span><span class="v">${s.chain_name ? `<span class="badge chain-tag">${esc(s.chain_name)}</span>` : '<span style="color:var(--muted)">none</span>'}</span></div>
       <div class="field"><span class="k">Package</span><span class="v"><span class="badge ${esc(s.package.toLowerCase())}">${esc(s.package)}</span></span></div>
       <div class="field"><span class="k">Status</span><span class="v"><span class="status ${esc(s.status)}"><span class="dot"></span>${esc(s.status.charAt(0).toUpperCase()+s.status.slice(1))}</span></span></div>
       <div class="field"><span class="k">Students enrolled</span><span class="v mono">${Number(s.students).toLocaleString()}</span></div>
@@ -317,6 +323,13 @@ function openNewSchoolDrawer(){
     <label class="formlabel" for="nEmail">Contact email</label>
     <input type="text" id="nEmail" placeholder="e.g. a.rossi@school.edu">
 
+    <label class="formlabel" for="nChain">Chain / owner group</label>
+    <select id="nChain" style="width:100%">
+      <option value="">No chain (independent school)</option>
+      ${chains.map(c => `<option value="${c.id}">${esc(c.name)} — owner @${esc(c.owner_username)}</option>`).join('')}
+    </select>
+    ${chains.length === 0 ? '<p style="font-size:12px;color:var(--muted);margin:4px 0 0">No chains yet — create one on the Chains page.</p>' : ''}
+
     <div class="btn-row" style="margin-top:22px">
       <button class="btn" id="createSchoolBtn" onclick="createSchool()">Add to registry</button>
       <button class="btn ghost" onclick="closeDrawer()">Cancel</button>
@@ -334,12 +347,13 @@ async function createSchool(){
   const renewal = document.getElementById('nRenewal').value || null;
   const contact = document.getElementById('nContact').value.trim();
   const email = document.getElementById('nEmail').value.trim();
+  const chainId = document.getElementById('nChain').value || null;
 
   const btn = document.getElementById('createSchoolBtn');
   if(btn){ btn.disabled = true; btn.textContent = 'Adding\u2026'; }
 
   try{
-    const data = await apiPost('/schools/create/', { name, city, package: pkg, students, renewal, contact, email });
+    const data = await apiPost('/schools/create/', { name, city, package: pkg, students, renewal, contact, email, chain_id: chainId });
     schools.push(data.school);
     renderAll();
     closeDrawer();

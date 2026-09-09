@@ -31,4 +31,10 @@ urlpatterns = [
     path("impersonate/<int:school_id>/start/", views.impersonate_start, name="impersonate-start"),
     path("impersonate/end/", views.impersonate_end, name="impersonate-end"),
     path("workspace/", views.workspace, name="workspace"),
+    path("chains/", views.chains, name="chains"),
+    path("chains/create/", views.chain_create, name="chain-create"),
+    path("chains/<int:chain_id>/assign/", views.chain_assign, name="chain-assign"),
+    path("schools/<int:school_id>/unassign/", views.chain_unassign, name="chain-unassign"),
+    path("chains/<int:chain_id>/delete/", views.chain_delete, name="chain-delete"),
+    path("chains/<int:chain_id>/owner-password/", views.chain_owner_password, name="chain-owner-password"),
 ]

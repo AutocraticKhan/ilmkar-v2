@@ -27,18 +27,52 @@ def _is_superuser(user):
     return user.is_active and user.is_superuser
 
 
+def _is_owner(user):
+    """True when the user may use the owner dashboard.
+
+    Owners are accounts assigned to own one or more schools (school.owner),
+    accounts that own a chain/group, or accounts holding an Owner-role
+    membership on a school (Users page). Implemented in school_owner.utils
+    to keep the apps decoupled (imported lazily to avoid a cycle).
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from school_owner.utils import is_owner
+
+    return is_owner(user)
+
+
+superuser_required = user_passes_test(_is_superuser, login_url="/")
+
+
+# Shown when a valid account has no console access. Broad on purpose:
+# school-level accounts (created on the Users page) are NOT owner logins
+# until the superuser assigns them as a school's owner.
+_NO_CONSOLE_ACCESS_MSG = (
+    "This account can't sign in to a console. Only platform operators and "
+    "school/group owners can. Ask the platform operator to assign owner "
+    "access to your account."
+)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
 def login_view(request):
-    """Login page served at the home URL."""
+    """Login page served at the home URL.
+
+    Routes by account type: superusers reach the operator console, chain
+    owners reach their group dashboard, everyone else is refused.
+    """
     if request.user.is_authenticated:
         if request.user.is_superuser:
             return redirect("SAAS_admin:dashboard")
+        if _is_owner(request.user):
+            return redirect("school_owner:dashboard")
         return render(
             request,
             "SAAS_admin/login.html",
-            {"error": "This account does not have operator access."},
+            {"error": _NO_CONSOLE_ACCESS_MSG},
         )
 
     error = None
@@ -50,7 +84,12 @@ def login_view(request):
             if _is_superuser(user):
                 login(request, user)
                 return redirect("SAAS_admin:dashboard")
-            error = "This account does not have operator access."
+            # Owners: accounts assigned to own schools (or a chain/group), or
+            # holding an Owner-role membership on a school.
+            if _is_owner(user):
+                login(request, user)
+                return redirect("school_owner:dashboard")
+            error = _NO_CONSOLE_ACCESS_MSG
         else:
             error = "Invalid username or password."
 
@@ -61,12 +100,31 @@ def login_view(request):
 @superuser_required
 def dashboard(request):
     schools = [
-        s.as_dict() for s in School.objects.annotate(_user_count=Count("memberships"))
+        s.as_dict() for s in School.objects.select_related("chain")
+        .annotate(_user_count=Count("memberships"))
     ]
+    # Existing accounts the superuser can assign as a school's owner from
+    # the add-school drawer. Any active non-operator account is eligible —
+    # the owner flag helps the UI group them.
+    owners = [
+        {
+            "id": u.pk,
+            "username": u.get_username(),
+            "email": u.email or "",
+            "is_owner": School.objects.filter(owner=u).exists(),
+        }
+        for u in User.objects.filter(is_active=True)
+        .exclude(is_superuser=True)
+        .order_by("username")
+    ]
+    # Chains remain supported for bulk assignment (Chains page).
+    from school_owner.models import Chain
+
+    chains = [c.as_dict() for c in Chain.objects.all()]
     return render(
         request,
         "SAAS_admin/dashboard.html",
-        {"schools": schools},
+        {"schools": schools, "chains": chains, "owners": owners},
     )
 
 
@@ -141,9 +199,32 @@ def school_create(request):
                 {"error": "Invalid renewal date. Use YYYY-MM-DD."}, status=400
             )
 
+    # Owner assignment: the superuser picks an EXISTING account (owner_id);
+    # that account owns the school and the school joins their group/chain.
+    owner = None
+    owner_id = data.get("owner_id")
+    if owner_id not in (None, "", "null"):
+        owner = (
+            User.objects.filter(pk=owner_id, is_active=True)
+            .exclude(is_superuser=True)
+            .first()
+        )
+        if owner is None:
+            return JsonResponse(
+                {"error": "Unknown owner account."}, status=400
+            )
+
+    # Fallback: assign to an existing chain directly (Chains page flow).
+    chain = None
+    if owner is None and data.get("chain_id") not in (None, "", "null"):
+        chain, chain_err = _resolve_chain(data.get("chain_id"))
+        if chain_err:
+            return chain_err
+
     school = School.objects.create(
         name=name,
         city=city,
+        chain=chain,
         package=package,
         students=students,
         renewal=renewal,
@@ -151,7 +232,27 @@ def school_create(request):
         contact=(data.get("contact") or "").strip() or "\u2014",
         email=(data.get("email") or "").strip() or "\u2014",
     )
+    if owner is not None:
+        from school_owner.utils import assign_owner
+
+        assign_owner(school, owner)
     return JsonResponse({"school": school.as_dict()}, status=201)
+
+
+def _resolve_chain(chain_id):
+    """Resolve a chain id strictly — returns (chain, error_response).
+
+    Used anywhere the operator console assigns a school to a chain so a bad
+    id never silently drops the assignment.
+    """
+    if chain_id in (None, "", "null"):
+        return None, None
+    from school_owner.models import Chain
+
+    try:
+        return Chain.objects.get(pk=int(chain_id)), None
+    except (Chain.DoesNotExist, TypeError, ValueError):
+        return None, JsonResponse({"error": "Unknown chain."}, status=400)
 
 
 @require_POST
@@ -189,6 +290,41 @@ def school_status(request, school_id):
 
     school.status = status
     school.save(update_fields=["status"])
+    return JsonResponse({"school": school.as_dict()})
+
+
+@require_POST
+@superuser_required
+def school_owner_set(request, school_id):
+    """Assign an EXISTING account as the school's owner (or clear it).
+
+    The account doesn't need any special role beforehand — assignment alone
+    makes it an owner. The school joins the owner's group so the owner
+    dashboard shows it alongside their other schools.
+    """
+    school = _school_or_404(school_id)
+    if school is None:
+        return JsonResponse({"error": "School not found."}, status=404)
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    owner = None
+    owner_id = data.get("owner_id")
+    if owner_id not in (None, "", "null"):
+        owner = (
+            User.objects.filter(pk=owner_id, is_active=True)
+            .exclude(is_superuser=True)
+            .first()
+        )
+        if owner is None:
+            return JsonResponse(
+                {"error": "Unknown owner account."}, status=400
+            )
+
+    from school_owner.utils import assign_owner
+
+    assign_owner(school, owner)
     return JsonResponse({"school": school.as_dict()})
 
 
@@ -651,4 +787,167 @@ def workspace(request):
             "open_tickets": open_tickets,
         },
     )
+
+
+# ---------- chains (groups of schools with a single owner) ----------
+
+
+@login_required
+@superuser_required
+def chains(request):
+    """Chains page: create groups, assign schools, manage owner logins."""
+    from school_owner.models import Chain
+
+    chains_ = [
+        c.as_dict() | {"schools": [s.as_dict() for s in c.schools.all()]}
+        for c in Chain.objects.all()
+    ]
+    schools = [
+        s.as_dict() for s in School.objects.select_related("chain")
+        .annotate(_user_count=Count("memberships"))
+    ]
+    return render(
+        request,
+        "SAAS_admin/chains.html",
+        {"chains": chains_, "schools": schools},
+    )
+
+
+@require_POST
+@superuser_required
+def chain_create(request):
+    """Create a chain and (optionally) its owner login in one step.
+
+    If ``owner_username`` is given and does not exist yet, the account is
+    created (with ``owner_password``). If the username exists, that account
+    becomes the owner — best practice for reusing an existing staff account.
+    The owner must not already own another chain or be a superuser.
+    """
+    from school_owner.models import Chain
+
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    name = (data.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"error": "Chain name is required."}, status=400)
+
+    username = (data.get("owner_username") or "").strip()
+    if not username:
+        return JsonResponse({"error": "Owner username is required."}, status=400)
+
+    owner = User.objects.filter(username__iexact=username).first()
+    if owner is None:
+        password = data.get("owner_password") or ""
+        if not password:
+            return JsonResponse(
+                {"error": "Password is required for a new owner account."},
+                status=400,
+            )
+        owner = User(
+            username=username,
+            email=(data.get("owner_email") or "").strip(),
+            first_name=(data.get("owner_first_name") or "").strip(),
+            last_name=(data.get("owner_last_name") or "").strip(),
+        )
+        try:
+            validate_password(password, owner)
+        except ValidationError as e:
+            return JsonResponse({"error": " ".join(e.messages)}, status=400)
+        owner.set_password(password)
+        owner.save()
+    elif owner.is_superuser:
+        return JsonResponse(
+            {"error": "Operator accounts cannot own a chain."}, status=400
+        )
+
+    if getattr(owner, "owned_chain", None) is not None:
+        return JsonResponse(
+            {"error": f"@{owner.get_username()} already owns a chain."}, status=400
+        )
+
+    chain = Chain.objects.create(name=name, owner=owner)
+    return JsonResponse({"chain": chain.as_dict()}, status=201)
+
+
+@require_POST
+@superuser_required
+def chain_assign(request, chain_id):
+    """Assign an existing school to a chain. A school belongs to at most one
+    chain — assigning re-parents it from any previous chain."""
+    from school_owner.models import Chain
+
+    chain = Chain.objects.filter(pk=chain_id).first()
+    if chain is None:
+        return JsonResponse({"error": "Chain not found."}, status=404)
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    if data.get("school_id") in (None, "", "null"):
+        return JsonResponse({"error": "Pick a school."}, status=400)
+    school = School.objects.filter(pk=data.get("school_id")).first()
+    if school is None:
+        return JsonResponse({"error": "School not found."}, status=404)
+
+    school.chain = chain
+    school.save(update_fields=["chain"])
+    return JsonResponse({"school": school.as_dict(), "chain": chain.as_dict()})
+
+
+@require_POST
+@superuser_required
+def chain_unassign(request, school_id):
+    """Remove a school from its chain (school stays in the registry)."""
+    school = School.objects.filter(pk=school_id).first()
+    if school is None:
+        return JsonResponse({"error": "School not found."}, status=404)
+    if school.chain_id is None:
+        return JsonResponse({"error": "This school is not in a chain."}, status=400)
+    school.chain = None
+    school.save(update_fields=["chain"])
+    return JsonResponse({"school": school.as_dict()})
+
+
+@require_POST
+@superuser_required
+def chain_delete(request, chain_id):
+    """Delete a chain. Schools remain in the registry (FK is SET_NULL) and
+    the owner account is not touched."""
+    from school_owner.models import Chain
+
+    chain = Chain.objects.filter(pk=chain_id).first()
+    if chain is None:
+        return JsonResponse({"error": "Chain not found."}, status=404)
+    name = chain.name
+    owner_username = chain.owner.get_username()
+    chain.delete()
+    return JsonResponse({"ok": True, "name": name, "owner_username": owner_username})
+
+
+@require_POST
+@superuser_required
+def chain_owner_password(request, chain_id):
+    """Set a new password for the chain's owner login."""
+    from school_owner.models import Chain
+
+    chain = Chain.objects.filter(pk=chain_id).select_related("owner").first()
+    if chain is None:
+        return JsonResponse({"error": "Chain not found."}, status=404)
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    password = data.get("password") or ""
+    if not password:
+        return JsonResponse({"error": "Password is required."}, status=400)
+    try:
+        validate_password(password, chain.owner)
+    except ValidationError as e:
+        return JsonResponse({"error": " ".join(e.messages)}, status=400)
+    chain.owner.set_password(password)
+    chain.owner.save(update_fields=["password"])
+    return JsonResponse({"ok": True, "owner": chain.owner.get_username()})
+
 
