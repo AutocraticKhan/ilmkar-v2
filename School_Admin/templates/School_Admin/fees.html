@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fees — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="fees" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Fees</h1>
+        <p>{{ period }} &middot; {{ students|length }} active students billed</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="openHeadDrawer()">Add fee head</button>
+        <button class="btn" onclick="openInvoiceDrawer()">Issue invoice</button>
+      </div>
+    </div>
+
+    {% if defaulters %}
+    <div class="chips">
+      <div class="chip"><b class="mono">{{ defaulters|length }}</b> defaulting students</div>
+      <div class="chip"><b class="mono">Rs {{ overdue_amount|floatformat:0 }}</b> overdue total</div>
+    </div>
+    {% endif %}
+
+    <div class="section-title" style="border:none;padding-top:0">Defaulter list</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Class</th>
+            <th>Overdue invoices</th>
+            <th>Total owed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in defaulters %}
+          <tr>
+            <td>{{ d.student__full_name }}</td>
+            <td>{{ d.student__class_section__grade }}{% if d.student__class_section__section %}-{{ d.student__class_section__section }}{% endif %}</td>
+            <td>{{ d.invoices }}</td>
+            <td class="amount">Rs {{ d.owed|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Fee structure</div>
+    {% if fee_heads %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Head</th>
+            <th>Applies to</th>
+            <th>Frequency</th>
+            <th>Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in fee_heads %}
+          <tr data-head-id="{{ h.id }}">
+            <td>{{ h.name }}</td>
+            <td>{{ h.class_section }}</td>
+            <td><span class="badge {{ h.frequency }}">{{ h.frequency_display }}</span></td>
+            <td class="amount">{{ h.amount|floatformat:0 }}</td>
+            <td>
+              {% if h.is_active %}
+              <button class="btn small ghost danger" onclick="deleteHead({{ h.id }})">Deactivate</button>
+              {% else %}
+              <span class="badge inactive">Off</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No fee heads yet</h3><p>Add fee heads (tuition, transport, exam fee…) to structure fees by class.</p></div>
+    {% endif %}
+
+    <div class="section-title">Invoices &amp; payments</div>
+    {% if invoices %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Head</th>
+            <th>Period</th>
+            <th>Amount</th>
+            <th>Paid</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in invoices %}
+          <tr data-invoice-id="{{ inv.id }}">
+            <td>{{ inv.student_name }}<div class="small-note">{{ inv.class_section }}</div></td>
+            <td>{{ inv.fee_head }}</td>
+            <td>{{ inv.period }}</td>
+            <td class="amount">Rs {{ inv.amount|floatformat:0 }}</td>
+            <td class="amount">{% if inv.paid_amount %}Rs {{ inv.paid_amount|floatformat:0 }}{% else %}&mdash;{% endif %}</td>
+            <td>{{ inv.due_date }}</td>
+            <td><span class="badge {{ inv.status }}">{{ inv.status_display }}</span></td>
+            <td>
+              {% if inv.status != "paid" %}
+              <button class="btn small" onclick="openPayDrawer({{ inv.id }})">Record payment</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No invoices yet</h3><p>Issue the first invoice to begin collecting fees.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ fee_heads|json_script:"fee-heads-data" }}
+{{ students|json_script:"students-data" }}
+{{ invoices|json_script:"invoices-data" }}
+{{ sections|json_script:"sections-data" }}
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+<script src="{% static 'School_Admin/js/fees.js' %}"></script>
+</body>
+</html>

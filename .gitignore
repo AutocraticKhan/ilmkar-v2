@@ -120,3 +120,4 @@ celerybeat.pid
 *.sage.py
 .docker/
 .dockerignore
+.~lock.Ilmkar_School_Management_SaaS_Architecture_Plan.docx#

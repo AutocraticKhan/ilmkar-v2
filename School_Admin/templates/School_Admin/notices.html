@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notices — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="notices" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Notices &amp; circulars</h1>
+        <p id="subhead">{{ notices|length }} notice{{ notices|length|pluralize }} posted</p>
+      </div>
+      <button class="btn" onclick="openNoticeDrawer()">Post a notice</button>
+    </div>
+
+    {% for n in notices %}
+    <div class="card" style="margin-bottom:14px">
+      <div class="f-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <span class="badge {% if n.priority == 'urgent' %}urgent{% elif n.priority == 'important' %}important{% else %}info{% endif %}">{{ n.priority|title }}</span>
+          <span class="badge activity">{{ n.audience_display }}</span>
+          <h3 style="display:inline;margin-left:8px">{{ n.title }}</h3>
+        </div>
+        <button class="link-like" onclick="deleteNotice({{ n.id }})">Delete</button>
+      </div>
+      <div class="f-body">{{ n.body|linebreaksbr }}</div>
+      <div class="f-meta">Sent to {{ n.audience_display }} &middot; by {{ n.author }} &middot; {{ n.created_at }}</div>
+    </div>
+    {% empty %}
+    <div class="empty"><h3>No notices yet</h3><p>Post a circular to staff, students, or parents.</p></div>
+    {% endfor %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ notices|json_script:"notices-data" }}
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+<script src="{% static 'School_Admin/js/notices.js' %}"></script>
+</body>
+</html>

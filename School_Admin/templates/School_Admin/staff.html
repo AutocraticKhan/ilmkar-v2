@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="staff" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Staff</h1>
+        <p id="subhead">{{ active_staff }} active staff &middot; {{ pending_leaves }} pending leave request{{ pending_leaves|pluralize }}</p>
+      </div>
+      <button class="btn" onclick="openStaffDrawer()">Add staff member</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Designation</th>
+            <th>Department</th>
+            <th>Contact</th>
+            <th>Joined</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in staff %}
+          <tr data-staff-id="{{ m.id }}">
+            <td>
+              <span class="avatar-dot">{{ m.full_name|slice:":1" }}</span>{{ m.full_name }}
+            </td>
+            <td>{{ m.designation }}</td>
+            <td>{{ m.department }}</td>
+            <td>
+              {{ m.phone }}<div class="small-note">{{ m.email }}</div>
+            </td>
+            <td>{{ m.join_date|default:"&mdash;" }}</td>
+            <td><span class="badge {% if m.is_active %}muted{% else %}inactive{% endif %}">{% if m.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+            <td>
+              <button class="btn small {% if m.is_active %}ghost danger{% else %}ghost{% endif %}" onclick="toggleStaff({{ m.id }})">
+                {% if m.is_active %}Deactivate{% else %}Re-activate{% endif %}
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7"><div class="empty"><h3>No staff yet</h3><p>Add your first staff member to manage them here.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Leave requests</div>
+    <div class="small-note" style="margin-bottom:14px">
+      Record and decide staff leave here — see the <a href="{% url 'School_Admin:approvals' %}">Approvals</a> page for pending decisions.
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ staff|json_script:"staff-data" }}
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+<script src="{% static 'School_Admin/js/staff.js' %}"></script>
+</body>
+</html>

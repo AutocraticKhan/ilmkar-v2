@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="reports" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Reports</h1>
+        <p>Filtered by class / section — share the URL to send the same view.</p>
+      </div>
+    </div>
+
+    <form class="filter-bar" method="get" action="{% url 'School_Admin:reports' %}">
+      <select name="view" onchange="this.form.submit()">
+        <option value="attendance" {% if view == 'attendance' %}selected{% endif %}>Attendance</option>
+        <option value="academic" {% if view == 'academic' %}selected{% endif %}>Academic (exams)</option>
+        <option value="financial" {% if view == 'financial' %}selected{% endif %}>Financial</option>
+      </select>
+      <select name="section" onchange="this.form.submit()">
+        <option value="all">All classes</option>
+        {% for c in sections %}
+        <option value="{{ c.id }}" {% if section and section.id == c.id %}selected{% endif %}>{{ c.label }}</option>
+        {% endfor %}
+      </select>
+      {% if view == 'attendance' %}
+      <select name="days" onchange="this.form.submit()">
+        <option value="7">Last 7 days</option>
+        <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+        <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+        <option value="180" {% if days == 180 %}selected{% endif %}>Last 180 days</option>
+      </select>
+      {% endif %}
+      <noscript><button class="btn small" type="submit">Apply</button></noscript>
+    </form>
+
+    {% if view == 'attendance' %}
+      <div class="chips">
+        <div class="chip">Average attendance<b>{% if attendance_avg is not None %}{{ attendance_avg|floatformat:1 }}%{% else %}&mdash;{% endif %}</b></div>
+        <div class="chip">Period<b>{{ days }} days</b></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>{% if section %}Date{% else %}Class{% endif %}</th><th>Present</th><th>Absent</th><th>Attendance %</th></tr>
+          </thead>
+          <tbody>
+            {% for row in attendance_rows %}
+            <tr>
+              <td>{{ row.label }}</td>
+              <td>{{ row.present }}</td>
+              <td>{{ row.absent }}</td>
+              <td>{% if row.pct is not None %}{{ row.pct|floatformat:1 }}%{% else %}&mdash;{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4"><div class="empty"><h3>No attendance recorded</h3><p>Attendance snapshots appear here once recorded.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% elif view == 'academic' %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Exam</th><th>Class</th><th>Subject</th><th>Date</th><th>Average</th></tr>
+          </thead>
+          <tbody>
+            {% for e in exam_rows %}
+            <tr>
+              <td>{{ e.exam_name }}</td>
+              <td>{{ e.class_section }}</td>
+              <td>{{ e.subject }}</td>
+              <td>{{ e.exam_date }}</td>
+              <td>{% if e.average_pct is not None %}{{ e.average_pct|floatformat:1 }}%{% else %}<span class="badge pending">Upcoming</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5"><div class="empty"><h3>No exams on record</h3><p>Exam records appear here once recorded.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% else %}
+      <div class="chips">
+        <div class="chip">Collected this month<b class="mono">Rs {{ fees.collected_month|floatformat:0 }}</b></div>
+        <div class="chip">Invoiced this month<b class="mono">Rs {{ fees.invoiced_month|floatformat:0 }}</b></div>
+        <div class="chip">Overdue<b class="mono">Rs {{ fees.overdue_amount|floatformat:0 }}</b></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Period</th><th>Invoiced</th><th>Collected</th><th>Outstanding</th><th>Collection %</th></tr>
+          </thead>
+          <tbody>
+            {% for row in financial_rows %}
+            <tr>
+              <td>{{ row.period }}{% if row.current %} <span class="badge muted">current</span>{% endif %}</td>
+              <td class="amount">Rs {{ row.invoiced|floatformat:0 }}</td>
+              <td class="amount">Rs {{ row.collected|floatformat:0 }}</td>
+              <td class="amount">Rs {{ row.outstanding|floatformat:0 }}</td>
+              <td>{% if row.collection_pct is not None %}{{ row.collection_pct|floatformat:1 }}%{% else %}&mdash;{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5"><div class="empty"><h3>No financial data yet</h3><p>Monthly invoiced-vs-collected history appears here.</p></div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+</body>
+</html>

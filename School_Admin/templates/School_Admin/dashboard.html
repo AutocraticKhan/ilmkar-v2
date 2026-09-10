@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>{{ school.name }}</h1>
+        <p>{{ school.city }} &middot; {{ fees.period }}</p>
+      </div>
+      <a class="btn ghost" href="{% url 'School_Admin:reports' %}">All reports</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Attendance today</div>
+        <div class="value">{% if attendance_today is not None %}{{ attendance_today|floatformat:1 }}%{% else %}&mdash;{% endif %}</div>
+        <div class="delta">{% if attendance_30d is not None %}{{ attendance_30d|floatformat:1 }}% average (30 days){% else %}No attendance recorded yet{% endif %}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Fees collected today</div>
+        <div class="value">{{ fees.collected_today|floatformat:0 }}</div>
+        <div class="delta">Rs {{ fees.collected_month|floatformat:0 }} this month ({{ fees.collection_pct|default:"0"|floatformat:1 }}%)</div>
+      </div>
+      <div class="stat">
+        <div class="label">Pending admissions</div>
+        <div class="value">{{ pending_admissions_count }}</div>
+        <div class="delta">{{ active_students }} active students</div>
+      </div>
+      <div class="stat">
+        <div class="label">Outstanding this month</div>
+        <div class="value">Rs {{ fees.outstanding_month|floatformat:0 }}</div>
+        <div class="delta">Rs {{ fees.overdue_amount|floatformat:0 }} overdue ({{ fees.overdue_count }})</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Admissions awaiting decision</h3>
+        <div class="sub">Applications submitted that still need your approval.</div>
+        {% if pending_admissions %}
+          <div class="mini-list">
+            {% for app in pending_admissions %}
+              <div class="mini-row">
+                <div>
+                  <div class="who">{{ app.applicant_name }}</div>
+                  <div class="what">{{ app.class_section|default:"Class not assigned" }} &middot; {{ app.created_at }}</div>
+                </div>
+                <a class="btn small ghost" href="{% url 'School_Admin:students' %}#admissions">Review</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>All caught up</h3>
+            <p>No pending admission applications.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Upcoming exams</h3>
+        <div class="sub">Next scheduled papers, soonest first.</div>
+        {% if upcoming_exams %}
+          <div class="mini-list">
+            {% for exam in upcoming_exams %}
+              <div class="mini-row">
+                <div>
+                  <div class="who">{{ exam.exam_name }}</div>
+                  <div class="what">{{ exam.class_section }} &middot; {{ exam.subject }}</div>
+                </div>
+                <span class="mono small-note">{{ exam.exam_date }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>Nothing scheduled</h3>
+            <p>No upcoming exams on record.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+</body>
+</html>

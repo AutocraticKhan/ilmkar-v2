@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Students — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="students" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Student records</h1>
+        <p id="subhead">{{ students|length }} students &middot; {{ pending_admissions }} admission{{ pending_admissions|pluralize }} pending</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="openAdmissionDrawer()">Record admission application</button>
+        <button class="btn" onclick="openStudentDrawer()">Add student</button>
+      </div>
+    </div>
+
+    <div class="section-title" id="admissions" style="border:none;padding-top:0">Admission applications</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th>Class</th>
+            <th>Guardian</th>
+            <th>Applied</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+          <tr data-app-id="{{ app.id }}">
+            <td>{{ app.applicant_name }}</td>
+            <td>{{ app.class_section }}</td>
+            <td>{{ app.guardian_name }}<div class="small-note">{{ app.guardian_phone }}</div></td>
+            <td>{{ app.created_at }}</td>
+            <td><span class="badge {% if app.status == 'pending' %}pending{% elif app.status == 'approved' %}approved{% elif app.status == 'rejected' %}rejected{% else %}waitlisted{% endif %}">{{ app.status|title }}</span></td>
+            <td>
+              {% if app.status == "pending" %}
+              <div class="btn-row">
+                <button class="btn small" onclick="openApproveDrawer({{ app.id }})">Approve</button>
+                <button class="btn small danger" onclick="decideAdmission({{ app.id }}, 'rejected')">Reject</button>
+              </div>
+              {% else %}
+              <span class="small-note">{{ app.decision_note|default:"&mdash;" }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6"><div class="empty"><h3>No applications yet</h3><p>Record an admission application to start the intake.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Enrolled students</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Admission no.</th>
+            <th>Name</th>
+            <th>Class</th>
+            <th>Guardian</th>
+            <th>Monthly fee</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr data-student-id="{{ s.id }}">
+            <td class="mono">{{ s.admission_no }}</td>
+            <td>{{ s.full_name }}</td>
+            <td>{{ s.class_section }}</td>
+            <td>{{ s.guardian_name }}<div class="small-note">{{ s.guardian_phone }}</div></td>
+            <td class="amount">{{ s.monthly_fee|floatformat:0 }}</td>
+            <td>
+              <select class="status-select" data-student-id="{{ s.id }}" onchange="changeStatus(this)">
+                <option value="active" {% if s.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if s.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="left" {% if s.status == 'left' %}selected{% endif %}>Left school</option>
+                <option value="graduated" {% if s.status == 'graduated' %}selected{% endif %}>Graduated</option>
+              </select>
+            </td>
+            <td><span class="badge {{ s.status }}">{{ s.status_display }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7"><div class="empty"><h3>No students yet</h3><p>Add your first student or approve a pending admission.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ students|json_script:"students-data" }}
+{{ applications|json_script:"applications-data" }}
+{{ sections|json_script:"sections-data" }}
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+<script src="{% static 'School_Admin/js/students.js' %}"></script>
+</body>
+</html>

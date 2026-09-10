@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Front desk — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "School_Admin/_sidebar.html" with nav_active="frontdesk" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Complaints &amp; front desk</h1>
+        <p id="subhead">{{ open_complaints }} open complaint{{ open_complaints|pluralize }} &middot; {{ follow_ups }} follow-up{{ follow_ups|pluralize:'s' }} needed</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="openEntryDrawer()">Log a visit / call</button>
+        <button class="btn" onclick="openComplaintDrawer()">Log a complaint</button>
+      </div>
+    </div>
+
+    <div class="section-title" style="border:none;padding-top:0">Complaints</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Complainant</th>
+            <th>Source</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in complaints %}
+          <tr data-complaint-id="{{ c.id }}">
+            <td>
+              {{ c.subject }}
+              {% if c.details %}<div class="small-note">{{ c.details|truncatechars:90 }}</div>{% endif %}
+            </td>
+            <td>{{ c.complainant_name }}<div class="small-note">{{ c.contact }}</div></td>
+            <td><span class="badge muted">{{ c.source_display }}</span></td>
+            <td>{{ c.category_display }}</td>
+            <td>
+              <span class="badge {{ c.status }}">{{ c.status|title }}</span>
+              {% if c.resolution_note %}<div class="small-note">{{ c.resolution_note|truncatechars:60 }}</div>{% endif %}
+            </td>
+            <td>
+              <div class="btn-row">
+                <select class="status-select" data-complaint-id="{{ c.id }}" onchange="changeComplaintStatus(this)">
+                  <option value="open" {% if c.status == 'open' %}selected{% endif %}>Open</option>
+                  <option value="in_progress" {% if c.status == 'in_progress' %}selected{% endif %}>In progress</option>
+                  <option value="resolved" {% if c.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                  <option value="closed" {% if c.status == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+                {% if c.status == 'open' or c.status == 'in_progress' %}
+                <button class="btn small ghost" onclick="resolveComplaint({{ c.id }})">Resolve</button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6"><div class="empty"><h3>No complaints</h3><p>Complaints logged at the front desk show up here.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Front desk log</div>
+    {% if entries %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Person</th>
+            <th>Summary</th>
+            <th>Handled by</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr>
+            <td><span class="badge activity">{{ e.entry_type_display }}</span>{% if e.follow_up_needed %} <span class="badge important">follow-up</span>{% endif %}</td>
+            <td>{{ e.person }}</td>
+            <td>{{ e.summary }}</td>
+            <td>{{ e.handled_by }}</td>
+            <td>{{ e.occurred_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No entries yet</h3><p>Visitors, enquiries, phone calls and deliveries are logged here.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ complaints|json_script:"complaints-data" }}
+<script src="{% static 'School_Admin/js/school_common.js' %}"></script>
+<script src="{% static 'School_Admin/js/frontdesk.js' %}"></script>
+</body>
+</html>

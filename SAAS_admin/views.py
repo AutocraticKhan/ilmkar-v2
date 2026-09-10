@@ -42,6 +42,21 @@ def _is_owner(user):
     return is_owner(user)
 
 
+def _is_school_admin(user):
+    """True when the user may use the school admin dashboard.
+
+    Principals hold a principal-role membership on one school. Imported
+    lazily like _is_owner to keep the apps decoupled.
+    TODO(integration): when teacher/front-desk apps land, their roles
+    route here too.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from School_Admin.utils import is_school_admin
+
+    return is_school_admin(user)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
@@ -49,9 +64,9 @@ superuser_required = user_passes_test(_is_superuser, login_url="/")
 # school-level accounts (created on the Users page) are NOT owner logins
 # until the superuser assigns them as a school's owner.
 _NO_CONSOLE_ACCESS_MSG = (
-    "This account can't sign in to a console. Only platform operators and "
-    "school/group owners can. Ask the platform operator to assign owner "
-    "access to your account."
+    "This account can't sign in to a console. Only platform operators, "
+    "school/group owners and school admins (principals) can. Ask the "
+    "platform operator to assign a role to your account."
 )
 
 
@@ -69,6 +84,8 @@ def login_view(request):
             return redirect("SAAS_admin:dashboard")
         if _is_owner(request.user):
             return redirect("school_owner:dashboard")
+        if _is_school_admin(request.user):
+            return redirect("School_Admin:dashboard")
         return render(
             request,
             "SAAS_admin/login.html",
@@ -89,6 +106,10 @@ def login_view(request):
             if _is_owner(user):
                 login(request, user)
                 return redirect("school_owner:dashboard")
+            # School admins: principal-role memberships on a school.
+            if _is_school_admin(user):
+                login(request, user)
+                return redirect("School_Admin:dashboard")
             error = _NO_CONSOLE_ACCESS_MSG
         else:
             error = "Invalid username or password."
