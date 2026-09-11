@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Parents/_head.html" with title="Today" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Parents/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>{% now "l, d F Y" %}</h1>
+        <p>
+          {% if profile %}Welcome back, {{ profile.guardian_name }}.{% else %}Welcome to the family dashboard.{% endif %}
+          {% if child %}{{ child.full_name }} · {{ child.class_section.label|default:"—" }} · Admission no. {{ child.admission_no }}{% endif %}
+        </p>
+      </div>
+      <a class="btn small ghost" href="{% url 'Parents:messages' %}">Message a teacher</a>
+    </div>
+
+    {% if not children %}
+      <div class="card">
+        <div class="empty" style="padding:34px 10px">
+          <h3>No children linked yet</h3>
+          <p>This account isn't linked to any student records yet. Ask the school admin to link your children (or to set the guardian name on their records).</p>
+        </div>
+      </div>
+    {% else %}
+{% if sibling_snapshots|length > 1 %}
+        <div class="card" style="margin-bottom:22px">
+          <h3>Your children</h3>
+          <div class="sub">Their day at school at a glance — switch the sidebar selector (or tap a child) for the full digest.</div>
+          <table class="table">
+            <thead>
+              <tr><th>Child</th><th>Today</th><th>Fees outstanding</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for s in sibling_snapshots %}
+                <tr>
+                  <td>{{ s.student.full_name }} <span class="small-note">· {{ s.student.class_section.label|default:"no class" }}</span></td>
+                  <td>
+                    {% if s.attendance %}
+                      <span class="mark-{{ s.attendance.mark }}">{{ s.attendance.get_mark_display }}</span>
+                    {% else %}<span class="small-note">not marked yet</span>{% endif %}
+                  </td>
+                  <td class="amount">
+                    {% if s.owed_count %}{{ s.owed|floatformat:2 }} ({{ s.owed_count }} invoice{{ s.owed_count|pluralize }}){% else %}clear{% endif %}
+                  </td>
+                  <td><a class="btn small ghost" href="?child={{ s.student.pk }}">Full digest</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Attendance today</div>
+          <div class="value">{% if digest.attendance %}{{ digest.attendance.get_mark_display }}{% else %}—{% endif %}</div>
+          <div class="delta{% if digest.attendance and digest.attendance.mark == 'absent' %} down{% endif %}">
+            {% if digest.attendance %}{{ digest.attendance.date|date:"D" }}{% else %}not marked yet{% endif %}
+          </div>
+        </div>
+        <div class="stat">
+          <div class="label">Classes today</div>
+          <div class="value">{{ digest.slots|length }}</div>
+          <div class="delta">{{ child.class_section.label|default:"no class assigned" }}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Homework open</div>
+          <div class="value">{{ open_count }}</div>
+          <div class="delta{% if overdue_assignments|length %} down{% endif %}">{{ overdue_assignments|length }} overdue</div>
+        </div>
+        <div class="stat">
+          <div class="label">Fees outstanding</div>
+          <div class="value">{% if fees_due_count %}{{ fees_due_amount|floatformat:2 }}{% else %}0{% endif %}</div>
+          <div class="delta{% if fees_due_count %} down{% endif %}">{{ fees_due_count }} unpaid invoice{{ fees_due_count|pluralize }}</div>
+        </div>
+      </div>
+<div class="card" style="margin-bottom:22px">
+        <h3>Today at school — {{ child.full_name }}</h3>
+        <div class="sub">Everything important about {{ child.full_name }}'s day in one place — no menu hunting.</div>
+
+        <div class="digest-grid">
+          <div class="digest-col">
+            <h4>Attendance</h4>
+            {% if digest.attendance %}
+              <div class="digest-item">
+                <span class="big-mark mark-{{ digest.attendance.mark }}">{{ digest.attendance.get_mark_display }}</span>
+                <span class="what">{{ digest.attendance.marked_by.full_name|default:"marked by the teacher" }}</span>
+              </div>
+            {% else %}
+              <div class="digest-item"><span class="small-note">Attendance hasn't been marked yet today.</span></div>
+            {% endif %}
+
+            <h4>Homework given today</h4>
+            {% if digest.homework %}
+              {% for a in digest.homework %}
+                <div class="digest-item">
+                  <div class="who">{{ a.title }} <span class="badge muted">{{ a.subject }}</span></div>
+                  <div class="what">Due {{ a.due_date }} · {{ a.posted_by.full_name|default:"teacher" }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="digest-item"><span class="small-note">No homework recorded today.</span></div>
+            {% endif %}
+
+            <h4>Note from the teacher</h4>
+            {% if digest.teacher_note and digest.teacher_note.reply %}
+              <div class="digest-item">
+                <div class="who">{{ digest.teacher_note.staff.full_name|default:"Teacher" }} · {{ digest.teacher_note.subject }}</div>
+                <div class="what">{{ digest.teacher_note.reply }}</div>
+              </div>
+            {% else %}
+              <div class="digest-item"><span class="small-note">No teacher note today.</span></div>
+            {% endif %}
+          </div>
+
+          <div class="digest-col">
+            <h4>Today's classes</h4>
+            {% if digest.slots %}
+              {% for slot in digest.slots %}
+                <div class="digest-item">
+                  <div class="who">P{{ slot.period }} · {{ slot.subject }}</div>
+                  <div class="what">{{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }} · {{ slot.teacher.full_name|default:"—" }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="digest-item"><span class="small-note">No classes scheduled today.</span></div>
+            {% endif %}
+
+            <h4>What was taught today</h4>
+            {% if digest.diary %}
+              {% for entry in digest.diary %}
+                <div class="digest-item">
+                  <div class="who">{{ entry.subject }}</div>
+                  <div class="what">{{ entry.taught }}</div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="digest-item"><span class="small-note">No diary entry yet today.</span></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+<div class="grid2">
+        <div class="card">
+          <h3>Needs your attention</h3>
+          <div class="sub">Alerts for {{ child.full_name }}.</div>
+          <div class="mini-list">
+            {% if recent_absences %}
+              <div class="mini-row">
+                <div>
+                  <div class="who" style="color:var(--red)">{{ recent_absences|length }} absent/late day{{ recent_absences|length|pluralize }} this week</div>
+                  <div class="what">most recent {{ recent_absences.0.date }} ({{ recent_absences.0.get_mark_display }})</div>
+                </div>
+                <a class="btn small ghost" href="{% url 'Parents:attendance' %}">Attendance</a>
+              </div>
+            {% else %}
+              <div class="mini-row">
+                <div>
+                  <div class="who">Attendance: all clear</div>
+                  <div class="what">no absences or late marks in the last 7 days</div>
+                </div>
+                <a class="btn small ghost" href="{% url 'Parents:attendance' %}">Attendance</a>
+              </div>
+            {% endif %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{% if open_count %}{{ open_count }} homework task{{ open_count|pluralize }} open{% else %}Homework: all submitted{% endif %}</div>
+                <div class="what">{% if overdue_assignments|length %}<span style="color:var(--red)">{{ overdue_assignments|length }} overdue</span>{% else %}nothing overdue{% endif %}</div>
+              </div>
+              <a class="btn small ghost" href="{% url 'Parents:homework' %}">Homework</a>
+            </div>
+            <div class="mini-row">
+              <div>
+                <div class="who">{% if fees_due_count %}Fees: {{ fees_due_amount|floatformat:2 }} outstanding{% else %}Fees: all clear{% endif %}</div>
+                <div class="what">{% if fees_due_count %}{{ fees_due_count }} unpaid invoice{{ fees_due_count|pluralize }}{% else %}nothing due right now{% endif %}</div>
+              </div>
+              <a class="btn small ghost" href="{% url 'Parents:fees' %}">Fee status</a>
+            </div>
+            <div class="mini-row">
+              <div>
+                <div class="who">{% if upcoming_exams %}{{ upcoming_exams|length }} upcoming exam{{ upcoming_exams|pluralize }}{% else %}No upcoming exams{% endif %}</div>
+                <div class="what">{% if upcoming_exams %}next: {{ upcoming_exams.0.exam_name }} on {{ upcoming_exams.0.exam_date }}{% else %}for this class{% endif %}</div>
+              </div>
+              <a class="btn small ghost" href="{% url 'Parents:results' %}">Results</a>
+            </div>
+            <div class="mini-row">
+              <div>
+                <div class="who">Teacher replies: {% if unread_messages %}{{ unread_messages }} with a reply{% else %}none waiting{% endif %}</div>
+                <div class="what">one thread per child &amp; subject</div>
+              </div>
+              <a class="btn small ghost" href="{% url 'Parents:messages' %}">Messages</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Notices for parents</h3>
+          <div class="sub">Latest circulars from {{ school.name }}.</div>
+          {% if notices %}
+            <div class="mini-list">
+              {% for n in notices %}
+                <div class="mini-row">
+                  <div>
+                    <div class="who">{{ n.title }} <span class="badge {{ n.priority }}">{{ n.get_priority_display }}</span></div>
+                    <div class="what">{{ n.created_at|date:"M d, Y H:i" }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <p><a class="link-like" href="{% url 'Parents:notices' %}">View all notices &rarr;</a></p>
+          {% else %}
+            <div class="empty" style="padding:30px 10px">
+              <h3>No notices</h3>
+              <p>Nothing has been posted for parents yet.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    {% endif %}
+
+  </main>
+</div>
+</body>
+</html>

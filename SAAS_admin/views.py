@@ -82,6 +82,18 @@ def _is_student(user):
     return is_student(user)
 
 
+def _is_parent(user):
+    """True when the user may use the parent/family dashboard at /parent/.
+    Parents hold a parent-role SchoolUser membership (Parents.utils).
+    Imported lazily like _is_owner to keep the apps decoupled.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from Parents.utils import is_parent
+
+    return is_parent(user)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
@@ -90,8 +102,9 @@ superuser_required = user_passes_test(_is_superuser, login_url="/")
 # until the superuser assigns them as a school's owner.
 _NO_CONSOLE_ACCESS_MSG = (
     "This account can't sign in to a console. Only platform operators, "
-    "school/group owners, school admins (principals), teachers/staff and "
-    "students can. Ask the platform operator to assign a role to your account."
+    "school/group owners, school admins (principals), teachers/staff, "
+    "students and parents/families can. Ask the platform operator to "
+    "assign a role to your account."
 )
 
 
@@ -116,6 +129,9 @@ def login_view(request):
         # Students: student-role memberships land at /student/.
         if _is_student(request.user):
             return redirect("Student:dashboard")
+        # Parents/families: parent-role memberships land at /parent/.
+        if _is_parent(request.user):
+            return redirect("Parents:dashboard")
         return render(
             request,
             "SAAS_admin/login.html",
@@ -148,6 +164,10 @@ def login_view(request):
             if _is_student(user):
                 login(request, user)
                 return redirect("Student:dashboard")
+            # Parents/families: parent-role memberships land at /parent/.
+            if _is_parent(user):
+                login(request, user)
+                return redirect("Parents:dashboard")
             error = _NO_CONSOLE_ACCESS_MSG
         else:
             error = "Invalid username or password."

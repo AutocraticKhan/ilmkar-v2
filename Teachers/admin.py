@@ -37,6 +37,7 @@ class TeacherMessageAdmin(admin.ModelAdmin):
     parent portal + principal compose UI land (TODO(placeholder))."""
     list_display = ("staff", "sender_type", "sender_name", "subject", "is_read", "created_at")
     list_filter = ("school", "sender_type", "is_read")
+    search_fields = ("sender_name", "subject", "staff__full_name")
 
 
 admin.site.register((

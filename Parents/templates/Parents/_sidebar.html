@@ -1,0 +1,70 @@
+<aside class="sidebar">
+  <div class="brand">
+    <span class="mark">ILMKAR</span>
+    <span class="sub">{{ school.name }} · Parent</span>
+  </div>
+
+  {% if children %}
+    <div class="child-switch">
+      <span class="cs-label">Viewing child</span>
+      <select id="child-switch" class="cs-select" aria-label="Switch child">
+        {% for c in children %}
+          <option value="{{ c.pk }}" {% if child and child.pk == c.pk %}selected{% endif %}>{{ c.full_name }} · {{ c.class_section.label|default:"—" }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
+
+  <nav class="nav">
+    <a class="{% if nav_active == 'overview' %}active{% endif %}" href="{% url 'Parents:dashboard' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg>
+      Today
+    </a>
+    <a class="{% if nav_active == 'attendance' %}active{% endif %}" href="{% url 'Parents:attendance' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6 9 17l-5-5"/></svg>
+      Attendance
+    </a>
+    <a class="{% if nav_active == 'fees' %}active{% endif %}" href="{% url 'Parents:fees' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M17 5.5c-1-1-2.8-1.5-5-1.5-3 0-5 1.3-5 3.5S9 11 12 11s5 1.3 5 3.5-2 3.5-5 3.5c-2.2 0-4-.5-5-1.5"/></svg>
+      Fee status
+    </a>
+    <a class="{% if nav_active == 'results' %}active{% endif %}" href="{% url 'Parents:results' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H6v18h12V7l-4-4Z"/><path d="M9 12h6M9 16h4"/></svg>
+      Results
+    </a>
+    <a class="{% if nav_active == 'homework' %}active{% endif %}" href="{% url 'Parents:homework' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12v18l-6-3-6 3V3Z"/></svg>
+      Homework
+    </a>
+    <a class="{% if nav_active == 'notices' %}active{% endif %}" href="{% url 'Parents:notices' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11 21 5v12L3 13v-2Z"/><path d="M7 13v5a2 2 0 0 0 4 0"/></svg>
+      Notices
+    </a>
+    <a class="{% if nav_active == 'messages' %}active{% endif %}" href="{% url 'Parents:messages' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+      Message teacher
+    </a>
+  </nav>
+
+  <div class="sidebar-foot">
+    {% if profile %}{{ profile.guardian_name|default:user.get_username }}{% else %}Signed in as {{ user.get_username }}{% endif %}<br>
+    {% if child %}{{ child.full_name }} · {{ child.class_section.label|default:"—" }}{% else %}no children linked yet{% endif %}
+    <form class="logout-form" method="post" action="{% url 'SAAS_admin:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="logout-btn">Log out</button>
+    </form>
+  </div>
+</aside>
+
+{% if children %}
+<script>
+(function () {
+  var sel = document.getElementById("child-switch");
+  if (!sel) return;
+  sel.addEventListener("change", function () {
+    var path = window.location.pathname;
+    window.location.href = path + (path.indexOf("?") === -1 ? "?" : "&") + "child=" + sel.value;
+  });
+})();
+</script>
+{% endif %}

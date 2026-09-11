@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Parents/_head.html" with title="Attendance" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Parents/_sidebar.html" with nav_active="attendance" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Attendance — {{ month_label }}</h1>
+        <p>{% if child %}Every day {{ child.full_name }} was marked, month by month.{% else %}No child linked to this account yet.{% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn small ghost" href="?month={{ prev_month }}{% if child %}&child={{ child.pk }}{% endif %}">&larr; {{ prev_month }}</a>
+        {% if not is_current %}
+          <a class="btn small ghost" href="?month={{ next_month }}{% if child %}&child={{ child.pk }}{% endif %}">{{ next_month }} &rarr;</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{% if pct is not None %}{{ pct }}%{% else %}—{% endif %}</b> Present</div>
+      <div class="chip"><b>{{ counts.present }}</b> Present days</div>
+      <div class="chip"><b>{{ counts.late }}</b> Late</div>
+      <div class="chip"><b>{{ counts.absent }}</b> Absent</div>
+      <div class="chip"><b>{{ counts.excused }}</b> Excused</div>
+    </div>
+
+    <div class="card" style="margin-bottom:26px">
+      <h3>{{ month_label }}</h3>
+      <div class="sub">Newest first.</div>
+      {% if records %}
+        <table class="table">
+          <thead>
+            <tr><th>Date</th><th>Class</th><th>Mark</th><th>Marked by</th></tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+              <tr>
+                <td>{{ record.date }} <span class="small-note">({{ record.date|date:"D" }})</span></td>
+                <td>{{ record.class_section.label }}</td>
+                <td><span class="mark-{{ record.mark }}">{{ record.get_mark_display }}</span></td>
+                <td>{{ record.marked_by.full_name|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No records this month</h3>
+          <p>Attendance marks will appear here once the teachers take attendance.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3>Alerts — last 7 days</h3>
+      <div class="sub">Absent / late marks get flagged here so you don't have to hunt.</div>
+      {% if recent_alerts %}
+        <div class="mini-list">
+          {% for record in recent_alerts %}
+            <div class="mini-row">
+              <div>
+                <div class="who mark-{{ record.mark }}">{{ record.get_mark_display }} · {{ record.date }}</div>
+                <div class="what">{{ record.class_section.label }} · {{ record.marked_by.full_name|default:"teacher" }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>All clear</h3>
+          <p>No absences or late marks for {{ child.full_name|default:"this child" }} in the last 7 days.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

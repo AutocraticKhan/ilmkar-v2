@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Parents/_head.html" with title="Fee status" %}</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Parents/_sidebar.html" with nav_active="fees" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Fee status</h1>
+        <p>{% if child %}Invoices issued to {{ child.full_name }}.{% else %}No child linked to this account yet.{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{{ outstanding_total|floatformat:2 }}</b> Outstanding</div>
+      <div class="chip"><b>{{ invoices|length }}</b> Invoices</div>
+      <div class="chip">
+        <b style="font-size:13px">{% if can_pay %}Online payment ON{% else %}View only{% endif %}</b>
+        set by the school
+      </div>
+    </div>
+
+    {% if child %}
+      <div class="card" style="margin-bottom:26px">
+        <h3>Invoices</h3>
+        <div class="sub">{% if can_pay %}Pay online below — payments are recorded instantly on the school ledger.{% else %}View only: online payment is switched off for your school (pay at the school office).{% endif %}</div>
+        {% if invoices %}
+          <table class="table">
+            <thead>
+              <tr><th>Period</th><th>Head</th><th>Amount</th><th>Paid</th><th>Due date</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for invoice in invoices %}
+                <tr>
+                  <td>{{ invoice.period }}</td>
+                  <td>{{ invoice.fee_head.name|default:"Tuition" }}</td>
+                  <td class="amount">{{ invoice.amount|floatformat:2 }}</td>
+                  <td class="amount">{{ invoice.paid_amount|floatformat:2 }}</td>
+                  <td>{{ invoice.due_date }}</td>
+                  <td><span class="badge {{ invoice.status }}">{{ invoice.get_status_display }}</span></td>
+                  <td>
+                    {% if can_pay and invoice.status != "paid" %}
+                      <button class="btn small pay-btn" data-invoice="{{ invoice.pk }}">Pay online</button>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>No invoices</h3>
+            <p>Fee invoices issued to {{ child.full_name }} will appear here.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if payments %}
+        <div class="card">
+          <h3>Recent payments</h3>
+          <div class="mini-list">
+            {% for payment in payments %}
+              <div class="mini-row">
+                <div>
+                  <div class="who">{{ payment.invoice.period }} · {{ payment.amount|floatformat:2 }}</div>
+                  <div class="what">{{ payment.paid_on }} · {{ payment.get_method_display }}</div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="card">
+        <div class="empty" style="padding:30px 10px">
+          <h3>No child linked yet</h3>
+          <p>Once your children are linked, their fee invoices appear here.</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var csrf = document.body.dataset.csrfToken;
+  document.addEventListener("click", function (event) {
+    var btn = event.target.closest(".pay-btn");
+    if (!btn) return;
+    var id = btn.dataset.invoice;
+    if (!confirm("Pay this invoice online in full?")) return;
+    btn.disabled = true;
+    fetch("{% url 'Parents:invoice-pay' 0 %}".replace("/0/", "/" + id + "/"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf,
+      },
+      body: JSON.stringify({ child_id: {{ child.pk|default:0 }} }),
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (res) {
+        if (res.ok) { window.location.reload(); }
+        else { alert(res.data.error || "Payment failed."); btn.disabled = false; }
+      })
+      .catch(function () { alert("Network error."); btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>

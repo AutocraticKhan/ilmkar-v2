@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Parents/_head.html" with title="Message a teacher" %}</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Parents/_sidebar.html" with nav_active="messages" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Message a teacher</h1>
+        <p>{% if child %}One simple thread per child &amp; subject — write to {{ child.full_name }}'s teacher and replies land right here.{% else %}No child linked to this account yet.{% endif %}</p>
+      </div>
+    </div>
+
+    {% if child %}
+
+      <div class="card" style="margin-bottom:24px">
+        <h3>Send a message</h3>
+        <div class="sub">Pick the subject, write your message, and it goes straight to the teacher who takes that subject for {{ child.full_name }}'s class.</div>
+        {% if can_message %}
+          {% if subject_teachers %}
+            <form id="msg-form" class="msg-form">
+              {% csrf_token %}
+              <input type="hidden" name="child_id" value="{{ child.pk }}">
+              <label>
+                <span>Subject <span class="small-note">(teacher)</span></span>
+                <select name="subject" required>
+                  <option value="" disabled selected>Choose a subject…</option>
+                  {% for subject, teacher in subject_teachers.items %}
+                    <option value="{{ subject }}">{{ subject }} — {{ teacher.full_name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Message</span>
+                <textarea name="body" rows="4" required placeholder="e.g. Ayesha was confused by the fractions homework — could you suggest how we can help her at home?"></textarea>
+              </label>
+              <button type="submit" class="btn">Send to teacher</button>
+            </form>
+          {% else %}
+            <div class="empty" style="padding:22px 10px">
+              <p>No teacher is mapped to {{ child.full_name }}'s timetable yet — ask the school to set the timetable first.</p>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="empty" style="padding:22px 10px">
+            <p>Messaging is switched off for your school right now.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if threads %}
+        {% for thread in threads %}
+          <div class="thread">
+            <div class="thread-head">
+              <h3>{{ thread.subject }} <span class="badge muted">{{ thread.student.full_name }} · {{ thread.student.class_section.label|default:"—" }}</span></h3>
+              <div class="sub">with {{ thread.staff.full_name|default:"the teacher" }} · {{ thread.messages|length }} message{{ thread.messages|length|pluralize }}</div>
+            </div>
+            <div class="thread-body">
+              {% for m in thread.messages %}
+                <div class="bubble parent">
+                  <div class="b-head">{{ profile.guardian_name|default:"You" }} <span class="what">{{ m.created_at|date:"M d, Y H:i" }}</span></div>
+                  <div class="b-text">{{ m.body }}</div>
+                  {% if m.reply %}
+                    <div class="bubble teacher">
+                      <div class="b-head">{{ m.staff.full_name|default:"Teacher" }} <span class="what">{{ m.replied_at|date:"M d, Y H:i" }}</span></div>
+                      <div class="b-text">{{ m.reply }}</div>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="card">
+          <div class="empty" style="padding:30px 10px">
+            <h3>No conversations yet</h3>
+            <p>Messages you send to {{ child.full_name }}'s teachers appear here as threads.</p>
+          </div>
+        </div>
+      {% endif %}
+
+    {% else %}
+      <div class="card">
+        <div class="empty" style="padding:30px 10px">
+          <h3>No child linked yet</h3>
+          <p>Once your children are linked, you can message their teachers directly.</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var csrf = document.body.dataset.csrfToken;
+  var form = document.getElementById("msg-form");
+  if (!form) return;
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    var payload = new URLSearchParams(new FormData(form));
+    fetch("{% url 'Parents:message-send' %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": csrf },
+      body: payload,
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (res) {
+        if (res.ok) { window.location.reload(); }
+        else { alert(res.data.error || "Could not send the message."); btn.disabled = false; }
+      })
+      .catch(function () { alert("Network error."); btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>

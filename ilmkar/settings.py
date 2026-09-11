@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'School_Admin',
     'Teachers',
     'Student',
+    'Parents',
 ]
 
 MIDDLEWARE = [

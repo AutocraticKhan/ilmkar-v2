@@ -1,0 +1,69 @@
+/* Parent / Family dashboard — page-specific styles on top of the operator
+   dashboard.css design system (same palette + components). */
+
+/* ---------- child switcher in the sidebar ---------- */
+.child-switch{ display:flex; flex-direction:column; gap:6px; }
+.child-switch .cs-label{ font-size:11px; color:#8A8F9C; letter-spacing:.02em; }
+.child-switch .cs-select{
+  background:var(--ink-soft); color:#F3EFE3; border:1px solid rgba(255,255,255,0.14);
+  border-radius:var(--radius-s); padding:7px 8px; font-size:12.5px; width:100%;
+  font-family:'IBM Plex Sans', sans-serif;
+}
+.child-switch .cs-select option{ background:var(--ink); color:#E6E2D5; }
+
+/* ---------- digest grid ("today at school") ---------- */
+.digest-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+@media (max-width:960px){ .digest-grid{ grid-template-columns:1fr; } }
+.digest-col h4{
+  font-family:'IBM Plex Sans', sans-serif; font-size:11.5px; letter-spacing:.02em;
+  color:var(--muted); text-transform:uppercase; margin:0 0 8px;
+}
+.digest-col h4:first-child{ padding-top:4px; }
+.digest-col h4:not(:first-child){ margin-top:14px; }
+.digest-item{ padding:5px 0; font-size:13px; line-height:1.45; }
+.digest-item .who{ font-weight:500; color:var(--ink); }
+.digest-item .what{ color:var(--muted); font-size:12.5px; }
+.big-mark{ font-family:'Source Serif 4', serif; font-size:17px; font-weight:600; }
+
+/* ---------- attendance mark colors ---------- */
+.mark-present{ color:var(--green); font-weight:500; }
+.mark-late{ color:var(--amber); font-weight:500; }
+.mark-absent{ color:var(--red); font-weight:500; }
+.mark-excused{ color:var(--muted); }
+
+/* ---------- message threads (parent <-> teacher) ---------- */
+.thread{
+  background:var(--surface); border:1px solid var(--line);
+  border-left:3px solid var(--brass); border-radius:var(--radius-m);
+  padding:16px 20px; margin-bottom:14px;
+}
+.thread-head h3{ font-size:15.5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.thread-head h3 span{ font-size:12px; }
+.thread-head .sub{ color:var(--muted); font-size:12.5px; margin-top:5px; }
+.thread-body{ display:flex; flex-direction:column; gap:2px; margin-top:10px; }
+.bubble{ padding:9px 12px; border-radius:var(--radius-m); font-size:13px; }
+.bubble.parent{ background:var(--brass-soft); }
+.bubble.teacher{
+  background:var(--ink); color:#EFEBE0; margin:8px 0 2px 16px;
+  border-left:3px solid var(--brass);
+}
+.bubble .b-head{ font-weight:600; font-size:12px; display:flex; align-items:center; gap:8px; }
+.bubble .b-text{ margin-top:4px; white-space:pre-wrap; line-height:1.5; color:inherit; }
+.bubble .what{ color:var(--muted); font-size:11.5px; }
+
+/* ---------- compose form ---------- */
+.msg-form{ display:flex; flex-direction:column; gap:12px; }
+.msg-form label{ display:flex; flex-direction:column; gap:5px; font-size:12.5px; color:var(--muted); }
+.msg-form label span{ font-weight:500; color:var(--ink); }
+.msg-form select{
+  padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-s);
+  background:var(--surface); font-size:13px; font-family:'IBM Plex Sans', sans-serif;
+}
+.msg-form textarea{
+  padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius-s);
+  background:var(--surface); font-size:13px; font-family:'IBM Plex Sans', sans-serif;
+  resize:vertical;
+}
+.msg-form .btn{ align-self:flex-start; }
+
+/* misc helpers reused from school_admin.css (badge, chips, feed-card) */

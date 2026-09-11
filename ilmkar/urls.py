@@ -18,5 +18,7 @@ urlpatterns = [
     path("teacher/", include("Teachers.urls")),
     # Student dashboard (student role)
     path("student/", include("Student.urls")),
+    # Parent / Family dashboard (parent role, multi-child)
+    path("parent/", include("Parents.urls")),
     path("", include("SAAS_admin.urls")),
 ]

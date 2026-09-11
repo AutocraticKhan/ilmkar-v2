@@ -680,6 +680,13 @@ class TeacherMessage(models.Model):
         max_length=10, choices=SenderType.choices, default=SenderType.ADMIN
     )
     sender_name = models.CharField(max_length=150)
+    # TODO(integration): set by the parent portal when a parent composes a
+    # message (sender_type=parent); lets the parent portal list this parent's
+    # own threads unambiguously. Null for admin-created / legacy rows.
+    sent_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="parent_sent_messages",
+    )
     subject = models.CharField(max_length=200)
     body = models.TextField()
     is_read = models.BooleanField(default=False)

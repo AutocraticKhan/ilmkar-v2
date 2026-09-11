@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Parents/_head.html" with title="Homework" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Parents/_sidebar.html" with nav_active="homework" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Homework &amp; assignments</h1>
+        <p>{% if child %}What's been set for {{ child.full_name }}'s class, with the submission status.{% else %}No child linked to this account yet.{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{{ items|length }}</b> Assignments</div>
+      <div class="chip"><b>{{ pending_count }}</b> Open</div>
+      <div class="chip"><b>{{ overdue_count }}</b> Overdue</div>
+    </div>
+
+    {% if items %}
+      <div class="card">
+        <h3>Assignments</h3>
+        <div class="sub">Read-only view — {{ child.full_name|default:"your child" }} submits from the student portal.</div>
+        <table class="table">
+          <thead>
+            <tr><th>Title</th><th>Subject</th><th>Assigned</th><th>Due</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              <tr>
+                <td>
+                  {{ item.assignment.title }}
+                  {% if item.assigned_today %}<span class="badge important" title="Given today">today</span>{% endif %}
+                </td>
+                <td>{{ item.assignment.subject }}</td>
+                <td>{{ item.assignment.assigned_on }}</td>
+                <td>
+                  {{ item.assignment.due_date }}
+                  {% if item.overdue %}<span class="small-note" style="color:var(--red)">overdue</span>{% elif item.due_soon %}<span class="small-note" style="color:var(--amber)">soon</span>{% endif %}
+                </td>
+                <td>
+                  {% if item.graded %}
+                    <span class="badge paid">Graded{% if item.submission.grade %} · {{ item.submission.grade }}{% endif %}</span>
+                  {% elif item.submitted %}
+                    <span class="badge approved">Submitted</span>
+                  {% else %}
+                    <span class="badge {% if item.overdue %}unpaid{% else %}pending{% endif %}">{% if item.overdue %}Overdue{% else %}Pending{% endif %}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="empty" style="padding:30px 10px">
+          <h3>No assignments</h3>
+          <p>Homework set for {{ child.full_name|default:"your child" }}'s class will appear here.</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+</body>
+</html>
