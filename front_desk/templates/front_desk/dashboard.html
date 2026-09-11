@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Front desk — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if fd_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "front_desk/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Front desk</h1>
+        <p>{{ school.name }} &middot; {{ today }}{% if not fd_can_edit %} &middot; read-only (principal){% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn ghost" href="{% url 'front_desk:visitors' %}">Visitor log</a>
+        <a class="btn" href="{% url 'front_desk:enquiries' %}">New enquiry</a>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Visitors inside</div>
+        <div class="value">{{ visitors_inside_count }}</div>
+        <div class="delta {% if visitors_inside_count %}down{% endif %}">On campus now</div>
+      </div>
+      <div class="stat">
+        <div class="label">Open enquiries</div>
+        <div class="value">{{ open_enquiries }}</div>
+        <div class="delta">{{ funnel.enrolled }} enrolled &middot; {{ funnel.dropped }} dropped</div>
+      </div>
+      <div class="stat">
+        <div class="label">Register open</div>
+        <div class="value">{{ open_complaint_count }}</div>
+        <div class="delta">Complaints / requests</div>
+      </div>
+      <div class="stat">
+        <div class="label">Active passes</div>
+        <div class="value">{{ active_pass_count }}</div>
+        <div class="delta {% if cards.drafts %}down{% endif %}">{{ cards.drafts }} card(s) to print</div>
+      </div>
+    </div>
+
+    {% if visitors_inside or open_enquiries or open_complaint_count or active_pass_count or cards.drafts %}
+    <div class="chips">
+      <a class="chip" href="{% url 'front_desk:visitors' %}"><b class="mono">{{ visitors_inside_count }}</b> visitor(s) on campus</a>
+      <a class="chip" href="{% url 'front_desk:enquiries' %}"><b class="mono">{{ open_enquiries }}</b> open enquiry / lead(s)</a>
+      <a class="chip" href="{% url 'front_desk:complaints' %}"><b class="mono">{{ open_complaint_count }}</b> register item(s) open</a>
+      <a class="chip" href="{% url 'front_desk:gate-passes' %}"><b class="mono">{{ active_pass_count }}</b> gate pass(es) outstanding</a>
+      {% if cards.drafts %}<a class="chip" href="{% url 'front_desk:id-cards' %}"><b class="mono">{{ cards.drafts }}</b> ID card(s) to print</a>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="grid2">
+
+      <div class="card">
+        <h3>Admission funnel</h3>
+        <div class="sub">Enquiries tracked till they enroll or drop off</div>
+        <div class="mini-list">
+          <div class="mini-row"><span class="who">New</span><span class="mono">{{ funnel.stage_counts.new|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Contacted</span><span class="mono">{{ funnel.stage_counts.contacted|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Site visit</span><span class="mono">{{ funnel.stage_counts.site_visit|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Applied</span><span class="mono">{{ funnel.stage_counts.applied|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Enrolled</span><span class="mono">{{ funnel.stage_counts.enrolled|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Dropped off</span><span class="mono">{{ funnel.stage_counts.dropped|default:0 }}</span></div>
+        </div>
+        {% if due_followups %}
+        <h3 style="margin-top:18px">Follow-ups due</h3>
+        {% for e in due_followups %}
+        <div class="mini-row">
+          <span class="who">{{ e.applicant_name }}</span>
+          <span class="small-note">{{ e.follow_up_date }} &middot; {{ e.follow_up_note|default:"follow up" }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>On campus now</h3>
+        <div class="sub">Checked in, not yet out</div>
+        {% if visitors_inside %}
+        <div class="mini-list">
+          {% for v in visitors_inside %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ v.visitor_name }}</div>
+              <div class="what">{{ v.purpose }} &middot; {{ v.whom_to_meet|default:"—" }}</div>
+            </div>
+            <span class="small-note">{{ v.entered_at }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">No visitors inside right now.</div>
+        {% endif %}
+      </div>
+
+<div class="grid2">
+
+      <div class="card">
+        <h3>Register — recent items</h3>
+        <div class="sub">Complaints &amp; requests logged at the desk</div>
+        {% if open_complaints %}
+        <div class="mini-list">
+          {% for c in open_complaints %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ c.subject }}</div>
+              <div class="what">{{ c.complainant_name }} &middot; {{ c.category_display }}</div>
+            </div>
+            <span class="badge {{ c.status }}">{{ c.status }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">Nothing open in the register.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Outstanding gate passes</h3>
+        <div class="sub">Issued, not yet returned</div>
+        {% if active_passes %}
+        <div class="mini-list">
+          {% for p in active_passes %}
+          <div class="mini-row">
+            <span class="mono">{{ p.pass_no }}</span>
+            <span class="who">{{ p.holder_name }}</span>
+            <span class="small-note">{{ p.reason }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">No outstanding gate passes.</div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <div class="section-title">Latest front-desk actions (append-only)</div>
+    {% if recent_audit %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Note</th></tr></thead>
+        <tbody>
+          {% for a in recent_audit %}
+          <tr>
+            <td>{{ a.created_at }}</td>
+            <td>{{ a.actor }}</td>
+            <td>{{ a.action }}</td>
+            <td>{{ a.target }}</td>
+            <td>{{ a.note }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">Actions are logged here as they happen.</div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+</body>
+</html>
+    </div>

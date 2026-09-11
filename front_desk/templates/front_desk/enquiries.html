@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enquiries &amp; leads — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "front_desk/_sidebar.html" with nav_active="enquiries" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Enquiries &amp; leads</h1>
+        <p>{{ school.name }} &middot; {{ funnel.open }} open &middot; {{ funnel.enrolled }} enrolled &middot; {{ funnel.dropped }} dropped</p>
+      </div>
+      <div class="btn-row">
+        {% if can_edit %}
+        <button class="btn" onclick="openEnquiryDrawer()">Log enquiry</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    <div class="funnel">
+      <span class="chip"><b class="mono">{{ funnel.stage_counts.new|default:0 }}</b> &nbsp;new</span>
+      <span class="chip"><b class="mono">{{ funnel.stage_counts.contacted|default:0 }}</b> &nbsp;contacted</span>
+      <span class="chip"><b class="mono">{{ funnel.stage_counts.site_visit|default:0 }}</b> &nbsp;site visit</span>
+      <span class="chip"><b class="mono">{{ funnel.stage_counts.applied|default:0 }}</b> &nbsp;applied</span>
+      <span class="chip"><b class="mono">{{ funnel.stage_counts.enrolled|default:0 }}</b> &nbsp;enrolled</span>
+      <span class="chip"><b class="mono">{{ funnel.stage_counts.dropped|default:0 }}</b> &nbsp;dropped</span>
+    </div>
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Applicant</th><th>Guardian</th><th>Grade</th><th>Source</th><th>Stage</th><th>Follow-up</th><th>Logged</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for e in rows %}
+          <tr data-enquiry-id="{{ e.id }}">
+            <td class="school-name">{{ e.applicant_name }}</td>
+            <td>{{ e.guardian_name|default:"—" }}<br><span class="small-note">{{ e.guardian_phone|default:"" }}</span></td>
+            <td>{{ e.interested_grade|default:"—" }}</td>
+            <td>{{ e.source }}</td>
+            <td><span class="badge {{ e.stage }}">{{ e.stage }}</span></td>
+            <td>{% if e.follow_up_date %}{{ e.follow_up_date }}{% else %}—{% endif %}</td>
+            <td>{{ e.created_at }}</td>
+            <td class="cell-actions">
+              {% if can_edit %}
+              <button class="btn small ghost" onclick="openStageDrawer({{ e.id }})">Stage</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No enquiries yet</h3><p>Log the first admission enquiry and track it till the student enrolls — or drops off.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ rows|json_script:"enquiry-rows" }}
+{{ sections|json_script:"section-options" }}
+{{ students|json_script:"student-options" }}
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+<script src="{% static 'front_desk/js/enquiries.js' %}"></script>
+</body>
+</html>

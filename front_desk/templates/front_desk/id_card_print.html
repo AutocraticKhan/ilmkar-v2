@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print ID card — {{ card.card_no }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if fd_can_edit %}1{% else %}0{% endif %}">
+
+<div class="print-bar">
+  <button class="btn" onclick="markPrintedThenPrint()">Print card</button>
+  <a class="btn ghost" href="{% url 'front_desk:id-cards' %}">Back to cards</a>
+</div>
+
+<section class="idcard-sheet">
+  <div class="idcard">
+    <div class="id-front">
+      <div class="id-head">
+        <span class="id-school">{{ school.name|truncatechars:26 }}</span>
+        <span class="id-tag">STUDENT / STAFF ID</span>
+      </div>
+      <div class="id-photo">{{ card.initials }}</div>
+      <div class="id-name">{{ card.holder_name }}</div>
+      <div class="id-line">{{ card.holder_line|default:"" }}</div>
+      <div class="id-rows">
+        <div class="id-row"><span>Card no</span><b>{{ card.card_no }}</b></div>
+        <div class="id-row"><span>Admission no</span><b>{{ card.admission_no|default:"—" }}</b></div>
+        <div class="id-row"><span>Guardian</span><b>{{ card.guardian_phone|default:"—" }}</b></div>
+        <div class="id-row"><span>Valid</span><b>{% if card.issued_on %}{{ card.issued_on }}{% else %}—{% endif %} &rarr; {{ card.expires_on|default:"—" }}</b></div>
+      </div>
+      <div class="id-foot">If found, please return to the school office.</div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+<script>
+  async function markPrintedThenPrint(){
+    const url = '{% url "front_desk:idcard-printed" card.id %}';
+    try {
+      await apiPost(url, {});
+    } catch(e) {
+      // Read-only principals can still print the draft layout.
+      if(!FD_CAN_EDIT){ showToast("Printing (draft — read-only session)."); }
+      else { showToast(e.message); }
+    }
+    window.print();
+  }
+</script>
+</body>
+</html>

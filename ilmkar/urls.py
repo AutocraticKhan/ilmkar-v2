@@ -24,5 +24,7 @@ urlpatterns = [
     path("finance/", include("Accountant.urls")),
     # HR dashboard (hr role + principal read-through)
     path("hr/", include("HR.urls")),
+    # Front Desk / Admissions dashboard (front_desk role + principal read-through)
+    path("frontdesk/", include("front_desk.urls")),
     path("", include("SAAS_admin.urls")),
 ]

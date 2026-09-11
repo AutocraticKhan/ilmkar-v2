@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gate passes — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "front_desk/_sidebar.html" with nav_active="gate-passes" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Gate passes</h1>
+        <p>{{ school.name }} &middot; {{ active_count }} outstanding</p>
+      </div>
+      <div class="btn-row">
+        {% if can_edit %}
+        <button class="btn" onclick="openIssueDrawer()">Issue pass</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Pass no</th><th>Type</th><th>Holder</th><th>Reason</th><th>Issued to</th><th>Issued</th><th>Expected back</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for p in rows %}
+          <tr data-pass-id="{{ p.id }}">
+            <td class="mono">{{ p.pass_no }}</td>
+            <td>{{ p.pass_type }}</td>
+            <td class="school-name">{{ p.holder_name }}{% if p.student_section %} <span class="small-note">{{ p.student_section }}</span>{% endif %}</td>
+            <td>{{ p.reason }}</td>
+            <td>{{ p.issued_to|default:"—" }}</td>
+            <td>{{ p.issued_at }}</td>
+            <td>{{ p.expected_return|default:"—" }}</td>
+            <td><span class="badge {{ p.status }}">{{ p.status }}</span></td>
+            <td class="cell-actions">
+              {% if can_edit and p.is_outstanding %}
+              <button class="btn small ghost" onclick="returnPass({{ p.id }})">Return</button>
+              <button class="btn small ghost" onclick="cancelPass({{ p.id }})">Cancel</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No gate passes</h3><p>Issue a pass for a student leaving early, a visitor, vehicle or goods movement.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ rows|json_script:"pass-rows" }}
+{{ students|json_script:"student-options" }}
+{{ next_pass_no|json_script:"next-pass-no" }}
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+<script src="{% static 'front_desk/js/gate_passes.js' %}"></script>
+</body>
+</html>

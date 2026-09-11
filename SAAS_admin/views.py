@@ -118,6 +118,18 @@ def _is_hr(user):
     return is_hr(user)
 
 
+def _is_front_desk(user):
+    """True when the user may use the Front Desk / Admissions dashboard at
+    /frontdesk/. Front-desk staff hold a front_desk-role SchoolUser
+    membership (front_desk.utils); principals are admitted too as a
+    read-through. Imported lazily like _is_hr."""
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from front_desk.utils import is_front_desk
+
+    return is_front_desk(user)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
@@ -127,8 +139,9 @@ superuser_required = user_passes_test(_is_superuser, login_url="/")
 _NO_CONSOLE_ACCESS_MSG = (
     "This account can't sign in to a console. Only platform operators, "
     "school/group owners, school admins (principals), accountants, HR "
-    "staff, teachers/staff, students and parents/families can. Ask the "
-    "platform operator to assign a role to your account."
+    "staff, front desk / admissions staff, teachers/staff, students and "
+    "parents/families can. Ask the platform operator to assign a role to "
+    "your account."
 )
 
 
@@ -154,6 +167,10 @@ def login_view(request):
         # principals so the principal route keeps priority).
         if _is_hr(request.user):
             return redirect("HR:dashboard")
+        # Front desk / admissions staff: front_desk-role memberships land
+        # at /frontdesk/ (checked AFTER principals like HR).
+        if _is_front_desk(request.user):
+            return redirect("front_desk:dashboard")
         # Teachers / staff: teacher-role memberships land here (checked
         # AFTER principals so the principal route keeps priority).
         if _is_teacher(request.user):
@@ -196,6 +213,11 @@ def login_view(request):
             if _is_hr(user):
                 login(request, user)
                 return redirect("HR:dashboard")
+            # Front desk / admissions staff: front_desk-role memberships
+            # land at /frontdesk/.
+            if _is_front_desk(user):
+                login(request, user)
+                return redirect("front_desk:dashboard")
             # Teachers / staff: teacher-role memberships land here.
             if _is_teacher(user):
                 login(request, user)

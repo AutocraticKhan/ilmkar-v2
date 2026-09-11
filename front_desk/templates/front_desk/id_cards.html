@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ID cards — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "front_desk/_sidebar.html" with nav_active="id-cards" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>ID card printing</h1>
+        <p>{{ school.name }} &middot; {{ cards.drafts }} to print &middot; {{ cards.printed }} printed</p>
+      </div>
+      <div class="btn-row">
+        {% if can_edit %}
+        <button class="btn" onclick="openCardDrawer()">New card</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Card no</th><th>Holder</th><th>Type</th><th>Line</th><th>Valid</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for c in rows %}
+          <tr data-card-id="{{ c.id }}">
+            <td class="mono">{{ c.card_no }}</td>
+            <td class="school-name">{{ c.holder_name }}</td>
+            <td>{{ c.holder_type }}</td>
+            <td>{{ c.holder_line|default:"—" }}</td>
+            <td>{% if c.issued_on %}{{ c.issued_on }} &rarr; {{ c.expires_on|default:"—" }}{% else %}—{% endif %}</td>
+            <td><span class="badge {{ c.status }}">{{ c.status }}</span></td>
+            <td class="cell-actions">
+              <a class="btn small ghost" href="{% url 'front_desk:idcard-print' c.id %}" target="_blank">Print</a>
+              {% if can_edit and c.status == "draft" %}
+              <button class="btn small ghost" onclick="markPrinted({{ c.id }})">Mark printed</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No ID cards yet</h3><p>Create a student or staff card and print it straight from the desk.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ rows|json_script:"card-rows" }}
+{{ students|json_script:"student-options" }}
+{{ staff|json_script:"staff-options" }}
+{{ next_card_no|json_script:"next-card-no" }}
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+<script src="{% static 'front_desk/js/id_cards.js' %}"></script>
+</body>
+</html>

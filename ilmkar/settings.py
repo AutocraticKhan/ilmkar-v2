@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'Parents',
     'Accountant',
     'HR',
+    'front_desk',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'Accountant.context_processors.finance_badges',
             'HR.context_processors.hr_badges',
+            'front_desk.context_processors.front_desk_badges',
             ],
         },
     },

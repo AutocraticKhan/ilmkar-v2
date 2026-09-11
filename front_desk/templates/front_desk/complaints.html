@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complaints &amp; requests — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "front_desk/_sidebar.html" with nav_active="complaints" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Complaints &amp; request register</h1>
+        <p>{{ school.name }} &middot; {{ open_count }} open</p>
+      </div>
+      <div class="btn-row">
+        {% if can_edit %}
+        <button class="btn" onclick="openRegisterDrawer()">Log complaint / request</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Subject</th><th>From</th><th>Category</th><th>Source</th><th>Status</th><th>Assigned</th><th>Logged</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for c in rows %}
+          <tr data-complaint-id="{{ c.id }}">
+            <td class="mono">{{ c.id }}</td>
+            <td class="school-name">{{ c.subject }}</td>
+            <td>{{ c.complainant_name }}<br><span class="small-note">{{ c.contact|default:"" }}</span></td>
+            <td>{{ c.category_display }}</td>
+            <td>{{ c.source_display }}</td>
+            <td><span class="badge {{ c.status }}">{{ c.status }}</span></td>
+            <td>{{ c.assigned_to|default:"—" }}</td>
+            <td>{{ c.logged_at }}</td>
+            <td class="cell-actions">
+              {% if can_edit %}
+              <button class="btn small ghost" onclick="openStatusDrawer({{ c.id }})">Update</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>Nothing in the register</h3><p>Complaints and requests logged by the front desk land here for follow-up.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ rows|json_script:"complaint-rows" }}
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+<script src="{% static 'front_desk/js/complaints.js' %}"></script>
+</body>
+</html>

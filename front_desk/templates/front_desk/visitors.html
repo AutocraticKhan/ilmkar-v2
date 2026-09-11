@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitor log — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'front_desk/css/front_desk.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "front_desk/_sidebar.html" with nav_active="visitors" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Visitor log</h1>
+        <p>{{ school.name }} &middot; {{ inside }} inside right now</p>
+      </div>
+      <div class="btn-row">
+        {% if can_edit %}
+        <button class="btn" onclick="openCheckinDrawer()">Check in visitor</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Visitor</th><th>Contact</th><th>Purpose</th><th>Meeting</th><th>Badge</th><th>In</th><th>Out</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for v in rows %}
+          <tr data-visitor-id="{{ v.id }}">
+            <td class="school-name">{{ v.visitor_name }}{% if v.notes %} <span class="small-note" title="{{ v.notes }}">*</span>{% endif %}</td>
+            <td>{{ v.contact|default:"—" }}</td>
+            <td>{{ v.purpose }}</td>
+            <td>{{ v.whom_to_meet|default:"—" }}</td>
+            <td style="text-align:center">{{ v.badge_no|default:"—" }}</td>
+            <td>{{ v.entered_at }}</td>
+            <td>{% if v.exited_at %}{{ v.exited_at }}{% else %}<span class="badge new">inside</span>{% endif %}</td>
+            <td class="cell-actions">
+              {% if can_edit and v.is_inside %}
+              <button class="btn small ghost" onclick="checkout({{ v.id }})">Check out</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No visitors logged</h3><p>Check-ins land here with their badge number; check-outs fill the “Out” column.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ rows|json_script:"visitor-rows" }}
+<script src="{% static 'front_desk/js/front_desk_common.js' %}"></script>
+<script src="{% static 'front_desk/js/visitors.js' %}"></script>
+</body>
+</html>

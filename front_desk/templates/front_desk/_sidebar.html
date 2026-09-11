@@ -1,0 +1,43 @@
+<aside class="sidebar">
+  <div class="brand">
+    <span class="mark">ILMKAR</span>
+    <span class="sub">{{ school.name }}</span>
+  </div>
+  <nav class="nav">
+    <a class="{% if nav_active == 'overview' %}active{% endif %}" href="{% url 'front_desk:dashboard' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg>
+      Dashboard
+    </a>
+    <a class="{% if nav_active == 'enquiries' %}active{% endif %}" href="{% url 'front_desk:enquiries' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3h18v18h-18v-14h4v5h4v4h4"/><path d="M14 8.5l2 2M14 13.5l2 2"/></svg>
+      Enquiries &amp; leads
+      {% if fd_open_enquiries %}<span class="nav-badge">{{ fd_open_enquiries }}</span>{% endif %}
+    </a>
+    <a class="{% if nav_active == 'visitors' %}active{% endif %}" href="{% url 'front_desk:visitors' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4c1.5-1.5 5-4 7.5-6s5.5 2 7.5 6c1.5-1.5 4-2.5 6-4s3.5 1 6 4"/><rect x="12" y="5" width="9" height="14" rx="1.5"/><path d="M12 8h9"/></svg>
+      Visitor log
+      {% if fd_visitors_inside %}<span class="nav-badge warn">{{ fd_visitors_inside }}</span>{% endif %}
+    </a>
+    <a class="{% if nav_active == 'complaints' %}active{% endif %}" href="{% url 'front_desk:complaints' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3a9 9 0 0 1 0 18Z"/><path d="M13 3a9 9 0 0 1 0 18Z"/><path d="M3 15h18"/></svg>
+      Complaints &amp; requests
+      {% if fd_open_complaints %}<span class="nav-badge">{{ fd_open_complaints }}</span>{% endif %}
+    </a>
+    <a class="{% if nav_active == 'gate-passes' %}active{% endif %}" href="{% url 'front_desk:gate-passes' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4v16h16v-16h-8v8h-4v8h8"/><path d="M9 6h6"/></svg>
+      Gate passes
+      {% if fd_active_passes %}<span class="nav-badge">{{ fd_active_passes }}</span>{% endif %}
+    </a>
+    <a class="{% if nav_active == 'id-cards' %}active{% endif %}" href="{% url 'front_desk:id-cards' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="8.5" r="2.6"/><path d="M6.5 14h11M7 16.5h9"/></svg>
+      ID cards
+    </a>
+  </nav>
+  <div class="sidebar-foot">
+    Signed in as {{ user.get_username }}<br>{% if fd_can_edit %}front desk{% else %}principal &middot; read-only{% endif %}
+    <form class="logout-form" method="post" action="{% url 'SAAS_admin:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="logout-btn">Log out</button>
+    </form>
+  </div>
+</aside>

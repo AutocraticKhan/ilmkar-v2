@@ -689,6 +689,7 @@ class Complaint(models.Model):
         TRANSPORT = "transport", "Transport"
         FACILITIES = "facilities", "Facilities"
         FEES = "fees", "Fees"
+        REQUEST = "request", "Request"
         OTHER = "other", "Other"
 
     class Status(models.TextChoices):
