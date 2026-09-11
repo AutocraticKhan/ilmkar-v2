@@ -13,6 +13,7 @@ import datetime
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from SAAS_admin.models import School, SchoolUser
 
@@ -62,9 +63,6 @@ class Command(BaseCommand):
             ))
             return
         today = datetime.date.today()
-        weekdays = today - datetime.timedelta(days=today.weekday())
-        mon = weekdays
-        tue = weekdays + datetime.timedelta(days=1)
 
         staff = self._teachers(school)
         sections, students = self._students(school)
@@ -84,8 +82,8 @@ class Command(BaseCommand):
         )
 
         self._timetable(school, staff, sections)
-        self._attendance(school, staff, students, mon)
-        self._diary_and_homework(school, staff, sections, mon)
+        self._attendance(school, staff, students, today)
+        self._diary_and_homework(school, staff, sections, today)
         self._results(school, staff, students)
         self._fee(school, students, today)
         self._conversation(school, staff, profile, students[0])
@@ -129,12 +127,13 @@ class Command(BaseCommand):
                 },
             )
             staff.append(staff_member)
+        return staff
 
     def _students(self, school):
         """Two demo children with active status, a KG and a Grade 1 section,
         and the guardian name set so the guardian-name fallback also works."""
         sections = {}
-        for grade, section in {("KG", "A"), ("Grade 1", "A"), ("Grade 2", "A")}.items():
+        for grade, section in (("KG", "A"), ("Grade 1", "A"), ("Grade 2", "A")):
             key = (grade, section)
             if key not in sections:
                 sec, _ = ClassSection.objects.get_or_create(
@@ -160,7 +159,6 @@ class Command(BaseCommand):
             )
             students.append(student)
         return sections, students
-        return staff
 
     def _parent_user(self, school):
         """The demo parent user + a parent-role SchoolUser membership on the
@@ -185,7 +183,6 @@ class Command(BaseCommand):
     def _timetable(self, school, staff, sections):
         """One weekly slot for each teacher's subject across the demo sections,
         so the digest and messaging can route a subject to a real teacher."""
-        staff_by_subject = {s.full_name.split()[-1]: s for s in ["Math", "English", "Science"]}
         # Build the teacher lookup by subject from the TEACHERS list + staff list
         staff_list = staff
         subject_staff = {}
@@ -230,7 +227,11 @@ class Command(BaseCommand):
                 school=school,
                 student=student,
                 date=today,
-                defaults={"mark": StudentAttendance.Mark.PRESENT, "marked_by": teacher},
+                defaults={
+                    "class_section": student.class_section,
+                    "mark": StudentAttendance.Mark.PRESENT,
+                    "marked_by": teacher,
+                },
             )
         # One absence two days ago for the first child (alert demo)
         if len(students) >= 1 and teacher is not None:
@@ -238,5 +239,148 @@ class Command(BaseCommand):
                 school=school,
                 student=students[0],
                 date=today - datetime.timedelta(days=2),
-                defaults={"mark": StudentAttendance.Mark.ABSENT, "marked_by": teacher},
+                defaults={
+                    "class_section": students[0].class_section,
+                    "mark": StudentAttendance.Mark.ABSENT,
+                    "marked_by": teacher,
+                },
             )
+
+    def _subject_staff(self, staff):
+        """``{subject: StaffMember}`` built from the TEACHERS list — shared by
+        the diary / homework / results helpers so every seeded row points at
+        a real teacher."""
+        mapping = {}
+        for full_name, _designation, subject, _email in TEACHERS:
+            for s in staff:
+                if s.full_name == full_name:
+                    mapping[subject] = s
+                    break
+        return mapping
+
+    def _diary_and_homework(self, school, staff, sections, date):
+        """One class-diary entry + one assignment per section dated ``date``
+        so the digest and the homework page have content on first login."""
+        subject_staff = self._subject_staff(staff)
+        for grade, sec in sections.items():
+            for subject in ("Math", "English"):
+                teacher = subject_staff.get(subject)
+                if teacher is None:
+                    continue
+                ClassDiary.objects.get_or_create(
+                    school=school,
+                    class_section=sec,
+                    subject=subject,
+                    date=date,
+                    defaults={
+                        "taught": f"{subject} ({grade}): worked through this week's chapter.",
+                        "homework": f"{subject}: revise today's work for 15 minutes.",
+                        "recorded_by": teacher,
+                    },
+                )
+                Assignment.objects.get_or_create(
+                    school=school,
+                    class_section=sec,
+                    subject=subject,
+                    title=f"{subject} homework — week of {date:%b %d}",
+                    defaults={
+                        "description": "Practice exercises from today's lesson.",
+                        "assigned_on": date,
+                        "due_date": date + datetime.timedelta(days=3),
+                        "posted_by": teacher,
+                    },
+                )
+
+    def _results(self, school, staff, students):
+        """One graded exam (with a grade entry per child) + one upcoming exam
+        per section, so the Results page and the dashboard's "upcoming exams"
+        card have data."""
+        subject_staff = self._subject_staff(staff)
+        exam_date = datetime.date.today() - datetime.timedelta(days=14)
+        for student in students:
+            sec = student.class_section
+            if sec is None:
+                continue
+            exam, _ = ExamRecord.objects.get_or_create(
+                school=school,
+                class_section=sec,
+                exam_name=f"{sec.label} Midterm",
+                subject="Math",
+                exam_date=exam_date,
+                defaults={"average_pct": 78.5},
+            )
+            GradeEntry.objects.get_or_create(
+                school=school,
+                exam=exam,
+                student=student,
+                defaults={
+                    "marks_obtained": 82,
+                    "total_marks": 100,
+                    "remarks": "Good progress — keep practising word problems.",
+                    "entered_by": subject_staff.get("Math"),
+                },
+            )
+            # Upcoming exam: average_pct stays None → shows as "upcoming".
+            ExamRecord.objects.get_or_create(
+                school=school,
+                class_section=sec,
+                exam_name=f"{sec.label} Final",
+                subject="Math",
+                exam_date=datetime.date.today() + datetime.timedelta(days=21),
+            )
+
+    def _fee(self, school, students, today):
+        """A monthly tuition invoice per child for the current period (left
+        unpaid so the fee status page and the online-payment demo have
+        something to act on)."""
+        head, _ = FeeHead.objects.get_or_create(
+            school=school,
+            name="Monthly Tuition",
+            defaults={
+                "amount": 0,
+                "frequency": FeeHead.Frequency.MONTHLY,
+            },
+        )
+        for student in students:
+            # filter().exists() instead of get_or_create: the school's other
+            # seeds may already have issued more than one invoice for this
+            # student + period, which would make get() raise.
+            already_invoiced = StudentFeeInvoice.objects.filter(
+                school=school,
+                student=student,
+                period=today.strftime("%B %Y"),
+            ).exists()
+            if already_invoiced:
+                continue
+            StudentFeeInvoice.objects.create(
+                defaults={
+                    "fee_head": head,
+                    "amount": student.monthly_fee,
+                    "due_date": today + datetime.timedelta(days=10),
+                },
+            )
+
+    def _conversation(self, school, staff, profile, student):
+        """One parent message WITH a teacher reply, so the messages page has
+        a thread to show and the digest's "note from teacher" card is live."""
+        if not staff:
+            return
+        teacher = staff[0]
+        TeacherMessage.objects.get_or_create(
+            school=school,
+            staff=teacher,
+            about_student=student,
+            sender_type=TeacherMessage.SenderType.PARENT,
+            sent_by=profile.user,
+            subject="Math",
+            defaults={
+                "sender_name": profile.guardian_name or PARENT_NAME,
+                "body": (
+                    f"How is {student.full_name.split()[0]} doing with the "
+                    "new maths chapter?"
+                ),
+                "reply": "Doing well — asks good questions and finished the set.",
+                "replied_at": timezone.now(),
+                "is_read": True,
+            },
+        )
