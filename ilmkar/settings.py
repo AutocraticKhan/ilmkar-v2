@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'Student',
     'Parents',
     'Accountant',
+    'HR',
 ]
 
 MIDDLEWARE = [
@@ -71,6 +72,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'Accountant.context_processors.finance_badges',
+            'HR.context_processors.hr_badges',
             ],
         },
     },

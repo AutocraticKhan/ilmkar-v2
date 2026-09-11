@@ -22,5 +22,7 @@ urlpatterns = [
     path("parent/", include("Parents.urls")),
     # Accountant / Finance dashboard (accountant role + principal read-through)
     path("finance/", include("Accountant.urls")),
+    # HR dashboard (hr role + principal read-through)
+    path("hr/", include("HR.urls")),
     path("", include("SAAS_admin.urls")),
 ]

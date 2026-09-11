@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Onboarding — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="onboarding" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Onboarding checklists</h1>
+        <p>{{ school.name }} &middot; {{ progress|length }} hire(s) in progress</p>
+      </div>
+      <div class="btn-row">
+        {% if hr_can_edit %}
+        <button class="btn ghost" onclick="openTaskDrawer()">Add task</button>
+        <button class="btn" onclick="openStartDrawer()">Start checklist</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if progress %}
+    <div class="chips">
+      {% for p in progress %}
+      <a class="chip" href="#hire-{{ p.staff_id }}"><b class="mono">{{ p.pct }}%</b> {{ p.staff_name }} ({{ p.open }} open)</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if tasks %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Task</th><th>Hire</th><th>Due</th><th>Done</th></tr></thead>
+        <tbody>
+          {% for t in tasks %}
+          <tr id="hire-{{ t.staff_id }}">
+            <td style="width:30px">
+              {% if hr_can_edit %}
+              <input type="checkbox" {% if t.is_done %}checked{% endif %} onchange="toggleTask({{ t.id }})">
+              {% else %}{% if t.is_done %}&#10003;{% else %}&#9633;{% endif %}{% endif %}
+            </td>
+            <td class="school-name" {% if t.is_done %}style="color:var(--muted);text-decoration:line-through"{% endif %}>{{ t.title }}</td>
+            <td>{{ t.staff_name }}</td>
+            <td>{{ t.due_date|default:"—" }}</td>
+            <td>{{ t.done_at|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No onboarding tasks</h3><p>Start a checklist for a new hire (or hire someone — the checklist starts automatically).</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ staff|json_script:"staff-options" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/onboarding.js' %}"></script>
+</body>
+</html>

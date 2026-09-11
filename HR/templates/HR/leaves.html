@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leave approvals — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="leaves" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Attendance &amp; leave approvals</h1>
+        <p>{{ school.name }} &middot; {{ pending }} awaiting decision</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn ghost" href="{% url 'HR:attendance' %}">Attendance grid</a>
+        {% if hr_can_edit %}
+        <button class="btn ghost" onclick="openBalanceDrawer()">Set balance</button>
+        <button class="btn" onclick="openLeaveDrawer()">File leave</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if leaves %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Staff</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th>Decision</th><th>Days left</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for l in leaves %}
+          <tr data-leave-id="{{ l.id }}">
+            <td class="school-name">{{ l.staff_name }}</td>
+            <td>{{ l.from_date }}</td>
+            <td>{{ l.to_date }}</td>
+            <td>{{ l.reason }}</td>
+            <td><span class="badge {{ l.status }}">{{ l.status }}</span></td>
+            <td>{{ l.decision_note|default:"—" }}</td>
+            <td>{% if l.remaining != None %}{{ l.remaining }}{% else %}—{% endif %}</td>
+            <td class="cell-actions">
+              {% if hr_can_edit and l.status == "pending" %}
+              <button class="btn small" onclick="decide({{ l.id }}, true)">Approve</button>
+              <button class="btn small ghost" onclick="decide({{ l.id }}, false)">Reject</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No leave requests</h3><p>Filed and staff-submitted leave requests land here for approval.</p></div>
+    {% endif %}
+
+    <div class="section-title">Leave balances ({{ balances|length }})</div>
+    {% if balances %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Staff</th><th>Year</th><th>Entitled</th><th>Carried over</th><th>Used</th><th>Unpaid used</th><th>Remaining</th></tr></thead>
+        <tbody>
+          {% for b in balances %}
+          <tr>
+            <td class="school-name">{{ b.staff_name }}</td>
+            <td>{{ b.year }}</td>
+            <td>{{ b.entitled }}</td>
+            <td>{{ b.carried_over }}</td>
+            <td>{{ b.used }}</td>
+            <td>{{ b.unpaid_used }}</td>
+            <td><b>{{ b.remaining }}</b></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">Balances are created automatically on a staff member's first approved leave — or set one with “File leave &rarr; Set balance”.</div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ staff|json_script:"staff-options" }}
+{{ balances|json_script:"balance-rows" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/leaves.js' %}"></script>
+</body>
+</html>

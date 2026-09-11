@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll input — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="payroll" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Payroll input</h1>
+        <p>{{ school.name }} &middot; {{ period }}{% if run_status %} &middot; finance run: {{ run_status }}{% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <select id="periodPick" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)"
+                onchange="location.href='?period='+encodeURIComponent(this.value)">
+          {% for p in periods %}<option value="{{ p }}" {% if p == period %}selected{% endif %}>{{ p }}</option>{% endfor %}
+        </select>
+        {% if hr_can_edit %}
+        <button class="btn ghost" onclick="generateInputs()">Generate from attendance</button>
+        <button class="btn" onclick="feedPayroll()">Feed to payroll</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    <div class="chips">
+      <div class="chip"><b class="mono">{{ overview.total }}</b> input row(s)</div>
+      <div class="chip"><b class="mono">{{ overview.fed }}</b> fed</div>
+      <div class="chip"><b class="mono">{{ overview.pending }}</b> awaiting feed</div>
+      <div class="chip">Finance runs approval &amp; payout &mdash; HR only feeds the draft</div>
+    </div>
+
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Staff</th><th class="right">Present</th><th class="right">Unpaid absent</th><th class="right">Paid leave</th><th class="right">Late</th><th class="right">Bonus</th><th class="right">Advance</th><th>Note</th><th>Payroll</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr data-input-id="{{ r.id }}">
+            <td class="school-name">{{ r.staff_name }}<div class="small-note">{{ r.designation }}</div></td>
+            <td class="amount right">{{ r.present_days }}</td>
+            <td class="amount right">{% if r.absent_unpaid_days %}<b style="color:var(--red)">{{ r.absent_unpaid_days }}</b>{% else %}0{% endif %}</td>
+            <td class="amount right">{{ r.paid_leave_days }}</td>
+            <td class="amount right">{{ r.late_marks }}</td>
+            <td class="amount right">{{ r.bonus|floatformat:0 }}</td>
+            <td class="amount right">{{ r.advance|floatformat:0 }}</td>
+            <td>{{ r.note|default:"—" }}</td>
+            <td>{% if r.fed_to_payroll %}<span class="badge fed">fed</span>{% else %}<span class="badge awaiting">awaiting</span>{% endif %}</td>
+            <td class="cell-actions">
+              {% if hr_can_edit %}
+              <button class="btn small ghost" onclick="adjustInput({{ r.id }}, {{ r.bonus }}, {{ r.advance }}, '{{ r.note|escapejs }}')">Adjust</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="small-note" style="margin-top:10px">
+      Feed writes one pay line per staff member into Finance &rarr; Payroll &rarr; “{{ period }}”
+      (created as a draft if it doesn't exist). Deduction = unpaid absent days &times; (contract salary &divide; working days); bonus adds to allowances; advance adds to deductions.
+    </div>
+    {% else %}
+    <div class="empty">
+      <h3>No inputs for {{ period }}</h3>
+      <p>Hit “Generate from attendance” to roll up this month's attendance and approved leave per staff member.</p>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ period|json_script:"period-label" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/payroll_input.js' %}"></script>
+</body>
+</html>

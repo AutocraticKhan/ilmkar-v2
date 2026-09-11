@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff documents — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="documents" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Staff documents &amp; expiry alerts</h1>
+        <p>{{ school.name }} &middot; {{ expired }} expired &middot; {{ expiring }} expiring (&le;60 days)</p>
+      </div>
+      <div class="btn-row">
+        {% if hr_can_edit %}<button class="btn" onclick="openDocDrawer()">Add document</button>{% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if documents %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Staff</th><th>Document</th><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for d in documents %}
+          <tr>
+            <td class="school-name">{{ d.staff_name }}</td>
+            <td>{{ d.title }}{% if d.file_url %} <a class="small-note" href="{{ d.file_url }}" target="_blank">file</a>{% endif %}</td>
+            <td>{{ d.kind_display }}</td>
+            <td>{{ d.number }}</td>
+            <td>{{ d.issued_on|default:"—" }}</td>
+            <td>{{ d.expiry_date|default:"no expiry" }}</td>
+            <td>
+              <span class="badge {{ d.expiry_status }}">
+                {% if d.expiry_status == "expired" %}EXPIRED{% elif d.expiry_status == "expiring" %}expiring soon{% elif d.expiry_status == "ok" %}valid{% else %}no expiry{% endif %}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No documents on file</h3><p>Register certifications, CNICs, degrees and contract copies — expiry dates raise dashboard alerts 60 days ahead.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ staff|json_script:"staff-options" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/documents.js' %}"></script>
+</body>
+</html>

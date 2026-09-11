@@ -107,6 +107,17 @@ def _is_accountant(user):
     return is_accountant(user)
 
 
+def _is_hr(user):
+    """True when the user may use the HR dashboard at /hr/. HR staff hold
+    an hr-role SchoolUser membership (HR.utils); principals are admitted
+    too as a read-through. Imported lazily like _is_accountant."""
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from HR.utils import is_hr
+
+    return is_hr(user)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
@@ -115,9 +126,9 @@ superuser_required = user_passes_test(_is_superuser, login_url="/")
 # until the superuser assigns them as a school's owner.
 _NO_CONSOLE_ACCESS_MSG = (
     "This account can't sign in to a console. Only platform operators, "
-    "school/group owners, school admins (principals), accountants, "
-    "teachers/staff, students and parents/families can. Ask the platform "
-    "operator to assign a role to your account."
+    "school/group owners, school admins (principals), accountants, HR "
+    "staff, teachers/staff, students and parents/families can. Ask the "
+    "platform operator to assign a role to your account."
 )
 
 
@@ -139,6 +150,10 @@ def login_view(request):
         # (checked AFTER principals so the principal route keeps priority).
         if _is_accountant(request.user):
             return redirect("Accountant:dashboard")
+        # HR staff: hr-role memberships land at /hr/ (checked AFTER
+        # principals so the principal route keeps priority).
+        if _is_hr(request.user):
+            return redirect("HR:dashboard")
         # Teachers / staff: teacher-role memberships land here (checked
         # AFTER principals so the principal route keeps priority).
         if _is_teacher(request.user):
@@ -177,6 +192,10 @@ def login_view(request):
             if _is_accountant(user):
                 login(request, user)
                 return redirect("Accountant:dashboard")
+            # HR staff: hr-role memberships land at /hr/.
+            if _is_hr(user):
+                login(request, user)
+                return redirect("HR:dashboard")
             # Teachers / staff: teacher-role memberships land here.
             if _is_teacher(user):
                 login(request, user)

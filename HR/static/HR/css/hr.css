@@ -1,0 +1,59 @@
+/* HR dashboard accents — layered on top of SAAS_admin dashboard.css +
+   School_Admin school_admin.css (same approach as Accountant). */
+
+/* staff grid cells (attendance) */
+.att-grid td.cell{ text-align:center; font-size:11px; padding:2px 3px; }
+.att-grid td.cell.weekend{ background:#F7F5EF; }
+.att-mark{ display:inline-block; width:20px; height:20px; line-height:20px;
+  border-radius:6px; font-size:10.5px; font-weight:600; cursor:pointer;
+  background:#EDEAE2; color:#5B5747; }
+.att-mark.present{ background:var(--green-soft); color:var(--green); }
+.att-mark.absent{ background:var(--red-soft, #F9E3E0); color:var(--red); }
+.att-mark.late{ background:var(--amber-soft); color:var(--amber); }
+.att-mark.half_day{ background:#EDE2F5; color:#7B4FA6; }
+.att-mark.leave{ background:#E3EDF7; color:#2C6EA8; }
+.att-mark.unpaid::after{ content:'*'; }
+
+/* progress bar (onboarding) */
+.pbar{ background:#EDEAE2; border-radius:8px; height:8px; overflow:hidden; }
+.pbar > i{ display:block; height:100%; background:var(--green); }
+
+/* funnel chips */
+.funnel{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.funnel .chip b{ font-family:'IBM Plex Mono', monospace; }
+
+/* expiry badges */
+.badge.expired{ background:var(--red-soft, #F9E3E0); color:var(--red); }
+.badge.expiring{ background:var(--amber-soft); color:var(--amber); }
+.badge.ok{ background:var(--green-soft); color:var(--green); }
+.badge.none{ background:#EDEAE2; color:#5B5747; }
+.badge.open{ background:var(--green-soft); color:var(--green); }
+.badge.closed{ background:#EDEAE2; color:#5B5747; }
+.badge.filled{ background:var(--ink); color:#F3EFE3; }
+.badge.new{ background:#E3EDF7; color:#2C6EA8; }
+.badge.shortlisted{ background:var(--amber-soft); color:var(--amber); }
+.badge.interviewed{ background:#EDE2F5; color:#7B4FA6; }
+.badge.offered{ background:var(--brass-soft); color:var(--brass); }
+.badge.hired{ background:var(--green-soft); color:var(--green); }
+.badge.rejected{ background:var(--red-soft, #F9E3E0); color:var(--red); }
+.badge.draft{ background:#EDEAE2; color:#5B5747; }
+.badge.finalized{ background:var(--ink); color:#F3EFE3; }
+.badge.planned{ background:#E3EDF7; color:#2C6EA8; }
+.badge.ongoing{ background:var(--amber-soft); color:var(--amber); }
+.badge.completed{ background:var(--green-soft); color:var(--green); }
+.badge.cancelled{ background:var(--red-soft, #F9E3E0); color:var(--red); }
+.badge.enrolled{ background:#E3EDF7; color:#2C6EA8; }
+.badge.dropped{ background:#EDEAE2; color:#5B5747; }
+.badge.scheduled{ background:#E3EDF7; color:#2C6EA8; }
+.badge.passed{ background:var(--green-soft); color:var(--green); }
+.badge.failed{ background:var(--red-soft, #F9E3E0); color:var(--red); }
+.badge.no_show{ background:#EDEAE2; color:#5B5747; }
+.badge.pending{ background:var(--amber-soft); color:var(--amber); }
+.badge.approved{ background:var(--green-soft); color:var(--green); }
+.badge.fed{ background:var(--green-soft); color:var(--green); }
+.badge.awaiting{ background:var(--amber-soft); color:var(--amber); }
+
+.nav-badge.warn{ background:var(--red-soft, #F9E3E0); color:var(--red); }
+
+/* read-only hint for principals */
+.ro-note{ font-size:12.5px; color:var(--amber); margin-bottom:14px; }

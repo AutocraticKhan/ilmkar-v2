@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="training" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Training &amp; professional development</h1>
+        <p>{{ school.name }} &middot; {{ summary.enrolled }} enrolled &middot; {{ summary.completed }} completed &middot; {{ summary.programs_this_year }} program(s) this year</p>
+      </div>
+      <div class="btn-row">
+        {% if hr_can_edit %}
+        <button class="btn ghost" onclick="openEnrollDrawer()">Enroll staff</button>
+        <button class="btn" onclick="openProgramDrawer()">New program</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    <div class="section-title">Programs</div>
+    {% if programs %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Program</th><th>Type</th><th>Provider</th><th>Dates</th><th class="right">Cost/head</th><th>Enrolled</th><th>Completed</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for p in programs %}
+          <tr>
+            <td class="school-name">{{ p.title }}</td>
+            <td>{{ p.kind_display }}</td>
+            <td>{{ p.provider }}</td>
+            <td>{{ p.start_date }}{% if p.end_date %} &rarr; {{ p.end_date }}{% endif %}</td>
+            <td class="amount right">Rs {{ p.cost_per_head|floatformat:0 }}</td>
+            <td>{{ p.enrolled }}</td>
+            <td>{{ p.completed }}</td>
+            <td><span class="badge {{ p.status }}">{{ p.status }}</span></td>
+            <td class="cell-actions">
+              {% if hr_can_edit and p.status != "completed" and p.status != "cancelled" %}
+              <button class="btn small ghost" onclick="setProgramStatus({{ p.id }}, 'ongoing')">Start</button>
+              <button class="btn small ghost" onclick="setProgramStatus({{ p.id }}, 'completed')">Complete</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">No training programs yet.</div>
+    {% endif %}
+
+    <div class="section-title">Enrollments</div>
+    {% if enrollments %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Staff</th><th>Program</th><th>Status</th><th>Completed on</th><th>Certificate</th><th></th></tr></thead>
+        <tbody>
+          {% for e in enrollments %}
+          <tr data-enrollment-id="{{ e.id }}">
+            <td class="school-name">{{ e.staff_name }}</td>
+            <td>{{ e.program_title }} <span class="small-note">({{ e.program_kind_display }})</span></td>
+            <td><span class="badge {{ e.status }}">{{ e.status_display }}</span></td>
+            <td>{{ e.completed_on|default:"—" }}</td>
+            <td>{{ e.certificate_ref }}</td>
+            <td class="cell-actions">
+              {% if hr_can_edit and e.status == "enrolled" %}
+              <button class="btn small" onclick="completeEnrollment({{ e.id }})">Mark completed</button>
+              <button class="btn small ghost" onclick="dropEnrollment({{ e.id }})">Drop</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">No enrollments yet.</div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ programs|json_script:"program-options" }}
+{{ staff|json_script:"staff-options" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/training.js' %}"></script>
+</body>
+</html>

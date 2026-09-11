@@ -1,0 +1,147 @@
+{% load static hr_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recruitment — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="recruitment" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Recruitment</h1>
+        <p>{{ school.name }} &middot; {{ pipeline.open_postings }} open posting(s) &middot; {{ pipeline.total_applications }} applicant(s)</p>
+      </div>
+      <div class="btn-row">
+        {% if hr_can_edit %}
+        <button class="btn ghost" onclick="openApplicantDrawer()">Add applicant</button>
+        <button class="btn" onclick="openPostingDrawer()">New posting</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    <div class="section-title" style="border:none;padding-top:0">Funnel</div>
+    <div class="chips">
+      {% for stage in "new shortlisted interviewed offered hired rejected" %}
+      <div class="chip"><b class="mono">{{ pipeline.stage_counts|get_item:stage|default:0 }}</b> {{ stage }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="section-title">Job postings</div>
+    {% if postings %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Department</th><th>Openings</th><th>Posted</th><th>Closes</th><th>Applicants</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for p in postings %}
+          <tr>
+            <td class="school-name">{{ p.title }}</td>
+            <td>{{ p.department }}</td>
+            <td>{{ p.openings }}</td>
+            <td>{{ p.posted_on }}</td>
+            <td>{{ p.closes_on|default:"—" }}</td>
+            <td>{{ p.applicants }}</td>
+            <td><span class="badge {{ p.status }}">{{ p.status }}</span></td>
+            <td class="cell-actions">
+              {% if hr_can_edit and p.status == "open" %}
+              <button class="btn small ghost" onclick="closePosting({{ p.id }}, 'filled')">Filled</button>
+              <button class="btn small ghost" onclick="closePosting({{ p.id }}, 'closed')">Close</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">No postings yet — open one to start collecting applicants.</div>
+    {% endif %}
+
+    <div class="section-title">Applicants</div>
+    {% if applications %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Candidate</th><th>Posting</th><th>Contact</th><th>Experience</th><th>Stage</th><th>Interviews</th><th></th></tr></thead>
+        <tbody>
+          {% for a in applications %}
+          <tr data-app-id="{{ a.id }}">
+            <td class="school-name">{{ a.candidate_name }}</td>
+            <td>{{ a.posting_title }}</td>
+            <td>{{ a.phone }}{% if a.email %} &middot; {{ a.email }}{% endif %}</td>
+            <td>{{ a.experience }}</td>
+            <td><span class="badge {{ a.stage }}">{{ a.stage_display }}</span></td>
+            <td>{{ a.interviews|length }}</td>
+            <td class="cell-actions">
+              {% if hr_can_edit %}
+              <button class="btn small ghost" onclick="scheduleInterview({{ a.id }}, '{{ a.candidate_name|escapejs }}')">Interview</button>
+              <button class="btn small ghost" onclick="moveStage({{ a.id }}, '{{ a.stage|escapejs }}')">Stage</button>
+              {% if a.stage != "hired" and a.stage != "rejected" %}
+              <button class="btn small" onclick="hireApplicant({{ a.id }}, '{{ a.candidate_name|escapejs }}')">Hire</button>
+              {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">No applicants yet.</div>
+    {% endif %}
+
+    <div class="section-title">Interviews</div>
+    {% if interviews %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Candidate</th><th>Round</th><th>Scheduled</th><th>Interviewer</th><th>Score</th><th>Outcome</th><th></th></tr></thead>
+        <tbody>
+          {% for i in interviews %}
+          <tr>
+            <td class="school-name">{{ i.candidate_name }}</td>
+            <td>R{{ i.round_no }}</td>
+            <td>{{ i.scheduled_on }} {{ i.scheduled_at }}</td>
+            <td>{{ i.interviewer }}</td>
+            <td>{{ i.score|default:"—" }}</td>
+            <td><span class="badge {{ i.outcome }}">{{ i.outcome_display }}</span></td>
+            <td class="cell-actions">
+              {% if hr_can_edit and i.outcome == "scheduled" %}
+              <button class="btn small" onclick="recordOutcome({{ i.id }})">Record outcome</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">No interviews scheduled.</div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ postings|json_script:"posting-options" }}
+{{ applications|json_script:"application-rows" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/recruitment.js' %}"></script>
+</body>
+</html>

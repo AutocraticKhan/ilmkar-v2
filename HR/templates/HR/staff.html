@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff directory — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="staff" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Staff directory &amp; contracts</h1>
+        <p>{{ school.name }} &middot; {{ active_staff }} active</p>
+      </div>
+      <div class="btn-row">
+        {% if hr_can_edit %}
+        <button class="btn ghost" onclick="openContractDrawer()">Add / renew contract</button>
+        <button class="btn" onclick="openHireDrawer()">Hire staff</button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    {% if staff %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Designation</th><th>Department</th><th>Contact</th><th>Joined</th><th>Contract</th><th>Salary</th><th>Onboarding</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for s in staff %}
+          <tr data-staff-id="{{ s.id }}">
+            <td class="school-name">{{ s.full_name }}{% if not s.is_active %} <span class="badge none">inactive</span>{% endif %}</td>
+            <td>{{ s.designation }}</td>
+            <td>{{ s.department }}</td>
+            <td>{{ s.phone }}{% if s.email %} &middot; {{ s.email }}{% endif %}</td>
+            <td>{{ s.join_date|default:"—" }}</td>
+            <td>
+              {% if s.contract %}
+                <span class="badge {{ s.contract.status }}">{{ s.contract.kind_display }}</span>
+                <div class="small-note">{{ s.contract.start_date }}{% if s.contract.end_date %} &rarr; {{ s.contract.end_date }}{% if s.contract_expired %} <b style="color:var(--red)">expired</b>{% endif %}{% endif %}</div>
+              {% else %}<span class="small-note">none on file</span>{% endif %}
+            </td>
+            <td class="amount">{% if s.contract %}Rs {{ s.contract.monthly_salary|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if s.open_onboarding %}<a href="{% url 'HR:onboarding' %}"><span class="nav-badge">{{ s.open_onboarding }} open</span></a>{% else %}—{% endif %}</td>
+            <td class="cell-actions">
+              {% if hr_can_edit %}
+              <button class="btn small ghost" onclick="toggleStaff({{ s.id }}, '{{ s.full_name|escapejs }}')">{% if s.is_active %}Deactivate{% else %}Reactivate{% endif %}</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No staff on record</h3><p>Hire your first staff member to start contracts, attendance and payroll.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ staff|json_script:"staff-data" }}
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/staff.js' %}"></script>
+</body>
+</html>

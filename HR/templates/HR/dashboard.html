@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR dashboard — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>HR dashboard</h1>
+        <p>{{ school.name }} &middot; {{ period }}{% if not hr_can_edit %} &middot; read-only (principal){% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn ghost" href="{% url 'HR:attendance' %}">Attendance</a>
+        <a class="btn" href="{% url 'HR:payroll-input' %}">Payroll input</a>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Active staff</div>
+        <div class="value">{{ kpis.active_staff }}</div>
+        <div class="delta">{{ kpis.total_staff }} on record</div>
+      </div>
+      <div class="stat">
+        <div class="label">Joined this month</div>
+        <div class="value">{{ kpis.new_this_month }}</div>
+        <div class="delta">New hires</div>
+      </div>
+      <div class="stat">
+        <div class="label">Leaves awaiting</div>
+        <div class="value">{{ kpis.pending_leaves }}</div>
+        <div class="delta">Approval queue</div>
+      </div>
+      <div class="stat">
+        <div class="label">Doc alerts</div>
+        <div class="value">{{ doc_alert_count }}</div>
+        <div class="delta {% if doc_alert_count %}down{% endif %}">Expiring / expired</div>
+      </div>
+    </div>
+
+    {% if pending_leave_total or doc_alert_count or onboarding_open_tasks or payroll_overview.pending or expired_contracts %}
+    <div class="chips">
+      <a class="chip" href="{% url 'HR:leaves' %}"><b class="mono">{{ pending_leave_total }}</b> leave(s) awaiting</a>
+      <a class="chip" href="{% url 'HR:documents' %}"><b class="mono">{{ doc_alert_count }}</b> document alert(s)</a>
+      <a class="chip" href="{% url 'HR:onboarding' %}"><b class="mono">{{ onboarding_open_tasks }}</b> onboarding task(s) open</a>
+      <a class="chip" href="{% url 'HR:payroll-input' %}"><b class="mono">{{ payroll_overview.pending }}</b> payroll input(s) to feed</a>
+      {% if expired_contracts %}<a class="chip" href="{% url 'HR:staff' %}"><b class="mono">{{ expired_contracts|length }}</b> contract(s) past end date</a>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="grid2">
+
+      <div class="card">
+        <h3>Leave requests awaiting</h3>
+        <div class="sub">Decided here or from the principal's desk</div>
+        {% if pending_leave_rows %}
+        <div class="mini-list">
+          {% for l in pending_leave_rows %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ l.staff_name }}</div>
+              <div class="what">{{ l.from_date }} &rarr; {{ l.to_date }} &middot; {{ l.reason }}</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'HR:leaves' %}">Review</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">No pending leave requests.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Document expiry watch</h3>
+        <div class="sub">Certifications &amp; contracts inside 60 days</div>
+        {% if doc_alerts %}
+        <div class="mini-list">
+          {% for d in doc_alerts %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ d.staff_name }}</div>
+              <div class="what">{{ d.title }} &middot; {{ d.kind_display }}</div>
+            </div>
+            <span class="badge {{ d.expiry_status }}">{{ d.expiry_date|default:"—" }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">Nothing expiring in the next 60 days.</div>
+        {% endif %}
+      </div>
+
+    </div>
+
+      <div class="card">
+        <h3>Onboarding in progress</h3>
+        <div class="sub">Newest hires first to finish last</div>
+        {% if onboarding %}
+        <div class="mini-list">
+          {% for o in onboarding %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ o.staff_name }}</div>
+              <div class="what">{{ o.done }}/{{ o.total }} done &middot; {{ o.open }} open</div>
+            </div>
+            <div class="pbar" style="width:120px"><i style="width:{{ o.pct }}%"></i></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">No open onboarding checklists.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Recruitment</h3>
+        <div class="sub">{{ pipeline.open_postings }} open posting(s)</div>
+        <div class="mini-list">
+          <div class="mini-row"><span class="who">New</span><span class="mono">{{ pipeline.stage_counts.new|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Shortlisted</span><span class="mono">{{ pipeline.stage_counts.shortlisted|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Interviewed</span><span class="mono">{{ pipeline.stage_counts.interviewed|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Offered</span><span class="mono">{{ pipeline.stage_counts.offered|default:0 }}</span></div>
+          <div class="mini-row"><span class="who">Hired</span><span class="mono">{{ pipeline.stage_counts.hired|default:0 }}</span></div>
+        </div>
+        {% if upcoming_interviews %}
+        <h3 style="margin-top:18px">Upcoming interviews</h3>
+        {% for i in upcoming_interviews %}
+        <div class="mini-row">
+          <span class="who">{{ i.candidate_name }}</span>
+          <span class="small-note">R{{ i.round_no }} &middot; {{ i.scheduled_on }} {{ i.scheduled_at }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+    </div>
+
+    <div class="grid2">
+
+      <div class="card">
+        <h3>Payroll input — {{ payroll_overview.period }}</h3>
+        <div class="sub">Attendance/leave fed into the finance payroll run</div>
+        <div class="mini-list">
+          <div class="mini-row"><span class="who">Input rows</span><span class="mono">{{ payroll_overview.total }}</span></div>
+          <div class="mini-row"><span class="who">Fed to payroll</span><span class="mono">{{ payroll_overview.fed }}</span></div>
+          <div class="mini-row"><span class="who">Awaiting feed</span><span class="mono">{{ payroll_overview.pending }}</span></div>
+        </div>
+        {% if draft_payroll %}
+        <div class="small-note" style="margin-top:10px">Draft payroll run “{{ draft_payroll.period }}” is open in Finance.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Growth &amp; development</h3>
+        <div class="sub">Appraisals &amp; training this year</div>
+        <div class="mini-list">
+          <div class="mini-row"><span class="who">Appraisals finalized</span><span class="mono">{{ appraisals.finalized }}</span></div>
+          <div class="mini-row"><span class="who">Average rating</span><span class="mono">{{ appraisals.avg_rating|default:"—" }}</span></div>
+          <div class="mini-row"><span class="who">Appraisal drafts</span><span class="mono">{{ appraisals.drafts }}</span></div>
+          <div class="mini-row"><span class="who">Training completed</span><span class="mono">{{ training.completed }}</span></div>
+          <div class="mini-row"><span class="who">Programs this year</span><span class="mono">{{ training.programs_this_year }}</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="section-title">Latest HR actions (append-only)</div>
+    {% if recent_audit %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Note</th></tr></thead>
+        <tbody>
+          {% for a in recent_audit %}
+          <tr>
+            <td>{{ a.created_at }}</td>
+            <td>{{ a.actor }}</td>
+            <td>{{ a.action }}</td>
+            <td>{{ a.target }}</td>
+            <td>{{ a.note }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="small-note">Actions are logged here as they happen.</div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+</body>
+</html>

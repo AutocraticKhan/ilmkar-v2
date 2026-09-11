@@ -1,0 +1,89 @@
+{% load static hr_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'HR/css/hr.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}" data-can-edit="{% if hr_can_edit %}1{% else %}0{% endif %}">
+
+<div class="shell">
+
+  {% include "HR/_sidebar.html" with nav_active="attendance" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Attendance</h1>
+        <p>{{ school.name }} &middot; {{ month_label }}{% if attendance_pct %} &middot; {{ attendance_pct }}% present-days marked{% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn ghost" href="?year={{ prev.year }}&month={{ prev.month }}">&larr; {{ prev.month }}</a>
+        <a class="btn ghost" href="?year={{ next.year }}&month={{ next.month }}">{{ next.month }} &rarr;</a>
+        <a class="btn" href="{% url 'HR:leaves' %}">Leave approvals</a>
+      </div>
+    </div>
+
+    {% if not hr_can_edit %}<div class="ro-note">You are viewing as principal — changes are disabled.</div>{% endif %}
+
+    <div class="chips">
+      <div class="chip"><b class="mono">{{ rows|length }}</b> active staff</div>
+      <div class="chip"><b class="mono">{{ marked_total }}</b> day-marks this month</div>
+    </div>
+
+    {% if rows %}
+    <div class="table-wrap" style="overflow-x:auto">
+      <table class="att-grid">
+        <thead>
+          <tr>
+            <th style="position:sticky;left:0;background:var(--surface)">Staff</th>
+            {% for d in days %}<th class="cell {% if d.weekend %}weekend{% endif %}" title="{{ d.iso }}">{{ d.day }}</th>{% endfor %}
+            <th class="cell">P</th><th class="cell">A</th><th class="cell">L</th><th class="cell">A*</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr data-staff-id="{{ r.staff_id }}">
+            <td style="position:sticky;left:0;background:var(--surface)" class="school-name">{{ r.staff_name }}</td>
+            {% for d in days %}
+            <td class="cell {% if d.weekend %}weekend{% endif %}">
+              {% if hr_can_edit %}
+              <span class="att-mark {{ r.records|get_item:d.iso|default:'' }}" onclick="markDay({{ r.staff_id }}, '{{ d.iso }}')" title="{{ r.staff_name }} — {{ d.iso }}">{{ r.records|get_item:d.iso|ab_char }}</span>
+              {% else %}
+              <span class="att-mark {{ r.records|get_item:d.iso|default:'' }}">{{ r.records|get_item:d.iso|ab_char }}</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+            <td class="cell">{{ r.present }}</td>
+            <td class="cell">{{ r.absent }}</td>
+            <td class="cell">{{ r.late }}</td>
+            <td class="cell">{% if r.unpaid_absent %}<b style="color:var(--red)">{{ r.unpaid_absent }}</b>{% else %}0{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="small-note" style="margin-top:10px">P present &middot; A absent &middot; A* absent-unpaid (deducted in payroll) &middot; L late &middot; H half day &middot; V on (paid) leave. Click a cell to mark.</div>
+    {% else %}
+    <div class="empty"><h3>No active staff</h3><p>Add staff in the directory to start marking attendance.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="{% static 'HR/js/hr_common.js' %}"></script>
+<script src="{% static 'HR/js/attendance.js' %}"></script>
+</body>
+</html>
