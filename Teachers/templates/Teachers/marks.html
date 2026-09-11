@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marks — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="marks" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Marks &amp; grades</h1>
+        <p>A simple grid, not a spreadsheet. Saving recomputes the class average for the school dashboard.</p>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <label class="small-note" for="exam">Exam:</label>
+      <select id="exam" onchange="location=this.value">
+        <option value="{% url 'Teachers:marks' %}">— choose exam —</option>
+        {% for e in exams %}
+          <option value="{% url 'Teachers:marks' %}?exam={{ e.pk }}" {% if exam and exam.pk == e.pk %}selected{% endif %}>
+            {{ e.exam_name }}{% if e.subject %} · {{ e.subject }}{% endif %} · {{ e.class_section|default:"All" }} · {{ e.exam_date }}
+          </option>
+        {% endfor %}
+      </select>
+      {% if exam %}
+        <span class="small-note">Class average: {{ exam.average_pct|default:"—" }}%</span>
+      {% endif %}
+    </div>
+
+    {% if exam and section %}
+      <div class="card">
+        <h3>{{ exam.exam_name }} — {{ section.label }}{% if exam.subject %} · {{ exam.subject }}{% endif %}</h3>
+        <div class="sub">Enter marks out of {{ exam.total|default:100 }}. Leave blank for absentees.</div>
+        {% if grid %}
+          <table class="table">
+            <thead><tr><th>Student</th><th>Marks</th><th>Remarks</th></tr></thead>
+            <tbody>
+              {% for row in grid %}
+                <tr data-student="{{ row.student_id }}" data-total="{{ row.total }}">
+                  <td>{{ row.name }}</td>
+                  <td><input class="input marks-input mono" type="number" min="0" max="{{ row.total }}" step="0.5" value="{{ row.marks }}"></td>
+                  <td><input class="input remarks-input" type="text" value="{{ row.remarks }}"></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="btn-row" style="margin-top:14px">
+            <button class="btn" id="save-marks">Save marks</button>
+            <span class="small-note" id="save-note"></span>
+          </div>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>No students</h3>
+            <p>This class has no active students yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="card">
+        <h3>Pick an exam</h3>
+        <div class="sub">Exams are created by the school admin (Exams module — TODO: teacher-side exam creation is a later fix).</div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+const saveBtn = document.getElementById("save-marks");
+if (saveBtn) {
+  saveBtn.addEventListener("click", async () => {
+    const entries = [];
+    document.querySelectorAll("tr[data-student]").forEach(tr => {
+      const marksEl = tr.querySelector(".marks-input");
+      const val = (marksEl.value || "").trim();
+      entries.push({
+        student_id: Number(tr.dataset.student),
+        marks_obtained: val === "" ? null : Number(val),
+        total_marks: Number(tr.dataset.total) || 100,
+        remarks: (tr.querySelector(".remarks-input").value || "").trim(),
+      });
+    });
+    const out = await post("{% url 'Teachers:marks' %}", {
+      exam_id: {{ exam.pk }},
+      entries: entries,
+    });
+    if (out) {
+      document.getElementById("save-note").textContent =
+        "Saved · class average now " + out.average_pct + "% (synced to the school dashboard).";
+    }
+  });
+}
+</script>
+</body>
+</html>

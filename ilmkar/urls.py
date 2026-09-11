@@ -14,5 +14,7 @@ urlpatterns = [
     path("chain/", include("school_owner.urls")),
     # School Admin / Principal dashboard (single school, day-to-day)
     path("school/", include("School_Admin.urls")),
+    # Teacher / Staff dashboard (teacher + principal read-through)
+    path("teacher/", include("Teachers.urls")),
     path("", include("SAAS_admin.urls")),
 ]

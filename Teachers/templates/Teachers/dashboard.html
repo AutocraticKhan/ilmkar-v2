@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>{% now "l, d F Y" %}</h1>
+        <p>{% if staff %}{{ staff.full_name }}{% if profile %} · {{ profile.subjects }}{% endif %}{% else %}Teacher account not linked to a staff record yet — ask the admin (see TODO in Teachers/utils.py).{% endif %}</p>
+      </div>
+      <a class="btn" href="{% url 'Teachers:attendance' %}">Take attendance</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Classes today</div>
+        <div class="value">{{ today_slots|length }}</div>
+        <div class="delta">{% if attendance_done %}Attendance taken{% else %}Attendance pending{% endif %}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Unread messages</div>
+        <div class="value">{{ unread_count }}</div>
+        <div class="delta">from admin &amp; parents</div>
+      </div>
+      <div class="stat">
+        <div class="label">Leave balance</div>
+        <div class="value">{{ leave_left }}</div>
+        <div class="delta">{{ leave_used }} of {{ leave_quota }} days used</div>
+      </div>
+      <div class="stat">
+        <div class="label">Students falling behind</div>
+        <div class="value">{{ warnings_count }}</div>
+        <div class="delta{% if warnings_count %} down{% endif %}">early-warning list</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Today's classes</h3>
+        <div class="sub">Your timetable for today — tap a class to take attendance.</div>
+        {% if today_slots %}
+          <div class="mini-list">
+            {% for item in today_slots %}
+              <div class="mini-row">
+                <div>
+                  <div class="who">P{{ item.slot.period }} · {{ item.slot.subject }} — {{ item.slot.class_section.label }}</div>
+                  <div class="what">{{ item.slot.start_time }} – {{ item.slot.end_time }} · {{ item.marked_summary }}</div>
+                </div>
+                <a class="btn small ghost" href="{% url 'Teachers:attendance' %}?section={{ item.slot.class_section_id }}">Open</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>No classes today</h3>
+            <p>Your timetable has no slots for today. Timetable rows are seeded from the admin console (TODO: real timetable module).</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Needs your attention</h3>
+        <div class="sub">Shortcuts to the things piling up.</div>
+        <div class="mini-list">
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ pending_submissions }} submissions to review</div>
+              <div class="what">assignments waiting to be checked</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Teachers:assignments' %}">Review</a>
+          </div>
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ warnings_count }} students flagged</div>
+              <div class="what">attendance + marks early warnings</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Teachers:analytics' %}">See list</a>
+          </div>
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ unread_count }} unread messages</div>
+              <div class="what">admin &amp; parent inbox</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Teachers:inbox' %}">Inbox</a>
+          </div>
+          <div class="mini-row">
+            <div>
+              <div class="who">Leave: {{ leave_left }} days left</div>
+              <div class="what">request leave for approvals by the principal</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Teachers:leave' %}">Request</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Notices for staff</h3>
+      <div class="sub">Latest circulars from the school admin.</div>
+      {% if notices %}
+        <div class="mini-list">
+          {% for n in notices %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ n.title }}</div>
+                <div class="what">{{ n.body|truncatechars:140 }}</div>
+              </div>
+              <span class="badge {{ n.priority }}">{{ n.get_priority_display }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="small-note">No notices right now.</p>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

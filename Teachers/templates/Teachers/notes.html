@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student notes — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="notes" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Private student notes</h1>
+        <p>Behaviour, strengths, concerns — for your own preparation and parent meetings.</p>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--brass); margin-bottom:20px">
+      <div class="small-note"><b>Private:</b> these notes are visible to teachers and the school admin ONLY — parents never see them. Use the report-comment generator to produce a parent-safe summary.</div>
+    </div>
+
+    <div class="filter-bar">
+      <label class="small-note" for="student">Student:</label>
+      <select id="student" onchange="location=this.value">
+        <option value="{% url 'Teachers:notes' %}">— choose student —</option>
+        {% for s in student_list %}
+          <option value="?student={{ s.pk }}" {% if student and student.pk == s.pk %}selected{% endif %}>
+            {{ s.full_name }}{% if s.class_section_id %} ({{ s.class_section.label }}){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if student %}
+      <div class="grid2">
+        <div class="card">
+          <h3>Add a note — {{ student.full_name }}</h3>
+          <div class="sub">Only teachers/admin can read these.</div>
+          <form id="note-form" class="form-grid">
+            <div class="span2">
+              <label class="small-note">Category</label>
+              <select id="n-category" class="input">
+                {% for value, label in categories %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="span2">
+              <label class="small-note">Note</label>
+              <textarea id="n-body" class="input" rows="3" required></textarea>
+            </div>
+            <div class="span2 btn-row">
+              <button class="btn" type="submit">Save note</button>
+              <span class="small-note" id="form-note"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Note history</h3>
+          <div class="sub">{{ note_rows|length }} notes on record.</div>
+          {% if note_rows %}
+            <div class="feed-list">
+              {% for n in note_rows %}
+                <div class="feed-card">
+                  <div class="f-head">
+                    <h3>{{ n.category_display }}</h3>
+                    <span class="small-note">{{ n.created_at }}</span>
+                  </div>
+                  <div class="f-meta">by {{ n.author }}</div>
+                  <div class="f-body">{{ n.body }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty" style="padding:30px 10px">
+              <h3>No notes yet</h3>
+              <p>Jot down what you'd want to remember before the next parent meeting.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="card">
+        <h3>Pick a student</h3>
+        <div class="sub">Choose from your classes above.</div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+const noteForm = document.getElementById("note-form");
+if (noteForm) {
+  noteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const out = await post("{% url 'Teachers:notes' %}", {
+      student_id: {{ student.pk }},
+      category: document.getElementById("n-category").value,
+      body: document.getElementById("n-body").value.trim(),
+    });
+    if (out) {
+      document.getElementById("form-note").textContent = "Note saved (private).";
+      setTimeout(() => location.reload(), 500);
+    }
+  });
+}
+</script>
+</body>
+</html>

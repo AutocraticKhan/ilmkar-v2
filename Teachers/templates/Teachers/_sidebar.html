@@ -1,0 +1,72 @@
+<aside class="sidebar">
+  <div class="brand">
+    <span class="mark">ILMKAR</span>
+    <span class="sub">{{ school.name }}</span>
+  </div>
+  <nav class="nav">
+    <a class="{% if nav_active == 'overview' %}active{% endif %}" href="{% url 'Teachers:dashboard' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-8h6v8"/></svg>
+      Today
+    </a>
+    <a class="{% if nav_active == 'attendance' %}active{% endif %}" href="{% url 'Teachers:attendance' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 6 9 17l-5-5"/></svg>
+      Attendance
+    </a>
+    <a class="{% if nav_active == 'marks' %}active{% endif %}" href="{% url 'Teachers:marks' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h18v14H3z"/><path d="M3 10h18M9 10v9"/></svg>
+      Marks
+    </a>
+    <a class="{% if nav_active == 'assignments' %}active{% endif %}" href="{% url 'Teachers:assignments' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h12v18l-6-3-6 3V3Z"/></svg>
+      Assignments
+    </a>
+    <a class="{% if nav_active == 'diary' %}active{% endif %}" href="{% url 'Teachers:diary' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h14v16H5z"/><path d="M9 4v16M12 8h4M12 12h4"/></svg>
+      Class diary
+    </a>
+    <a class="{% if nav_active == 'lesson_plans' %}active{% endif %}" href="{% url 'Teachers:lesson-plans' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></svg>
+      Lesson plans
+    </a>
+    <a class="{% if nav_active == 'resources' %}active{% endif %}" href="{% url 'Teachers:resources' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19a2 2 0 0 0 2 2h13"/></svg>
+      Resources
+    </a>
+    <a class="{% if nav_active == 'inbox' %}active{% endif %}" href="{% url 'Teachers:inbox' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+      Messages
+      {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+    </a>
+    <a class="{% if nav_active == 'leave' %}active{% endif %}" href="{% url 'Teachers:leave' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+      Leave
+    </a>
+    <a class="{% if nav_active == 'payslips' %}active{% endif %}" href="{% url 'Teachers:payslips' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M17 5.5c-1-1-2.8-1.5-5-1.5-3 0-5 1.3-5 3.5S9 11 12 11s5 1.3 5 3.5-2 3.5-5 3.5c-2.2 0-4-.5-5-1.5"/></svg>
+      Payslips
+    </a>
+    <a class="{% if nav_active == 'notes' %}active{% endif %}" href="{% url 'Teachers:notes' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.4-7 10-7 10Z"/></svg>
+      Student notes
+    </a>
+    <a class="{% if nav_active == 'report_comments' %}active{% endif %}" href="{% url 'Teachers:report-comments' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H6v18h12V7l-4-4Z"/><path d="M9 12h6M9 16h4"/></svg>
+      Report comments
+    </a>
+    <a class="{% if nav_active == 'substitute' %}active{% endif %}" href="{% url 'Teachers:substitute' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3v4M17 3v4"/><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 14l2 2 4-4"/></svg>
+      Substitutes
+    </a>
+    <a class="{% if nav_active == 'analytics' %}active{% endif %}" href="{% url 'Teachers:analytics' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+      Early warnings
+    </a>
+  </nav>
+  <div class="sidebar-foot">
+    Signed in as {{ user.get_username }}<br>{% if staff %}{{ staff.full_name }} · teacher{% else %}teacher (not linked){% endif %}
+    <form class="logout-form" method="post" action="{% url 'SAAS_admin:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="logout-btn">Log out</button>
+    </form>
+  </div>
+</aside>

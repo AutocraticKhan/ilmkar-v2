@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class diary — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="diary" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Class diary</h1>
+        <p>What you taught today — the principal and (soon) parents follow this.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Record today's lesson</h3>
+      <div class="sub">One entry per class + subject per day — saving again updates the same entry.</div>
+      <form id="diary-form" class="form-grid">
+        <div>
+          <label class="small-note">Class</label>
+          <select id="d-section" class="input" required>
+            {% for s in sections %}<option value="{{ s.pk }}">{{ s.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="small-note">Subject</label>
+          <input id="d-subject" class="input" type="text" required>
+        </div>
+        <div>
+          <label class="small-note">Date</label>
+          <input id="d-date" class="input" type="date" value="{{ today|date:'Y-m-d' }}" required>
+        </div>
+        <div class="span2">
+          <label class="small-note">What was taught</label>
+          <textarea id="d-taught" class="input" rows="3" required></textarea>
+        </div>
+        <div class="span2">
+          <label class="small-note">Homework given (optional)</label>
+          <textarea id="d-homework" class="input" rows="2"></textarea>
+        </div>
+        <div class="span2 btn-row">
+          <button class="btn" type="submit">Save diary entry</button>
+          <span class="small-note" id="form-note"></span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <h3>Recent entries</h3>
+      <div class="sub">Your latest diary records.</div>
+      {% if entries %}
+        <div class="mini-list">
+          {% for e in entries %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ e.class_section }} · {{ e.subject }} · {{ e.date }}</div>
+                <div class="what">{{ e.taught|truncatechars:160 }}{% if e.homework %} — HW: {{ e.homework|truncatechars:60 }}{% endif %}</div>
+              </div>
+              <span class="badge muted">by {{ e.recorded_by }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No entries yet</h3>
+          <p>Record what you taught today — it takes 20 seconds.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+document.getElementById("diary-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const out = await post("{% url 'Teachers:diary' %}", {
+    section_id: Number(document.getElementById("d-section").value),
+    subject: document.getElementById("d-subject").value.trim(),
+    date: document.getElementById("d-date").value,
+    taught: document.getElementById("d-taught").value.trim(),
+    homework: document.getElementById("d-homework").value.trim(),
+  });
+  if (out) {
+    document.getElementById("form-note").textContent = "Saved.";
+    setTimeout(() => location.reload(), 500);
+  }
+});
+</script>
+</body>
+</html>

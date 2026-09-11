@@ -57,6 +57,19 @@ def _is_school_admin(user):
     return is_school_admin(user)
 
 
+def _is_teacher(user):
+    """True when the user may use the teacher/staff dashboard at
+    /teacher/. Teachers hold a teacher-role SchoolUser membership;
+    principals are admitted too as a read-through (Teachers.utils).
+    Imported lazily like _is_owner to keep the apps decoupled.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from Teachers.utils import is_teacher
+
+    return is_teacher(user)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
@@ -65,19 +78,17 @@ superuser_required = user_passes_test(_is_superuser, login_url="/")
 # until the superuser assigns them as a school's owner.
 _NO_CONSOLE_ACCESS_MSG = (
     "This account can't sign in to a console. Only platform operators, "
-    "school/group owners and school admins (principals) can. Ask the "
-    "platform operator to assign a role to your account."
+    "school/group owners, school admins (principals) and teachers/staff "
+    "can. Ask the platform operator to assign a role to your account."
 )
-
-
-superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
 def login_view(request):
     """Login page served at the home URL.
 
     Routes by account type: superusers reach the operator console, chain
-    owners reach their group dashboard, everyone else is refused.
+    owners their group dashboard, school admins the principal dashboard
+    and teachers/staff their dashboard at /teacher/ (Teachers app).
     """
     if request.user.is_authenticated:
         if request.user.is_superuser:
@@ -86,6 +97,10 @@ def login_view(request):
             return redirect("school_owner:dashboard")
         if _is_school_admin(request.user):
             return redirect("School_Admin:dashboard")
+        # Teachers / staff: teacher-role memberships land here (checked
+        # AFTER principals so the principal route keeps priority).
+        if _is_teacher(request.user):
+            return redirect("Teachers:dashboard")
         return render(
             request,
             "SAAS_admin/login.html",
@@ -110,6 +125,10 @@ def login_view(request):
             if _is_school_admin(user):
                 login(request, user)
                 return redirect("School_Admin:dashboard")
+            # Teachers / staff: teacher-role memberships land here.
+            if _is_teacher(user):
+                login(request, user)
+                return redirect("Teachers:dashboard")
             error = _NO_CONSOLE_ACCESS_MSG
         else:
             error = "Invalid username or password."

@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Substitutes — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="substitute" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Substitute finder</h1>
+        <p>Who's away, which periods are exposed, and who's free to cover.</p>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <label class="small-note" for="date">Date:</label>
+      <input id="date" type="date" value="{{ date|date:'Y-m-d' }}" onchange="location='{% url 'Teachers:substitute' %}?date='+this.value">
+      <span class="small-note">{{ day_display }} · gaps come from APPROVED leaves (School_Admin approvals)</span>
+    </div>
+
+    {% if gaps %}
+      {% for g in gaps %}
+        <div class="card gap-card" style="margin-bottom:16px">
+          <h3>{{ g.slot.subject }} — {{ g.slot.class_section }} · {{ g.slot.day_display }} P{{ g.slot.period }}</h3>
+          <div class="sub">
+            {{ g.slot.start_time }} – {{ g.slot.end_time }} ·
+            {% if g.covered_by %}
+              covered by <b>{{ g.covered_by }}</b>
+            {% else %}
+              regular teacher <b>{{ g.teacher }}</b> is on approved leave
+            {% endif %}
+          </div>
+          {% if not g.covered_by %}
+            {% if g.candidates %}
+              <div class="btn-row cand-row" data-slot="{{ g.slot.id }}">
+                {% for c in g.candidates %}
+                  <button class="btn small ghost cand" data-sub="{{ c.id }}">{{ c.name }} <span class="small-note">{{ c.designation }}</span></button>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="small-note">No free teachers for this period — everyone is teaching, on leave or already covering.</p>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="card">
+        <h3>No gaps on this date</h3>
+        <div class="sub">Nobody on approved leave, or no timetable slots for {{ day_display }}. Timetable + leave data drive this page.</div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+document.querySelectorAll(".cand-row").forEach(row => {
+  const slotId = Number(row.dataset.slot);
+  row.querySelectorAll(".cand").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const out = await post("{% url 'Teachers:substitute' %}", {
+        slot_id: slotId,
+        substitute_id: Number(btn.dataset.sub),
+        date: "{{ date|date:'Y-m-d' }}",
+      });
+      if (out) location.reload();
+    });
+  });
+});
+</script>
+</body>
+</html>

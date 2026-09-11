@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Early warnings — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="analytics" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Early warnings</h1>
+        <p>Which students are falling behind — attendance + marks trend, before term-end.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'Teachers:notes' %}">Add a private note</a>
+    </div>
+
+    <div class="chips">
+      <div class="chip">Attendance flags<b>{{ counts.attendance|default:0 }}</b></div>
+      <div class="chip">Low marks<b>{{ counts.low_marks|default:0 }}</b></div>
+      <div class="chip">Declining trend<b>{{ counts.declining|default:0 }}</b></div>
+    </div>
+
+    <div class="card">
+      <h3>Students flagged</h3>
+      <div class="sub">Attendance % is the last 30 days of marked attendance; trend compares recent exams vs earlier ones.</div>
+      {% if warnings %}
+        <table class="table">
+          <thead><tr><th>Student</th><th>Class</th><th>Attendance</th><th>Avg marks</th><th>Trend</th><th>Flags</th></tr></thead>
+          <tbody>
+            {% for w in warnings %}
+              <tr>
+                <td><a class="link-like" href="{% url 'Teachers:notes' %}?student={{ w.student_id }}">{{ w.student_name }}</a></td>
+                <td>{{ w.class_section }}</td>
+                <td class="mono">{{ w.attendance_pct|default:"—"|floatformat:1 }}%</td>
+                <td class="mono">{{ w.avg_pct|default:"—"|floatformat:1 }}%</td>
+                <td class="mono">{% if w.trend %}{{ w.trend }} pts{% else %}—{% endif %}</td>
+                <td>
+                  <div class="btn-row">
+                    {% for f in w.flags %}
+                      <span class="badge {{ f }}">{{ f }}</span>
+                    {% endfor %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No one flagged</h3>
+          <p>Everyone is above the thresholds right now.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

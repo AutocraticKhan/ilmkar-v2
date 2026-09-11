@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'SAAS_admin',
     'school_owner',
     'School_Admin',
+    'Teachers',
 ]
 
 MIDDLEWARE = [

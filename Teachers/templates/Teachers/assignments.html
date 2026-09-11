@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assignments — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="assignments" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Assignments &amp; homework</h1>
+        <p>Post homework and track who submitted.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Post a new assignment</h3>
+      <div class="sub">Submissions are recorded here until the student/parent portals launch (TODO).</div>
+      <form id="assignment-form" class="form-grid">
+        <div>
+          <label class="small-note">Class</label>
+          <select id="f-section" class="input" required>
+            {% for s in sections %}
+              <option value="{{ s.pk }}">{{ s.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="small-note">Subject</label>
+          <input id="f-subject" class="input" type="text" required>
+        </div>
+        <div>
+          <label class="small-note">Title</label>
+          <input id="f-title" class="input" type="text" required>
+        </div>
+        <div>
+          <label class="small-note">Due date</label>
+          <input id="f-due" class="input" type="date" required>
+        </div>
+        <div class="span2">
+          <label class="small-note">Description</label>
+          <textarea id="f-description" class="input" rows="2"></textarea>
+        </div>
+        <div class="span2 btn-row">
+          <button class="btn" type="submit">Post assignment</button>
+          <span class="small-note" id="form-note"></span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <h3>Posted assignments</h3>
+      <div class="sub">Open one to see who submitted.</div>
+      {% if assignments %}
+        <div class="mini-list">
+          {% for a in assignments %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ a.title }} — {{ a.class_section }} · {{ a.subject }}</div>
+                <div class="what">due {{ a.due_date }} · by {{ a.posted_by }} · {{ a.submitted }}/{{ a.total }} submitted</div>
+              </div>
+              <a class="btn small ghost" href="{% url 'Teachers:assignment-submissions' a.id %}">Submissions</a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>Nothing posted yet</h3>
+          <p>Assignments you post will show up here.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+document.getElementById("assignment-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const out = await post("{% url 'Teachers:assignments' %}", {
+    section_id: Number(document.getElementById("f-section").value),
+    subject: document.getElementById("f-subject").value.trim(),
+    title: document.getElementById("f-title").value.trim(),
+    description: document.getElementById("f-description").value.trim(),
+    due_date: document.getElementById("f-due").value,
+  });
+  if (out) {
+    document.getElementById("form-note").textContent = "Posted — submission tracking is ready.";
+    setTimeout(() => location.reload(), 600);
+  }
+});
+</script>
+</body>
+</html>

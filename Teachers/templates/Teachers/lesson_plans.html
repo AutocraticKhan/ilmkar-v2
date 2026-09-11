@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson plans — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="lesson_plans" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Lesson plans</h1>
+        <p>Curriculum tracker — plan the week, mark topics complete.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Add a lesson plan</h3>
+      <div class="sub">TODO: link topics to the curriculum/syllabus module when it lands.</div>
+      <form id="plan-form" class="form-grid">
+        <div>
+          <label class="small-note">Class</label>
+          <select id="p-section" class="input">
+            <option value="">— any —</option>
+            {% for s in sections %}<option value="{{ s.pk }}">{{ s.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="small-note">Subject</label>
+          <input id="p-subject" class="input" type="text" required>
+        </div>
+        <div>
+          <label class="small-note">Week</label>
+          <input id="p-week" class="input" type="text" placeholder="Week 4 / Term 1" required>
+        </div>
+        <div>
+          <label class="small-note">Topic</label>
+          <input id="p-topic" class="input" type="text" required>
+        </div>
+        <div class="span2">
+          <label class="small-note">Objectives</label>
+          <textarea id="p-objectives" class="input" rows="2"></textarea>
+        </div>
+        <div class="span2 btn-row">
+          <button class="btn" type="submit">Add plan</button>
+          <span class="small-note" id="form-note"></span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <h3>Plans</h3>
+      <div class="sub">Move each topic along the tracker.</div>
+      {% if plans %}
+        <table class="table">
+          <thead><tr><th>Week</th><th>Class · Subject</th><th>Topic</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for p in plans %}
+              <tr data-id="{{ p.id }}">
+                <td>{{ p.week_label }}</td>
+                <td>{{ p.class_section }} · {{ p.subject }}</td>
+                <td>{{ p.topic }}{% if p.objectives %}<div class="small-note">{{ p.objectives|truncatechars:80 }}</div>{% endif %}</td>
+                <td>
+                  <div class="btn-row">
+                    <span class="badge {{ p.status }}">{{ p.status_display }}</span>
+                    {% if p.status == 'draft' %}
+                      <button class="btn small ghost status" data-status="in_progress">Start</button>
+                    {% endif %}
+                    {% if p.status != 'completed' %}
+                      <button class="btn small ghost status" data-status="completed">Done</button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No plans yet</h3>
+          <p>Add your first weekly plan above.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+document.getElementById("plan-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const out = await post("{% url 'Teachers:lesson-plans' %}", {
+    section_id: document.getElementById("p-section").value || null,
+    subject: document.getElementById("p-subject").value.trim(),
+    week_label: document.getElementById("p-week").value.trim(),
+    topic: document.getElementById("p-topic").value.trim(),
+    objectives: document.getElementById("p-objectives").value.trim(),
+  });
+  if (out) {
+    document.getElementById("form-note").textContent = "Plan added.";
+    setTimeout(() => location.reload(), 500);
+  }
+});
+
+document.querySelectorAll("tr[data-id] .status").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const tr = btn.closest("tr");
+    const out = await post("{% url 'Teachers:lesson-plan-status' 0 %}".replace("/0/", "/" + tr.dataset.id + "/"), {
+      status: btn.dataset.status,
+    });
+    if (out) location.reload();
+  });
+});
+</script>
+</body>
+</html>

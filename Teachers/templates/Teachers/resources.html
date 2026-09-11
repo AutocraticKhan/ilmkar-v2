@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resources — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="resources" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Resource library</h1>
+        <p>Shared materials between teachers of the same subject — reuse, don't rebuild.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Share a resource</h3>
+      <div class="sub">TODO(placeholder): file uploads land with the content module — share a link for now.</div>
+      <form id="resource-form" class="form-grid">
+        <div>
+          <label class="small-note">Subject</label>
+          <input id="r-subject" class="input" type="text" list="subject-list" required>
+          <datalist id="subject-list">
+            {% for s in subjects %}<option value="{{ s }}"></option>{% endfor %}
+          </datalist>
+        </div>
+        <div>
+          <label class="small-note">Title</label>
+          <input id="r-title" class="input" type="text" required>
+        </div>
+        <div class="span2">
+          <label class="small-note">Link (Google Drive, Drive folder, URL…)</label>
+          <input id="r-link" class="input" type="url" required>
+        </div>
+        <div class="span2">
+          <label class="small-note">Description</label>
+          <textarea id="r-description" class="input" rows="2"></textarea>
+        </div>
+        <div class="span2 btn-row">
+          <button class="btn" type="submit">Share with subject team</button>
+          <span class="small-note" id="form-note"></span>
+        </div>
+      </form>
+    </div>
+
+    <div class="filter-bar" style="margin-top:22px">
+      <label class="small-note">Subject:</label>
+      <select onchange="location=this.value">
+        <option value="{% url 'Teachers:resources' %}" {% if not subject_filter %}selected{% endif %}>All subjects</option>
+        {% for s in subjects %}
+          <option value="?subject={{ s|urlencode }}" {% if subject_filter == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="card">
+      {% if resources %}
+        <div class="mini-list">
+          {% for r in resources %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ r.title }} <span class="badge activity">{{ r.subject }}</span></div>
+                <div class="what">{{ r.description|default:"—"|truncatechars:120 }} · by {{ r.shared_by }} · {{ r.created_at }}</div>
+              </div>
+              <a class="btn small ghost" href="{{ r.link }}" target="_blank" rel="noopener">Open</a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>Nothing shared yet</h3>
+          <p>Be the first to share a worksheet or past paper for your subject.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+document.getElementById("resource-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const out = await post("{% url 'Teachers:resources' %}", {
+    subject: document.getElementById("r-subject").value.trim(),
+    title: document.getElementById("r-title").value.trim(),
+    link: document.getElementById("r-link").value.trim(),
+    description: document.getElementById("r-description").value.trim(),
+  });
+  if (out) {
+    document.getElementById("form-note").textContent = "Shared.";
+    setTimeout(() => location.reload(), 500);
+  }
+});
+</script>
+</body>
+</html>

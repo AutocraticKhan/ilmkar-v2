@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inbox — Teachers · {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Teachers/css/teachers.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Teachers/_sidebar.html" with nav_active="inbox" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Messages</h1>
+        <p>Admin and parent messages in one place, plus school notices.</p>
+      </div>
+    </div>
+
+    {% if staff_missing %}
+      <div class="card" style="border-left:3px solid var(--amber); margin-bottom:20px">
+        <h3>Account not linked yet</h3>
+        <div class="sub">Your login isn't linked to a staff record, so the inbox can't be routed to you. Ask the admin to create a TeacherProfile (or match your email/name on the staff record) — TODO(integration) in Teachers/utils.py.</div>
+      </div>
+    {% endif %}
+
+    <div class="card">
+      <h3>Inbox</h3>
+      <div class="sub">Unread first. Replies are stored until the parent/admin reply-routing lands (TODO).</div>
+      {% if messages %}
+        <div class="feed-list">
+          {% for m in messages %}
+            <div class="feed-card msg" data-id="{{ m.id }}">
+              <div class="f-head">
+                <h3>{{ m.subject }}</h3>
+                <span class="badge {{ m.sender_type }}">{{ m.sender_type_display }}</span>
+              </div>
+              <div class="f-meta">from {{ m.sender_name }}{% if m.about_student %} · about {{ m.about_student }}{% endif %} · {{ m.created_at }}{% if not m.is_read %} · <b style="color:var(--brass)">unread</b>{% endif %}</div>
+              <div class="f-body">{{ m.body }}</div>
+              {% if m.reply %}
+                <div class="f-body" style="border-top:1px solid var(--line); padding-top:8px"><b>Your reply:</b> {{ m.reply }} <span class="small-note">({{ m.replied_at }})</span></div>
+              {% elif not m.is_read or m.sender_type == 'parent' %}
+                <div class="btn-row" style="margin-top:10px">
+                  <button class="btn small ghost reply-btn">Reply</button>
+                  <button class="btn small ghost read-btn">Mark read</button>
+                </div>
+                <div class="reply-box" hidden>
+                  <textarea class="input" rows="2" placeholder="Write your reply…"></textarea>
+                  <div class="btn-row" style="margin-top:8px">
+                    <button class="btn small send-btn">Send reply</button>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>Inbox zero</h3>
+          <p>No messages right now. Admins can send you one from the console (TODO: principal compose UI).</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <h3>School notices</h3>
+      <div class="sub">Circulars from the school admin.</div>
+      {% if notices %}
+        <div class="mini-list">
+          {% for n in notices %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ n.title }}</div>
+                <div class="what">{{ n.body|truncatechars:160 }}</div>
+              </div>
+              <span class="badge {{ n.priority }}">{{ n.get_priority_display }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="small-note">No notices.</p>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script>
+const CSRF = document.body.dataset.csrfToken;
+async function post(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-CSRFToken": CSRF},
+    body: JSON.stringify(data),
+  });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || out.error) { alert(out.error || "Something went wrong."); return null; }
+  return out;
+}
+
+document.querySelectorAll(".feed-card.msg").forEach(card => {
+  const id = Number(card.dataset.id);
+  const replyBtn = card.querySelector(".reply-btn");
+  const readBtn = card.querySelector(".read-btn");
+  const box = card.querySelector(".reply-box");
+  if (replyBtn) replyBtn.addEventListener("click", () => { box.hidden = !box.hidden; });
+  if (readBtn) readBtn.addEventListener("click", async () => {
+    const out = await post("{% url 'Teachers:inbox' %}", { id: id, action: "read" });
+    if (out) location.reload();
+  });
+  const send = card.querySelector(".send-btn");
+  if (send) send.addEventListener("click", async () => {
+    const text = box.querySelector("textarea").value.trim();
+    if (!text) return;
+    const out = await post("{% url 'Teachers:inbox' %}", { id: id, action: "reply", reply: text });
+    if (out) location.reload();
+  });
+});
+</script>
+</body>
+</html>
