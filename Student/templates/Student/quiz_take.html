@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Take quiz" %}</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="quizzes" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>{{ quiz.title }}</h1>
+        <p>{{ quiz.subject }} · {{ questions|length }} question{{ questions|length|pluralize }} · {{ duration_minutes }} minutes — one attempt only, answer everything before submitting.</p>
+      </div>
+      <div class="q-timer" id="q-timer">{{ duration_minutes }}:00</div>
+    </div>
+
+    <div class="card">
+      <h3>Questions</h3>
+      <div class="sub">Choose the best option for each question.</div>
+      {% for question in questions %}
+        <div class="q-block" data-question="{{ question.id }}">
+          <div class="q-text">{{ forloop.counter }}. {{ question.text }}</div>
+          {% for option in question.options %}
+            <label class="q-option">
+              <input type="radio" name="q-{{ question.id }}" value="{{ forloop.counter0 }}">
+              {{ option }}
+            </label>
+          {% endfor %}
+        </div>
+      {% empty %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No questions</h3>
+          <p>This quiz has no questions yet — ask your teacher.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="btn-row" style="margin-bottom:40px">
+      <button class="btn" id="quiz-submit">Submit quiz</button>
+      <a class="btn small ghost" href="{% url 'Student:quizzes' %}">Back</a>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var csrf = document.body.dataset.csrfToken;
+  var duration = {{ duration_minutes }};
+  var timerEl = document.getElementById("q-timer");
+  var deadline = Date.now() + duration * 60 * 1000;
+
+  function tick() {
+    var left = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+    var m = Math.floor(left / 60), s = left % 60;
+    timerEl.textContent = m + ":" + (s < 10 ? "0" : "") + s;
+    if (left <= 0) { timerEl.classList.add("over"); submitQuiz(); return; }
+    setTimeout(tick, 1000);
+  }
+
+  function submitQuiz() {
+    var answers = {};
+    document.querySelectorAll(".q-block").forEach(function (block) {
+      var qid = block.dataset.question;
+      var checked = block.querySelector("input[type=radio]:checked");
+      answers[qid] = checked ? parseInt(checked.value, 10) : -1;
+    });
+    var btn = document.getElementById("quiz-submit");
+    if (btn) btn.disabled = true;
+    fetch(window.location.pathname, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf,
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ answers: answers }),
+    })
+      .then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+      })
+      .then(function (res) {
+        if (res.ok) { window.location.reload(); }
+        else { alert(res.data.error || "Could not submit."); if (btn) btn.disabled = false; }
+      })
+      .catch(function () { alert("Network error."); if (btn) btn.disabled = false; });
+  }
+
+  var submitBtn = document.getElementById("quiz-submit");
+  if (submitBtn) submitBtn.addEventListener("click", submitQuiz);
+  tick();
+})();
+</script>
+</body>
+</html>

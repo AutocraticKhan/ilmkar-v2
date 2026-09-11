@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Today" %}</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>{% now "l, d F Y" %}</h1>
+        <p>{% if student %}{{ student.full_name }} · {{ student.class_section.label|default:"—" }} · Admission no. {{ student.admission_no }}{% else %}Student account not linked to a student record yet — ask the school admin (see TODO in Student/utils.py).{% endif %}</p>
+      </div>
+      <a class="btn" href="{% url 'Student:timetable' %}">Full timetable</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Classes today</div>
+        <div class="value">{{ today_slots|length }}</div>
+        <div class="delta">{% if student.class_section %}{{ student.class_section.label }}{% else %}no class assigned{% endif %}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Assignments due</div>
+        <div class="value">{{ open_assignments|length }}</div>
+        <div class="delta{% if overdue_count %} down{% endif %}">{{ overdue_count }} overdue</div>
+      </div>
+      <div class="stat">
+        <div class="label">Attendance</div>
+        <div class="value">{% if attendance_pct is not None %}{{ attendance_pct }}%{% else %}—{% endif %}</div>
+        <div class="delta">all-time record</div>
+      </div>
+      <div class="stat">
+        <div class="label">Fees outstanding</div>
+        <div class="value">{% if fees_due_count %}{{ fees_due_amount|floatformat:2 }}{% else %}0{% endif %}</div>
+        <div class="delta{% if fees_due_count %} down{% endif %}">{{ fees_due_count }} unpaid invoice{{ fees_due_count|pluralize }}</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Today's classes</h3>
+        <div class="sub">Your timetable for today.</div>
+        {% if today_slots %}
+          <div class="mini-list">
+            {% for slot in today_slots %}
+              <div class="mini-row">
+                <div>
+                  <div class="who">P{{ slot.period }} · {{ slot.subject }}</div>
+                  <div class="what">{{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }} · {{ slot.teacher.full_name|default:"—" }}</div>
+                </div>
+                <a class="btn small ghost" href="{% url 'Student:timetable' %}">Week</a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>No classes today</h3>
+            <p>Your timetable has no slots for today.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Needs your attention</h3>
+        <div class="sub">The things piling up, in one place.</div>
+        <div class="mini-list">
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ open_assignments|length }} assignment{{ open_assignments|length|pluralize }} to submit</div>
+              <div class="what">{% if overdue_count %}{{ overdue_count }} already overdue{% else %}nothing overdue{% endif %}</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Student:assignments' %}">Open</a>
+          </div>
+          <div class="mini-row">
+            <div>
+              <div class="who">Library: {{ active_issues }} book{{ active_issues|pluralize }} issued</div>
+              <div class="what">{% if next_due_book %}next due {{ next_due_book.due_date }}{% if overdue_books %} · <span style="color:var(--red)">{{ overdue_books }} overdue</span>{% endif %}{% else %}nothing issued{% endif %}</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Student:library' %}">Library</a>
+          </div>
+          <div class="mini-row">
+            <div>
+              <div class="who">{% if next_quiz %}{{ next_quiz.title }}{% else %}No open quizzes{% endif %}</div>
+              <div class="what">{% if next_quiz %}{{ next_quiz.subject }} · {{ next_quiz.duration_minutes }} min online test{% else %}check back later{% endif %}</div>
+            </div>
+            {% if next_quiz %}<a class="btn small ghost" href="{% url 'Student:quiz-take' next_quiz.pk %}">Take</a>{% endif %}
+          </div>
+          <div class="mini-row">
+            <div>
+              <div class="who">{% if fees_due_count %}Fees: {{ fees_due_amount|floatformat:2 }} outstanding{% else %}Fees: all clear{% endif %}</div>
+              <div class="what">{% if next_fee_due %}next due {{ next_fee_due.due_date }} ({{ next_fee_due.period }}){% else %}no unpaid invoices{% endif %}</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Student:fees' %}">Fee status</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Notices for students</h3>
+      <div class="sub">Latest circulars from the school.</div>
+      {% if notices %}
+        <div class="mini-list">
+          {% for n in notices %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ n.title }} <span class="badge {{ n.priority }}">{{ n.get_priority_display }}</span></div>
+                <div class="what">{{ n.created_at|date:"M d, Y H:i" }}</div>
+              </div>
+              <a class="btn small ghost" href="{% url 'Student:notices' %}">All</a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No notices</h3>
+          <p>Nothing has been posted for students yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

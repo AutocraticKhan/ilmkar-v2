@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Library" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="library" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Library</h1>
+        <p>{% if student %}Books issued to you, with due dates.{% else %}Student account not linked yet.{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{{ active|length }}</b> Books issued</div>
+      <div class="chip"><b{% if overdue_count %} style="color:var(--red)"{% endif %}>{{ overdue_count }}</b> Overdue</div>
+    </div>
+
+    {% if student %}
+      <div class="card" style="margin-bottom:26px">
+        <h3>Currently issued</h3>
+        <div class="sub">Return by the due date — overdue books are highlighted.</div>
+        {% if active %}
+          <table class="table">
+            <thead>
+              <tr><th>Book</th><th>Author</th><th>Issued on</th><th>Due date</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for issue in active %}
+                <tr>
+                  <td>{{ issue.book.title }}</td>
+                  <td>{{ issue.book.author|default:"—" }}</td>
+                  <td>{{ issue.issued_on }}</td>
+                  <td>{{ issue.due_date }}</td>
+                  <td>
+                    {% if issue.is_overdue %}
+                      <span class="badge left">Overdue</span>
+                    {% else %}
+                      <span class="badge active">Issued</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty" style="padding:30px 10px">
+            <h3>Nothing issued</h3>
+            <p>Visit the library — your issued books will show up here.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if history %}
+        <div class="card">
+          <h3>Returned history</h3>
+          <table class="table">
+            <thead>
+              <tr><th>Book</th><th>Issued on</th><th>Returned on</th></tr>
+            </thead>
+            <tbody>
+              {% for issue in history %}
+                <tr>
+                  <td>{{ issue.book.title }}</td>
+                  <td>{{ issue.issued_on }}</td>
+                  <td>{{ issue.returned_on }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="card">
+        <div class="empty" style="padding:30px 10px">
+          <h3>Not linked yet</h3>
+          <p>Your account isn't linked to a student record. Ask the school admin to link it.</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Timetable" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="timetable" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Timetable</h1>
+        <p>{% if section %}Weekly timetable for {{ section.label }}{% else %}No class section assigned to your account yet.{% endif %}</p>
+      </div>
+    </div>
+
+    {% if section %}
+      <div class="week-grid">
+        {% for day in week %}
+          <div class="card{% if day.day == today_day %} today{% endif %}">
+            <div class="day-head">
+              <h3>{{ day.day }}</h3>
+              {% if day.day == today_day %}<span class="today-tag">TODAY</span>{% endif %}
+            </div>
+            {% if day.slots %}
+              <div class="mini-list">
+                {% for slot in day.slots %}
+                  <div class="mini-row">
+                    <div>
+                      <div class="who">P{{ slot.period }} · {{ slot.subject }}</div>
+                      <div class="what">{{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }} · {{ slot.teacher.full_name|default:"—" }}</div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="small-note">No classes.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card">
+        <div class="empty" style="padding:30px 10px">
+          <h3>Not linked yet</h3>
+          <p>Your account isn't linked to a student record / class section. Ask the school admin to link it (StudentProfile in the admin console).</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+</body>
+</html>

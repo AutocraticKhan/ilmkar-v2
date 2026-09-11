@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Assignments" %}</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="assignments" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Assignments</h1>
+        <p>{% if student %}Homework posted for {{ student.class_section.label|default:"your class" }} — submit online with one tap.{% else %}Student account not linked yet.{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{{ pending_count }}</b> To submit</div>
+      <div class="chip"><b{% if overdue_count %} style="color:var(--red)"{% endif %}>{{ overdue_count }}</b> Overdue</div>
+    </div>
+
+    <div class="card">
+      <h3>All assignments</h3>
+      <div class="sub">Newest due date first.</div>
+      {% if items %}
+        <table class="table">
+          <thead>
+            <tr><th>Title</th><th>Subject</th><th>Due</th><th>Status</th><th>Grade / feedback</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+              <tr id="assignment-row-{{ item.assignment.pk }}">
+                <td>
+                  <div class="who">{{ item.assignment.title }}</div>
+                  {% if item.assignment.description %}<div class="small-note">{{ item.assignment.description|truncatechars:110 }}</div>{% endif %}
+                </td>
+                <td>{{ item.assignment.subject }}</td>
+                <td>{{ item.assignment.due_date }} <span class="small-note">({{ item.assignment.due_date|date:"D" }})</span></td>
+                <td>
+                  {% if item.graded %}
+                    <span class="badge approved">Graded</span>
+                  {% elif item.submitted %}
+                    <span class="badge active">Submitted</span>
+                  {% elif item.overdue %}
+                    <span class="badge left">Overdue</span>
+                  {% elif item.due_soon %}
+                    <span class="badge important">Due soon</span>
+                  {% else %}
+                    <span class="badge pending">Pending</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.submission %}
+                    {% if item.submission.grade is not None %}<span class="amount">{{ item.submission.grade }}</span>{% endif %}
+                    {% if item.submission.feedback %}<div class="small-note">{{ item.submission.feedback }}</div>{% endif %}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if can_submit and not item.submitted and not item.graded %}
+                    <button class="btn small submit-btn" data-assignment="{{ item.assignment.pk }}">Submit</button>
+                  {% elif item.submitted %}
+                    <span class="small-note">{{ item.submission.submitted_at|date:"M d, Y H:i" }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No assignments</h3>
+          <p>Homework your teachers post will appear here.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  var csrf = document.body.dataset.csrfToken;
+  document.addEventListener("click", function (event) {
+    var btn = event.target.closest(".submit-btn");
+    if (!btn) return;
+    var id = btn.dataset.assignment;
+    btn.disabled = true;
+    fetch("{% url 'Student:assignment-submit' 0 %}".replace("/0/", "/" + id + "/"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrf,
+      },
+      body: "{}",
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (res) {
+        if (res.ok) { window.location.reload(); }
+        else { alert(res.data.error || "Could not submit."); btn.disabled = false; }
+      })
+      .catch(function () { alert("Network error."); btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Results" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="results" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Results &amp; report card</h1>
+        <p>{% if student %}Every graded exam for {{ student.full_name }} with the class average next to it.{% else %}Student account not linked yet.{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{% if overall_pct is not None %}{{ overall_pct }}%{% else %}—{% endif %}</b> Overall</div>
+      <div class="chip"><b>{{ overall_obtained|floatformat:"0" }}</b> Marks obtained</div>
+      <div class="chip"><b>{{ overall_total|floatformat:"0" }}</b> Total marks</div>
+    </div>
+
+    <div class="card" style="margin-bottom:26px">
+      <h3>Graded exams</h3>
+      <div class="sub">Oldest first. The class average comes from the exam record (kept live by the teachers' marks grid).</div>
+      {% if rows %}
+        <table class="table">
+          <thead>
+            <tr><th>Exam</th><th>Subject</th><th>Date</th><th>Marks</th><th>%</th><th>Class avg</th></tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>{{ row.exam.exam_name }}</td>
+                <td>{{ row.exam.subject|default:"—" }}</td>
+                <td>{{ row.exam.exam_date }}</td>
+                <td class="amount">{{ row.marks_obtained }} / {{ row.total_marks }}</td>
+                <td class="amount">{% if row.percentage is not None %}{{ row.percentage }}%{% else %}—{% endif %}</td>
+                <td class="amount">{% if row.class_average is not None %}{{ row.class_average|floatformat:1 }}%{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty" style="padding:30px 10px">
+          <h3>No results yet</h3>
+          <p>Once teachers enter marks, your report card appears here.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if upcoming %}
+      <div class="card">
+        <h3>Upcoming exams</h3>
+        <div class="sub">Scheduled exams for your class that haven't been graded yet.</div>
+        <div class="mini-list">
+          {% for exam in upcoming %}
+            <div class="mini-row">
+              <div>
+                <div class="who">{{ exam.exam_name }}{% if exam.subject %} · {{ exam.subject }}{% endif %}</div>
+                <div class="what">{{ exam.exam_date }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+</body>
+</html>

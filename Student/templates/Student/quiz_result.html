@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Quiz score" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="quizzes" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>{{ quiz.title }}</h1>
+        <p>{{ quiz.subject }} — submitted {{ attempt.submitted_at|date:"M d, Y H:i" }}.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Your score</h3>
+      <div class="sub">Quizzes allow one attempt — this score is final and visible to your teacher.</div>
+      <div class="score-line">
+        <b>{{ attempt.score|floatformat:"0" }}</b> out of <b>{{ total_marks }}</b> marks
+        {% if total_marks %} · {{ attempt.score|floatformat:1 }}/{{ total_marks }}{% endif %}
+      </div>
+      <div class="btn-row" style="margin-top:10px">
+        <a class="btn small ghost" href="{% url 'Student:quizzes' %}">Back to quizzes</a>
+        <a class="btn small ghost" href="{% url 'Student:results' %}">Results &amp; report card</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

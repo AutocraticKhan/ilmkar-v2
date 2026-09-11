@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>{% include "Student/_head.html" with title="Quizzes" %}</head>
+<body>
+
+<div class="shell">
+
+  {% include "Student/_sidebar.html" with nav_active="quizzes" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Quizzes &amp; online tests</h1>
+        <p>Published for {{ student.class_section.label|default:"your class" }} — one attempt per quiz, scored instantly.</p>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b>{{ open_count }}</b> Open to take</div>
+      <div class="chip"><b>{{ done_count }}</b> Completed</div>
+    </div>
+
+    {% if items %}
+      {% for item in items %}
+        <div class="feed-card">
+          <div class="f-head">
+            <h3>{{ item.quiz.title }} <span class="badge muted">{{ item.quiz.subject }}</span></h3>
+            {% if item.attempt %}
+              <span class="badge approved">{{ item.attempt.score|floatformat:"0" }} / {{ item.quiz.total_marks|floatformat:"0" }}</span>
+            {% elif item.state == "upcoming" %}
+              <span class="badge pending">Opens {{ item.quiz.opens_at|date:"M d, H:i" }}</span>
+            {% elif item.state == "closed" %}
+              <span class="badge muted">Closed</span>
+            {% else %}
+              <span class="badge open">Open</span>
+            {% endif %}
+          </div>
+          <div class="f-meta">
+            {% if item.quiz.description %}{{ item.quiz.description }} · {% endif %}
+            {{ item.question_count }} question{{ item.question_count|pluralize }} · {{ item.quiz.duration_minutes }} minutes
+            {% if item.quiz.closes_at %} · closes {{ item.quiz.closes_at|date:"M d, H:i" }}{% endif %}
+          </div>
+          {% if item.is_open %}
+            <div class="btn-row" style="margin-top:10px">
+              <a class="btn small" href="{% url 'Student:quiz-take' item.quiz.pk %}">Take quiz</a>
+            </div>
+          {% elif item.attempt %}
+            <div class="btn-row" style="margin-top:10px">
+              <a class="btn small ghost" href="{% url 'Student:quiz-take' item.quiz.pk %}">View score</a>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="card">
+        <div class="empty" style="padding:30px 10px">
+          <h3>No quizzes</h3>
+          <p>Online tests published for your class will appear here.</p>
+        </div>
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+</body>
+</html>
