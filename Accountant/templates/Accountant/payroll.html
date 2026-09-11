@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="payroll" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Payroll</h1>
+        <p>{% if selected %}{{ selected.period }} &middot; {{ selected.status_display }}{% if selected.approved_by != "—" %} &middot; approved by {{ selected.approved_by }}{% endif %}{% else %}No payroll runs yet{% endif %} &middot; {{ active_staff }} active staff</p>
+      </div>
+      <div class="btn-row">
+        {% if selected and selected.status == "draft" %}
+        <button class="btn ghost" onclick="calculateRun({{ selected.id }})">Calculate</button>
+        <button class="btn" onclick="approveRun({{ selected.id }})">Approve</button>
+        {% elif selected and selected.status == "approved" %}
+        <button class="btn" onclick="markPaid({{ selected.id }})">Mark as paid</button>
+        {% endif %}
+        <button class="btn ghost" onclick="openPeriodDrawer()">New run</button>
+      </div>
+    </div>
+
+    {% if selected and totals %}
+    <div class="chips">
+      <div class="chip"><b class="mono">{{ totals.count }}</b> staff in run</div>
+      <div class="chip"><b class="mono">Rs {{ totals.basic|floatformat:0 }}</b> basic</div>
+      <div class="chip"><b class="mono">Rs {{ totals.allowances|floatformat:0 }}</b> allowances</div>
+      <div class="chip"><b class="mono">Rs {{ totals.deductions|floatformat:0 }}</b> deductions</div>
+      <div class="chip"><b class="mono">Rs {{ totals.net|floatformat:0 }}</b> net payout</div>
+    </div>
+    {% endif %}
+
+    <div class="section-title" style="border:none;padding-top:0">Payroll runs</div>
+    {% if periods %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Period</th><th>Status</th><th>Staff</th><th>Net total</th><th>Created by</th><th>Approved by</th><th></th></tr></thead>
+        <tbody>
+          {% for p in periods %}
+          <tr class="{% if selected and p.id == selected.id %}pnl-total{% endif %}">
+            <td class="school-name">{{ p.period }}</td>
+            <td><span class="badge {{ p.status }}">{{ p.status_display }}</span></td>
+            <td>{{ p.count }}</td>
+            <td class="amount">Rs {{ p.net|floatformat:0 }}</td>
+            <td>{{ p.created_by }}</td>
+            <td>{{ p.approved_by }}</td>
+            <td><a class="btn small ghost" href="?period={{ p.id }}">Open</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No payroll runs yet</h3><p>Open a run for the current period, then calculate to pull each staff member's pay lines.</p></div>
+    {% endif %}
+
+    {% if selected %}
+    <div class="section-title">Pay lines — {{ selected.period }}</div>
+    {% if items %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Staff</th><th>Designation</th><th class="right">Basic</th><th class="right">Allowances</th><th class="right">Deductions</th><th class="right">Net pay</th><th>Paid on</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr data-item-id="{{ item.id }}">
+            <td class="school-name">{{ item.staff_name }}</td>
+            <td>{{ item.designation }}</td>
+            <td class="amount right">{{ item.basic|floatformat:0 }}</td>
+            <td class="amount right">{{ item.allowances|floatformat:0 }}</td>
+            <td class="amount right">{{ item.deductions|floatformat:0 }}</td>
+            <td class="amount right"><span class="net">Rs {{ item.net_pay|floatformat:0 }}</span></td>
+            <td>{{ item.paid_on|default:"—" }}</td>
+            <td class="cell-actions">
+              {% if selected.status == "draft" %}
+              <button class="btn small ghost" onclick="openItemDrawer({{ item.id }})">Edit</button>
+              {% endif %}
+              <a class="btn small ghost" href="{% url 'Accountant:payslip' item.id %}" target="_blank">Payslip</a>
+            </td>
+          </tr>
+          {% endfor %}
+          <tr class="totals-row">
+            <td>Totals</td><td></td>
+            <td class="amount right">{{ totals.basic|floatformat:0 }}</td>
+            <td class="amount right">{{ totals.allowances|floatformat:0 }}</td>
+            <td class="amount right">{{ totals.deductions|floatformat:0 }}</td>
+            <td class="amount right">Rs {{ totals.net|floatformat:0 }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>Nothing calculated yet</h3><p>Hit “Calculate” to create one pay line per active staff member, prefilled from salary history.</p></div>
+    {% endif %}
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ items|json_script:"payroll-items-data" }}
+{{ current_period|json_script:"current-period-data" }}
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+<script src="{% static 'Accountant/js/payroll.js' %}"></script>
+</body>
+</html>

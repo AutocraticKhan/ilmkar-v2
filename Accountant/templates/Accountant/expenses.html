@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expenses — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="expenses" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Expense tracking</h1>
+        <p>Vendor payments, utility bills, salaries and rent &middot; {{ expenses_count }} recorded</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="openExpenseDrawer()">Record expense</button>
+      </div>
+    </div>
+
+    <div class="chips">
+      {% for row in by_category.rows %}
+      <a class="chip" href="?category={{ row.category }}"><b class="mono">Rs {{ row.total|floatformat:0 }}</b> {{ row.label }}</a>
+      {% endfor %}
+      <a class="chip" href="{% url 'Accountant:expenses' %}"><b class="mono">Rs {{ by_category.total|floatformat:0 }}</b> total this month</a>
+    </div>
+
+    {% if active_category %}
+    <div class="filter-bar">
+      <span class="small-note">Filtered by category: <b>{{ active_category }}</b></span>
+      <a class="btn small ghost" href="{% url 'Accountant:expenses' %}">Clear filter</a>
+    </div>
+    {% endif %}
+
+    <div class="section-title" style="border:none;padding-top:0">Expense register</div>
+    {% if expenses %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Title</th><th>Category</th><th>Vendor</th><th>Method</th><th>Reference</th><th>Paid on</th><th class="right">Amount</th></tr>
+        </thead>
+        <tbody>
+          {% for e in expenses %}
+          <tr>
+            <td class="school-name">{{ e.title }}{% if e.details %}<div class="small-note">{{ e.details }}</div>{% endif %}</td>
+            <td><span class="badge muted">{{ e.category_display }}</span></td>
+            <td>{{ e.vendor }}</td>
+            <td>{{ e.method_display }}</td>
+            <td>{{ e.reference_no }}</td>
+            <td>{{ e.paid_on }}</td>
+            <td class="amount right">Rs {{ e.amount|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No expenses recorded</h3><p>Vendor payments, utility bills, salaries and rent appear here — each one lands in the ledger automatically.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ categories|json_script:"categories-data" }}
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+<script src="{% static 'Accountant/js/expenses.js' %}"></script>
+</body>
+</html>

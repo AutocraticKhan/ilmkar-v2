@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collections — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="collections" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Fee collections</h1>
+        <p>{{ kpis.period }}{% if kpis.collection_pct %} &middot; {{ kpis.collection_pct }}% collected{% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="openPayDrawer()">Record payment</button>
+        <button class="btn ghost" onclick="openFollowupDrawer()">Log follow-up</button>
+      </div>
+    </div>
+
+    <div class="chips">
+      <div class="chip"><b class="mono">Rs {{ kpis.collected_today|floatformat:0 }}</b> today</div>
+      <div class="chip"><b class="mono">Rs {{ kpis.collected_week|floatformat:0 }}</b> this week</div>
+      <div class="chip"><b class="mono">Rs {{ kpis.collected_month|floatformat:0 }}</b> this month</div>
+      <div class="chip"><b class="mono">Rs {{ kpis.outstanding_month|floatformat:0 }}</b> outstanding ({{ kpis.period }})</div>
+      <div class="chip"><b class="mono">Rs {{ kpis.overdue_amount|floatformat:0 }}</b> overdue ({{ kpis.overdue_count }} invoices)</div>
+    </div>
+
+    <div class="section-title" style="border:none;padding-top:0">Collections by class (this month)</div>
+    {% if by_class %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Class</th><th>Invoiced ({{ kpis.period }})</th><th>Collected</th><th>Collection</th></tr></thead>
+        <tbody>
+          {% for row in by_class %}
+          <tr>
+            <td class="school-name">{{ row.label }}</td>
+            <td class="amount">Rs {{ row.invoiced|floatformat:0 }}</td>
+            <td class="amount">Rs {{ row.collected|floatformat:0 }}</td>
+            <td><span class="badge {% if row.collection_pct >= 100 %}paid{% elif row.collection_pct %}partial{% else %}unpaid{% endif %}">{{ row.collection_pct|default:"—" }}{% if row.collection_pct %}%{% endif %}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No classes yet</h3><p>Class-wise collections appear once classes and invoices exist.</p></div>
+    {% endif %}
+
+    <div class="section-title">Defaulter list</div>
+    {% if defaulters %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Class</th><th>Overdue invoices</th><th>Total owed</th><th>Last follow-up</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for d in defaulters %}
+          <tr data-student-id="{{ d.student_id }}">
+            <td class="school-name">{{ d.student_name }}</td>
+            <td>{{ d.class_label }}</td>
+            <td>{{ d.invoices }}</td>
+            <td class="amount">Rs {{ d.owed|floatformat:0 }}</td>
+            <td>
+              {% if d.follow_up %}
+                <span class="badge muted">{{ d.follow_up.outcome_display }}</span>
+                {% if d.follow_up.promised_on %}<div class="small-note">promised {{ d.follow_up.promised_on }}</div>{% endif %}
+              {% else %}
+                <span class="small-note">never contacted</span>
+              {% endif %}
+            </td>
+            <td>
+              <button class="btn small ghost" onclick="openFollowupDrawer({{ d.student_id }}, '{{ d.student_name|escapejs }}')">Follow up</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No defaulters</h3><p>Every overdue invoice has been cleared — nice.</p></div>
+    {% endif %}
+
+    <div class="section-title">Open invoices</div>
+    {% if open_invoices %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Head</th><th>Period</th><th>Amount</th><th>Paid</th><th>Due</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for inv in open_invoices %}
+          <tr data-invoice-id="{{ inv.id }}">
+            <td class="school-name">{{ inv.student_name }}<div class="small-note">{{ inv.class_section }}</div></td>
+            <td>{{ inv.fee_head }}</td>
+            <td>{{ inv.period }}</td>
+            <td class="amount">Rs {{ inv.amount|floatformat:0 }}</td>
+            <td class="amount">{% if inv.paid_amount %}Rs {{ inv.paid_amount|floatformat:0 }}{% else %}&mdash;{% endif %}</td>
+            <td>{{ inv.due_date }}</td>
+            <td><span class="badge {{ inv.status }}">{{ inv.status_display }}</span></td>
+            <td><button class="btn small" onclick="openPayDrawer({{ inv.id }})">Record payment</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No open invoices</h3><p>Everything invoiced so far has been paid.</p></div>
+    {% endif %}
+
+    <div class="section-title">Recent follow-ups</div>
+    {% if follow_ups %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Student</th><th>Outcome</th><th>Promised</th><th>Note</th><th>By</th><th>When</th></tr></thead>
+        <tbody>
+          {% for f in follow_ups %}
+          <tr>
+            <td>{{ f.student_name }}</td>
+            <td><span class="badge muted">{{ f.outcome_display }}</span></td>
+            <td>{{ f.promised_on|default:"—" }}</td>
+            <td>{{ f.note|default:"—" }}</td>
+            <td>{{ f.followed_up_by }}</td>
+            <td>{{ f.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No follow-ups logged yet</h3><p>Log calls and promised dates from the defaulter list above.</p></div>
+    {% endif %}
+
+
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ defaulters|json_script:"defaulters-data" }}
+{{ open_invoices|json_script:"open-invoices-data" }}
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+<script src="{% static 'Accountant/js/collections.js' %}"></script>
+</body>
+</html>

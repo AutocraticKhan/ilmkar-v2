@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Income &amp; expense statement — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="statement" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Income &amp; expense statement</h1>
+        <p>{{ school.name }} (branch) &middot; last {{ months }} months</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="openIncomeDrawer()">Record other income</button>
+        <a class="btn ghost" href="?months=12">12 months</a>
+      </div>
+    </div>
+
+    <div class="section-title" style="border:none;padding-top:0">Monthly profit &amp; loss</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Month</th><th>Fee collections</th><th>Other income</th><th>Total income</th><th>Expenses</th><th>Net</th></tr>
+        </thead>
+        <tbody>
+          {% for row in statement %}
+          <tr class="{% if row.current %}pnl-total{% endif %}">
+            <td class="school-name">{{ row.label }}{% if row.current %} <span class="badge muted">current</span>{% endif %}</td>
+            <td class="amount">Rs {{ row.fees|floatformat:0 }}</td>
+            <td class="amount">Rs {{ row.other_income|floatformat:0 }}</td>
+            <td class="amount">Rs {{ row.income|floatformat:0 }}</td>
+            <td class="amount">Rs {{ row.expenses|floatformat:0 }}</td>
+            <td class="amount {% if row.net < 0 %}pnl-negative{% else %}pnl-positive{% endif %}">Rs {{ row.net|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>This month's expense split</h3>
+        <div class="sub">Where the money went</div>
+        {% if expenses_by_category.rows %}
+        <div class="mini-list">
+          {% for row in expenses_by_category.rows %}
+          <div class="mini-row">
+            <span class="who">{{ row.label }}</span>
+            <span class="mono">Rs {{ row.total|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+          <div class="mini-row"><span class="who"><b>Total</b></span><span class="mono"><b>Rs {{ expenses_by_category.total|floatformat:0 }}</b></span></div>
+        </div>
+        {% else %}
+        <div class="small-note">No expenses recorded this month.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Collections by class</h3>
+        <div class="sub">Current month (the branch drill-down)</div>
+        {% if by_class %}
+        <div class="mini-list">
+          {% for row in by_class %}
+          <div class="mini-row">
+            <span class="who">{{ row.label }}</span>
+            <span class="mono">Rs {{ row.collected|floatformat:0 }} / Rs {{ row.invoiced|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">No classes yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section-title">Other income register</div>
+    {% if income_entries %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Receipt no.</th><th>Title</th><th>Source</th><th>Method</th><th>Received on</th><th>Recorded by</th><th class="right">Amount</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for i in income_entries %}
+          <tr>
+            <td class="mono">{{ i.receipt_no }}</td>
+            <td class="school-name">{{ i.title }}</td>
+            <td><span class="badge muted">{{ i.source_display }}</span></td>
+            <td>{{ i.method_display }}</td>
+            <td>{{ i.received_on }}</td>
+            <td>{{ i.recorded_by }}</td>
+            <td class="amount right">Rs {{ i.amount|floatformat:0 }}</td>
+            <td><a class="btn small ghost" href="{% url 'Accountant:receipt-print' %}?source=income&amp;id={{ i.id }}" target="_blank">Print</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No other income yet</h3><p>Rent, canteen, donations and sales income is tracked here — fee collections come from the Collections page.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+<script src="{% static 'Accountant/js/statement.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receipt — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="print-actions no-print">
+  <button class="btn" onclick="window.print()">Print receipt</button>
+  <a class="btn ghost" href="{% url 'Accountant:receipts' %}">Back to receipts</a>
+</div>
+
+<div class="print-page">
+  <div class="doc-head">
+    <div>
+      <h1>{{ school.name }}</h1>
+      <div class="muted">{% if kind == "fee" %}Fee receipt{% else %}Receipt (other income){% endif %}</div>
+    </div>
+    <div class="doc-no">
+      <div class="no">{% if kind == "fee" %}{{ receipt_no }}{% else %}{{ income.receipt_no }}{% endif %}</div>
+      <div class="muted">Issued {{ today }}</div>
+    </div>
+  </div>
+
+  {% if kind == "fee" %}
+  <table class="doc-table">
+    <tr><td class="lbl">Received from</td><td>{{ student.full_name }}</td></tr>
+    <tr><td class="lbl">Class</td><td>{% if student.class_section_id %}{{ student.class_section.label }}{% else %}&mdash;{% endif %}</td></tr>
+    <tr><td class="lbl">Billing period</td><td>{{ invoice.period }}</td></tr>
+    <tr><td class="lbl">Fee head</td><td>{{ invoice.fee_head.name|default:"Tuition" }}</td></tr>
+    <tr><td class="lbl">Payment method</td><td>{{ payment.get_method_display }}</td></tr>
+    <tr><td class="lbl">Paid on</td><td>{{ payment.paid_on }}</td></tr>
+    <tr><td class="lbl">Received by</td><td>{{ payment.received_by|default:"—" }}</td></tr>
+    <tr class="total"><td class="lbl">Amount received</td><td>Rs {{ payment.amount|floatformat:2 }}</td></tr>
+  </table>
+  {% else %}
+  <table class="doc-table">
+    <tr><td class="lbl">Title</td><td>{{ income.title }}</td></tr>
+    <tr><td class="lbl">Source</td><td>{{ income.get_source_display }}</td></tr>
+    <tr><td class="lbl">Payment method</td><td>{{ income.get_method_display }}</td></tr>
+    <tr><td class="lbl">Received on</td><td>{{ income.received_on }}</td></tr>
+    {% if income.details %}<tr><td class="lbl">Details</td><td>{{ income.details }}</td></tr>{% endif %}
+    <tr class="total"><td class="lbl">Amount received</td><td>Rs {{ income.amount|floatformat:2 }}</td></tr>
+  </table>
+  {% endif %}
+
+  <div class="doc-foot">
+    <span>This is a system-generated receipt.</span>
+    <span>{{ school.name }} &middot; Ilmkar</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+</body>
+</html>

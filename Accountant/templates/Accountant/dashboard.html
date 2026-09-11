@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance dashboard — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="overview" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Finance dashboard</h1>
+        <p>{{ school.name }} &middot; {{ kpis.period }}</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn ghost" href="{% url 'Accountant:collections' %}">Collections</a>
+        <a class="btn" href="{% url 'Accountant:expenses' %}">Record expense</a>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Collected today</div>
+        <div class="value">Rs {{ kpis.collected_today|floatformat:0 }}</div>
+        <div class="delta">Week: Rs {{ kpis.collected_week|floatformat:0 }}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Collected this month</div>
+        <div class="value">Rs {{ kpis.collected_month|floatformat:0 }}</div>
+        <div class="delta">{% if kpis.collection_pct %}{{ kpis.collection_pct }}% of invoiced{% else %}&mdash;{% endif %}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Expenses this month</div>
+        <div class="value">Rs {{ this_month.expenses|floatformat:0 }}</div>
+        <div class="delta">Income: Rs {{ this_month.income|floatformat:0 }}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Net this month</div>
+        <div class="value {% if this_month.net < 0 %}pnl-negative{% else %}pnl-positive{% endif %}">Rs {{ this_month.net|floatformat:0 }}</div>
+        <div class="delta {% if this_month.net < 0 %}down{% endif %}">{{ this_month.label }}</div>
+      </div>
+    </div>
+
+    {% if pending_refunds_count or open_payroll_count or unreconciled_count or defaulters %}
+    <div class="chips">
+      <a class="chip" href="{% url 'Accountant:collections' %}"><b class="mono">{{ defaulters|length }}</b> students in default</a>
+      <a class="chip" href="{% url 'Accountant:reconciliation' %}?only=unreconciled"><b class="mono">{{ unreconciled_count }}</b> unreconciled entries (Rs {{ unreconciled_amount|floatformat:0 }})</a>
+      <a class="chip" href="{% url 'Accountant:payroll' %}"><b class="mono">{{ open_payroll_count }}</b> payroll runs open</a>
+      <a class="chip" href="{% url 'Accountant:refunds' %}"><b class="mono">{{ pending_refunds_count }}</b> refunds awaiting</a>
+    </div>
+    {% endif %}
+
+    <div class="section-title" style="border:none;padding-top:0">Latest money movements</div>
+    {% if recent_ledger %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Account</th><th>Description</th><th>Source</th><th class="right">Amount</th><th>Reconciled</th></tr>
+        </thead>
+        <tbody>
+          {% for e in recent_ledger %}
+          <tr>
+            <td>{{ e.entry_date }}</td>
+            <td>{{ e.account }}</td>
+            <td>{{ e.description }}</td>
+            <td><span class="badge muted">{{ e.source_type_display }}</span></td>
+            <td class="amount right">
+              <span class="{% if e.direction == 'in' %}dir-in{% else %}dir-out{% endif %}">
+                {% if e.direction == 'in' %}+{% else %}&minus;{% endif %} Rs {{ e.amount|floatformat:0 }}
+              </span>
+            </td>
+            <td><span class="badge {{ e.reconciled|yesno:'reconciled,unreconciled' }}">{{ e.reconciled|yesno:'Matched,Pending' }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No money movements yet</h3><p>Fee payments, expenses and other income will appear here as they are recorded.</p></div>
+    {% endif %}
+
+    <div class="grid2">
+      <div class="card">
+        <h3>6-month trend</h3>
+        <div class="sub">Income vs expenses, per month</div>
+        <div class="table-wrap" style="border:none">
+          <table>
+            <thead><tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th></tr></thead>
+            <tbody>
+              {% for row in statement %}
+              <tr class="{% if row.current %}pnl-total{% endif %}">
+                <td>{{ row.label }}</td>
+                <td class="amount">Rs {{ row.income|floatformat:0 }}</td>
+                <td class="amount">Rs {{ row.expenses|floatformat:0 }}</td>
+                <td class="amount {% if row.net < 0 %}pnl-negative{% else %}pnl-positive{% endif %}">Rs {{ row.net|floatformat:0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Expenses this month</h3>
+        <div class="sub">By category</div>
+        {% if expenses_month.rows %}
+        <div class="mini-list">
+          {% for row in expenses_month.rows %}
+          <div class="mini-row">
+            <span class="who">{{ row.label }}</span>
+            <span class="mono">Rs {{ row.total|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">No expenses recorded this month.</div>
+        {% endif %}
+        <h3 style="margin-top:18px">Account balances</h3>
+        <div class="sub">Book balance (opening + in &minus; out)</div>
+        {% if positions %}
+        <div class="mini-list">
+          {% for p in positions %}
+          <div class="mini-row">
+            <span class="who">{{ p.name }} <span class="small-note">({{ p.kind_display }})</span></span>
+            <span class="mono">Rs {{ p.balance|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">Accounts appear after the first money movement.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Approval trail</h3>
+        <div class="sub">Latest audited actions (append-only)</div>
+        {% if recent_audit %}
+        <div class="mini-list">
+          {% for a in recent_audit %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ a.action }}</div>
+              <div class="what">{{ a.target }}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="small-note">{{ a.actor }}</div>
+              <div class="what">{{ a.created_at }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">Actions are logged here as they happen.</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Open refunds &amp; payroll</h3>
+        <div class="sub">Items awaiting a decision</div>
+        {% if pending_refunds or open_payroll %}
+        <div class="mini-list">
+          {% for r in pending_refunds %}
+          <div class="mini-row">
+            <div>
+              <div class="who">{{ r.kind_display }} &mdash; {{ r.student_name }}</div>
+              <div class="what">requested by {{ r.requested_by }}</div>
+            </div>
+            <span class="badge {{ r.status }}">Rs {{ r.amount|floatformat:0 }}</span>
+          </div>
+          {% endfor %}
+          {% for p in open_payroll %}
+          <div class="mini-row">
+            <div>
+              <div class="who">Payroll {{ p.period }}</div>
+              <div class="what">{{ p.status_display }}</div>
+            </div>
+            <a class="btn small ghost" href="{% url 'Accountant:payroll' %}?period={{ p.id }}">Open</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="small-note">Nothing waiting — all clear.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+</body>
+</html>

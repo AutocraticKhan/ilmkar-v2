@@ -94,6 +94,19 @@ def _is_parent(user):
     return is_parent(user)
 
 
+def _is_accountant(user):
+    """True when the user may use the finance dashboard at /finance/.
+    Accountants hold an accountant-role SchoolUser membership
+    (Accountant.utils); principals are admitted too as a read-through
+    (approvals + review). Imported lazily like _is_owner.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    from Accountant.utils import is_accountant
+
+    return is_accountant(user)
+
+
 superuser_required = user_passes_test(_is_superuser, login_url="/")
 
 
@@ -102,9 +115,9 @@ superuser_required = user_passes_test(_is_superuser, login_url="/")
 # until the superuser assigns them as a school's owner.
 _NO_CONSOLE_ACCESS_MSG = (
     "This account can't sign in to a console. Only platform operators, "
-    "school/group owners, school admins (principals), teachers/staff, "
-    "students and parents/families can. Ask the platform operator to "
-    "assign a role to your account."
+    "school/group owners, school admins (principals), accountants, "
+    "teachers/staff, students and parents/families can. Ask the platform "
+    "operator to assign a role to your account."
 )
 
 
@@ -122,6 +135,10 @@ def login_view(request):
             return redirect("school_owner:dashboard")
         if _is_school_admin(request.user):
             return redirect("School_Admin:dashboard")
+        # Accountants: accountant-role memberships land at /finance/
+        # (checked AFTER principals so the principal route keeps priority).
+        if _is_accountant(request.user):
+            return redirect("Accountant:dashboard")
         # Teachers / staff: teacher-role memberships land here (checked
         # AFTER principals so the principal route keeps priority).
         if _is_teacher(request.user):
@@ -156,6 +173,10 @@ def login_view(request):
             if _is_school_admin(user):
                 login(request, user)
                 return redirect("School_Admin:dashboard")
+            # Accountants: accountant-role memberships land at /finance/.
+            if _is_accountant(user):
+                login(request, user)
+                return redirect("Accountant:dashboard")
             # Teachers / staff: teacher-role memberships land here.
             if _is_teacher(user):
                 login(request, user)

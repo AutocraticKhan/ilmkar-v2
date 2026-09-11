@@ -1,0 +1,67 @@
+/* Accountant / Finance dashboard — page-specific styles on top of the
+   operator dashboard.css design system (same palette + components). */
+
+/* ---------- sidebar badges (nav counts) ---------- */
+.nav-badge{
+  margin-left:auto;
+  background:var(--brass-soft);
+  color:var(--brass);
+  border-radius:20px;
+  padding:1px 8px;
+  font-size:11px;
+  font-weight:500;
+}
+
+/* ---------- ledger direction + reconcile badges ---------- */
+.badge.in{ background:var(--green-soft); color:var(--green); }
+.badge.out{ background:var(--red-soft); color:var(--red); }
+.badge.reconciled{ background:var(--green-soft); color:var(--green); }
+.badge.unreconciled{ background:var(--amber-soft); color:var(--amber); }
+.badge.requested{ background:var(--amber-soft); color:var(--amber); }
+.badge.draft{ background:#EDEAE2; color:#5B5747; }
+.badge.refunded{ background:var(--green-soft); color:var(--green); }
+td .dir-in{ color:var(--green); font-weight:500; }
+td .dir-out{ color:var(--red); font-weight:500; }
+
+/* ---------- payroll totals row ---------- */
+.totals-row td{ font-weight:600; color:var(--ink); border-top:2px solid var(--line); }
+td.amount .net{ color:var(--ink); font-weight:600; }
+
+/* ---------- statement (P&L) ---------- */
+.pnl-total td{ font-weight:600; color:var(--ink); }
+.pnl-negative{ color:var(--red); font-weight:600; }
+.pnl-positive{ color:var(--green); font-weight:600; }
+
+/* ---------- print pages (receipt + payslip) ---------- */
+.print-page{
+  max-width:640px;
+  margin:30px auto;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-m);
+  padding:34px 40px;
+}
+.print-page .doc-head{
+  display:flex; justify-content:space-between; align-items:flex-start;
+  border-bottom:2px solid var(--ink); padding-bottom:14px; margin-bottom:18px;
+}
+.print-page .doc-head h1{ font-size:22px; }
+.print-page .doc-head .muted{ color:var(--muted); font-size:12.5px; margin-top:2px; }
+.print-page .doc-no{ text-align:right; }
+.print-page .doc-no .no{ font-family:'IBM Plex Mono', monospace; font-size:14px; color:var(--ink); }
+.doc-table{ width:100%; border-collapse:collapse; margin:14px 0; }
+.doc-table td{ padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.doc-table td.lbl{ color:var(--muted); width:44%; }
+.doc-table tr.total td{ font-weight:600; color:var(--ink); border-bottom:none; border-top:2px solid var(--ink); }
+.doc-foot{
+  margin-top:22px; padding-top:12px; border-top:1px dashed var(--line);
+  color:var(--muted); font-size:12px; display:flex; justify-content:space-between;
+}
+.print-actions{ max-width:640px; margin:0 auto 12px; display:flex; gap:10px; }
+
+@media print{
+  body{ background:#FFF; }
+  .sidebar, .print-actions, .toast{ display:none !important; }
+  .shell{ grid-template-columns:1fr; }
+  .print-page{ border:none; margin:0; padding:10px 0; }
+}

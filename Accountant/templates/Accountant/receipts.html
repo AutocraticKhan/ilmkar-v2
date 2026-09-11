@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receipts — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="receipts" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Invoices &amp; receipts</h1>
+        <p>Every fee payment and other-income entry is printable</p>
+      </div>
+    </div>
+
+    <div class="section-title" style="border:none;padding-top:0">Fee payment receipts</div>
+    {% if payments %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Head</th><th>Period</th><th>Method</th><th>Paid on</th><th>Received by</th><th class="right">Amount</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td class="school-name">{{ p.student_name }}<div class="small-note">{{ p.class_label }}</div></td>
+            <td>{{ p.fee_head }}</td>
+            <td>{{ p.period }}</td>
+            <td>{{ p.method_display }}</td>
+            <td>{{ p.paid_on }}</td>
+            <td>{{ p.received_by }}</td>
+            <td class="amount right">Rs {{ p.amount|floatformat:0 }}</td>
+            <td><a class="btn small ghost" href="{% url 'Accountant:receipt-print' %}?source=fee&amp;id={{ p.id }}" target="_blank">Print</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No payments yet</h3><p>Fee payments recorded on the Collections page (or in the school admin dashboard) get receipts here.</p></div>
+    {% endif %}
+
+    <div class="section-title">Other income receipts</div>
+    {% if income_entries %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Receipt no.</th><th>Title</th><th>Source</th><th>Method</th><th>Received on</th><th class="right">Amount</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for i in income_entries %}
+          <tr>
+            <td class="mono">{{ i.receipt_no }}</td>
+            <td class="school-name">{{ i.title }}</td>
+            <td><span class="badge muted">{{ i.source_display }}</span></td>
+            <td>{{ i.method_display }}</td>
+            <td>{{ i.received_on }}</td>
+            <td class="amount right">Rs {{ i.amount|floatformat:0 }}</td>
+            <td><a class="btn small ghost" href="{% url 'Accountant:receipt-print' %}?source=income&amp;id={{ i.id }}" target="_blank">Print</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No other income yet</h3><p>Other income recorded on the P&amp;L statement page gets receipts here.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+</body>
+</html>

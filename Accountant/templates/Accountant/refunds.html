@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refunds &amp; adjustments — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="refunds" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Refunds &amp; adjustments</h1>
+        <p>{{ refunds_count }} logged &middot; approvals cannot be self-approved and are append-only</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="openRefundDrawer()">Log refund / adjustment</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <a class="btn small {% if not active_status %}{% else %}ghost{% endif %}" href="{% url 'Accountant:refunds' %}">All</a>
+      {% for s in statuses %}
+      <a class="btn small {% if active_status == s.value %}{% else %}ghost{% endif %}" href="?status={{ s.value }}">{{ s.label }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="section-title" style="border:none;padding-top:0">Log</div>
+    {% if refunds %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Kind</th><th class="right">Amount</th><th>Reason</th><th>Requested by</th><th>Approved by</th><th>Paid on</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for r in refunds %}
+          <tr data-refund-id="{{ r.id }}">
+            <td class="school-name">{{ r.student_name }}<div class="small-note">{{ r.class_section }}</div></td>
+            <td><span class="badge muted">{{ r.kind_display }}</span></td>
+            <td class="amount right">Rs {{ r.amount|floatformat:0 }}</td>
+            <td>{{ r.reason }}{% if r.decision_note %}<div class="small-note">Decision: {{ r.decision_note }}</div>{% endif %}</td>
+            <td>{{ r.requested_by }}</td>
+            <td>{{ r.approved_by }}</td>
+            <td>{{ r.paid_on|default:"—" }}</td>
+            <td><span class="badge {{ r.status }}">{{ r.status_display }}</span></td>
+            <td class="cell-actions">
+              {% if r.status == "requested" %}
+              <button class="btn small" onclick="approveRefund({{ r.id }})">Approve</button>
+              <button class="btn small ghost danger" onclick="rejectRefund({{ r.id }})">Reject</button>
+              {% elif r.status == "approved" %}
+              <button class="btn small" onclick="markRefundPaid({{ r.id }})">Mark paid</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No refunds or adjustments</h3><p>Requests are logged here, approved by a second person, and only then paid out.</p></div>
+    {% endif %}
+
+    <div class="section-title">Approval trail (append-only)</div>
+    {% if audit %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Note</th></tr></thead>
+        <tbody>
+          {% for a in audit %}
+          <tr>
+            <td>{{ a.created_at }}</td>
+            <td>{{ a.actor }}</td>
+            <td><span class="badge muted">{{ a.action }}</span></td>
+            <td>{{ a.target }}</td>
+            <td>{{ a.note }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No audit entries yet</h3><p>Every finance action is appended here with its actor — rows are never edited or deleted.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+{{ students|json_script:"students-data" }}
+{{ refunds|json_script:"refunds-data" }}
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+<script src="{% static 'Accountant/js/refunds.js' %}"></script>
+</body>
+</html>

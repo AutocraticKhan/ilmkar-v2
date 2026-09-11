@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reconciliation — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="shell">
+
+  {% include "Accountant/_sidebar.html" with nav_active="reconciliation" %}
+
+  <main class="main">
+
+    <div class="topline">
+      <div>
+        <h1>Bank / cash reconciliation</h1>
+        <p>Money that has come in vs. what's recorded &middot; {% if synced_count %}{{ synced_count }} new entr{{ synced_count|pluralize:"y,ies" }} pulled in{% else %}ledger up to date{% endif %}</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="syncLedger()">Sync ledger</button>
+        <a class="btn {% if only_unreconciled %}ghost{% endif %}" href="{% url 'Accountant:reconciliation' %}">All entries</a>
+        <a class="btn {% if only_unreconciled %}{% else %}ghost{% endif %}" href="{% url 'Accountant:reconciliation' %}?only=unreconciled">Unreconciled only</a>
+      </div>
+    </div>
+
+    <div class="section-title" style="border:none;padding-top:0">Accounts</div>
+    {% if positions %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Account</th><th>Type</th><th class="right">Opening</th><th class="right">In</th><th class="right">Out</th><th class="right">Book balance</th><th>Pending</th><th></th></tr></thead>
+        <tbody>
+          {% for p in positions %}
+          <tr>
+            <td class="school-name">{{ p.name }}</td>
+            <td><span class="badge muted">{{ p.kind_display }}</span></td>
+            <td class="amount right">{{ p.opening|floatformat:0 }}</td>
+            <td class="amount right dir-in">{{ p.inflow|floatformat:0 }}</td>
+            <td class="amount right dir-out">{{ p.outflow|floatformat:0 }}</td>
+            <td class="amount right"><b>Rs {{ p.balance|floatformat:0 }}</b></td>
+            <td><span class="badge {{ p.unreconciled_count|yesno:'unreconciled,reconciled' }}">{{ p.unreconciled_count }} pending</span></td>
+            <td><a class="btn small ghost" href="?account={{ p.id }}{% if only_unreconciled %}&amp;only=unreconciled{% endif %}">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No accounts yet</h3><p>“Cash box” and “Bank account” are created automatically with the first money movement.</p></div>
+    {% endif %}
+
+    <div class="section-title">Ledger entries</div>
+    {% if entries %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Account</th><th>Description</th><th>Source</th><th class="right">Amount</th><th>Status</th><th>Reconciled by</th><th></th></tr></thead>
+        <tbody>
+          {% for e in entries %}
+          <tr data-entry-id="{{ e.id }}">
+            <td>{{ e.entry_date }}</td>
+            <td>{{ e.account }}</td>
+            <td>{{ e.description }}</td>
+            <td><span class="badge muted">{{ e.source_type_display }}</span></td>
+            <td class="amount right">
+              <span class="{% if e.direction == 'in' %}dir-in{% else %}dir-out{% endif %}">
+                {% if e.direction == 'in' %}+{% else %}&minus;{% endif %} Rs {{ e.amount|floatformat:0 }}
+              </span>
+            </td>
+            <td><span class="badge {{ e.reconciled|yesno:'reconciled,unreconciled' }}">{{ e.reconciled|yesno:'Matched,Pending' }}</span></td>
+            <td>{{ e.reconciled_by }}</td>
+            <td>
+              {% if not e.reconciled %}
+              <button class="btn small" onclick="reconcileEntry({{ e.id }})">Mark reconciled</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty"><h3>No ledger entries</h3><p>Recorded money movements appear here once they exist.</p></div>
+    {% endif %}
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+<script src="{% static 'Accountant/js/reconciliation.js' %}"></script>
+</body>
+</html>

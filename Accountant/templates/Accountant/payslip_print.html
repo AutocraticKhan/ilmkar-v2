@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payslip — {{ item.staff.full_name }} — {{ school.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'SAAS_admin/css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'School_Admin/css/school_admin.css' %}">
+<link rel="stylesheet" href="{% static 'Accountant/css/accountant.css' %}">
+</head>
+<body data-csrf-token="{{ csrf_token }}">
+
+<div class="print-actions no-print">
+  <button class="btn" onclick="window.print()">Print payslip</button>
+  <a class="btn ghost" href="{% url 'Accountant:payroll' %}?period={{ item.period_id }}">Back to payroll</a>
+</div>
+
+<div class="print-page">
+  <div class="doc-head">
+    <div>
+      <h1>{{ school.name }}</h1>
+      <div class="muted">Salary payslip &middot; {{ item.period.period }}</div>
+    </div>
+    <div class="doc-no">
+      <div class="no">PS-{{ item.period_id }}-{{ item.pk }}</div>
+      <div class="muted">Issued {{ today }}</div>
+    </div>
+  </div>
+
+  <table class="doc-table">
+    <tr><td class="lbl">Employee</td><td>{{ item.staff.full_name }}</td></tr>
+    <tr><td class="lbl">Designation</td><td>{{ item.staff.designation|default:"—" }}</td></tr>
+    <tr><td class="lbl">Department</td><td>{{ item.staff.department|default:"—" }}</td></tr>
+    <tr><td class="lbl">Basic salary</td><td>Rs {{ item.basic|floatformat:2 }}</td></tr>
+    <tr><td class="lbl">Allowances</td><td>Rs {{ item.allowances|floatformat:2 }}</td></tr>
+    <tr><td class="lbl">Deductions</td><td>Rs {{ item.deductions|floatformat:2 }}</td></tr>
+    <tr class="total"><td class="lbl">Net pay</td><td>Rs {{ item.net_pay|floatformat:2 }}</td></tr>
+    <tr><td class="lbl">Paid on</td><td>{{ item.paid_on|default:"pending disbursement" }}</td></tr>
+  </table>
+
+  <div class="doc-foot">
+    <span>Run total: Rs {{ totals.net|floatformat:2 }} across {{ totals.count }} staff</span>
+    <span>{{ school.name }} &middot; Ilmkar</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="{% static 'Accountant/js/accountant_common.js' %}"></script>
+</body>
+</html>
