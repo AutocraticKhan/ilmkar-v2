@@ -28,6 +28,9 @@ urlpatterns = [
     path("approvals/leave/<int:leave_id>/decide/", views.leave_decide, name="leave-decide"),
     path("approvals/expenses/create/", views.expense_create, name="expense-create"),
     path("approvals/expenses/<int:expense_id>/decide/", views.expense_decide, name="expense-decide"),
+    path("approvals/owner/create/", views.owner_request_create, name="owner-request-create"),
+    # messages (principal → staff inbox)
+    path("messages/create/", views.message_create, name="message-create"),
     # reports
     path("reports/", views.reports, name="reports"),
     # notices

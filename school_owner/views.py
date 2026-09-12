@@ -174,13 +174,12 @@ def transfers(request):
 
 
 def _sync_registry_count(school):
-    """TODO(placeholder): School.students is the registry number the operator
-    console shows; keep it aligned with the placeholder student rows until
-    the real admissions module owns that field."""
-    school.students = Student.objects.filter(
-        school=school, status=Student.Status.ACTIVE
-    ).count()
-    school.save(update_fields=["students"])
+    """Keep the operator console's registry number (School.students) in
+    sync with the active student mirror rows. Delegates to the shared
+    helper the school-side dashboard also calls on admissions."""
+    from .services import sync_registry_count
+
+    sync_registry_count(school)
 
 
 @require_POST
@@ -561,11 +560,12 @@ def announcement_delete(request, announcement_id):
 @login_required
 @owner_required
 def approvals(request):
-    """Branch requests (budget, new hire, \u2026) decided centrally by the owner.
+    """Branch requests (budget, new hire, …) decided centrally by the owner.
 
-    TODO(placeholder): the "record a request" action below exists only so
-    the workflow is testable before the branch principal dashboard lands —
-    principals will submit requests from their own dashboard later.
+    Branch principals submit these from their own dashboard now (School
+    Admin → Approvals → "Request owner approval"). The "record a request"
+    action below stays as the owner-side manual fallback (e.g. phone-in
+    requests from a branch without a principal login yet).
     """
     chain = _owner_chain(request.user)
     branches = _visible_branches(request.user)

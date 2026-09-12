@@ -183,8 +183,11 @@ class Invoice(models.Model):
 class UsageSnapshot(models.Model):
     """Periodic usage metrics captured for a school.
 
-    Populated with dummy data for now; real values will be written by the
-    school-side dashboards once implemented.
+    Computed from live data by ``SAAS_admin.services.refresh_snapshots``
+    (management command ``refresh_usage_snapshots``; also refreshed on the
+    operator console's Usage page load). Logins = member logins that day,
+    active_students = ACTIVE student count, storage_mb = 0 until the
+    content module adds file uploads.
     """
 
     school = models.ForeignKey(

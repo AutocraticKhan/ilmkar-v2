@@ -189,8 +189,11 @@ def student_create(request):
         monthly_fee=monthly_fee,
         admission_date=admission_date or datetime.date.today(),
     )
-    # TODO(integration): also mirror the new student into school_owner.Student
-    # so the owner dashboard's branch numbers stay in sync.
+    # Mirror the new student into the owner dashboard's chain rows so the
+    # owner's branch numbers stay in sync (lazy import keeps apps decoupled).
+    from school_owner.services import mirror_student_to_owner
+
+    mirror_student_to_owner(student)
     return JsonResponse({"student": student.as_dict()}, status=201)
 
 
@@ -210,6 +213,10 @@ def student_status(request, student_id):
         return JsonResponse({"error": "Unknown status."}, status=400)
     student.status = status
     student.save(update_fields=["status"])
+    # Keep the owner-dashboard mirror row (and the registry count) in sync.
+    from school_owner.services import mirror_student_to_owner
+
+    mirror_student_to_owner(student)
     return JsonResponse({"student": student.as_dict()})
 
 
@@ -352,8 +359,12 @@ def staff_create(request):
         email=(data.get("email") or "").strip(),
         join_date=join_date,
     )
-    # TODO(integration): mirror into school_owner.StaffMember and offer a
-    # staff-side login (SchoolUser membership) once the staff app exists.
+    # Mirror into school_owner.StaffMember so the owner dashboard's staff
+    # counts / transfers see the new hire (staff-side logins remain a
+    # SchoolUser membership created on the operator console).
+    from school_owner.services import mirror_staff_to_owner
+
+    mirror_staff_to_owner(member)
     return JsonResponse({"member": member.as_dict()}, status=201)
 
 
@@ -367,6 +378,10 @@ def staff_toggle(request, staff_id):
         return JsonResponse({"error": "Staff member not found."}, status=404)
     member.is_active = not member.is_active
     member.save(update_fields=["is_active"])
+    # Keep the owner-dashboard mirror row in sync with the deactivation.
+    from school_owner.services import mirror_staff_to_owner
+
+    mirror_staff_to_owner(member)
     return JsonResponse({"member": member.as_dict()})
 
 
@@ -687,9 +702,75 @@ def expense_decide(request, expense_id):
     expense.decision_note = (data.get("note") or "").strip()[:300]
     expense.decided_at = timezone.now()
     expense.save(update_fields=["status", "decision_note", "decided_at"])
-    # TODO(integration): escalate large approved expenses to the owner
-    # dashboard (school_owner.ApprovalRequest) once the apps are connected.
+    if decision == ExpenseRequest.Status.APPROVED:
+        # Escalate approved expenses into the owner dashboard's approval
+        # feed (type=budget) — standalone schools (no chain) skip this.
+        from school_owner.services import escalate_to_owner
+
+        escalate_to_owner(
+            school,
+            request_type="budget",
+            title=f"Expense — {expense.title}",
+            details=expense.details,
+            amount=expense.amount,
+            requested_by=expense.requested_by,
+        )
     return JsonResponse({"expense": expense.as_dict()})
+
+
+@require_POST
+@login_required
+@school_admin_required
+def owner_request_create(request):
+    """Submit a branch request (budget / new hire / other) to the group
+    owner — it lands in the chain dashboard's approval workflow feed.
+
+    This is the principal-side intake the owner dashboard's temporary
+    "record a branch request" button used to stand in for. Standalone
+    schools (no chain) are rejected — there is no owner to decide.
+    """
+    school = _school_of(request)
+    if school.chain_id is None:
+        return JsonResponse(
+            {
+                "error": (
+                    "Your school is not part of a group/chain — "
+                    "there is no owner to approve requests."
+                )
+            },
+            status=400,
+        )
+    data, err = _parse_body(request)
+    if err:
+        return err
+    title = (data.get("title") or "").strip()
+    if not title:
+        return JsonResponse({"error": "Request title is required."}, status=400)
+    request_type = data.get("request_type")
+    if request_type not in ("budget", "new_hire", "other"):
+        request_type = "other"
+    amount_raw = (data.get("amount") or "").strip()
+    amount = None
+    if amount_raw:
+        try:
+            amount = float(amount_raw)
+        except ValueError:
+            return JsonResponse({"error": "Amount must be a number."}, status=400)
+        if amount < 0:
+            return JsonResponse(
+                {"error": "Amount cannot be negative."}, status=400
+            )
+    from school_owner.services import principal_request_to_owner
+
+    approval_request = principal_request_to_owner(
+        request.user,
+        school,
+        request_type=request_type,
+        title=title,
+        details=(data.get("details") or "").strip(),
+        amount=amount,
+    )
+    return JsonResponse({"request": approval_request.as_dict()}, status=201)
 
 
 # ---------- reports ----------
@@ -762,6 +843,13 @@ def notices(request):
         {
             "school": school,
             "notices": [n.as_dict() for n in Notice.objects.filter(school=school)],
+            # Active staff for the "message a staff member" compose drawer
+            # (direct 1:1 messages land in the staff member's inbox at
+            # /teacher — circulars below are the broadcast channel).
+            "staff": [
+                s.as_dict()
+                for s in StaffMember.objects.filter(school=school, is_active=True)
+            ],
             "pending_approvals": _pending_counts(school),
         },
     )
@@ -771,8 +859,10 @@ def notices(request):
 @login_required
 @school_admin_required
 def notice_create(request):
-    """TODO(integration): when the teacher/student/parent portals exist,
-    fan this out to their inboxes on create (post_save or a task queue)."""
+    """Post a circular. NOTE: no fan-out needed — the teacher, student and
+    parent portals read ``Notice`` rows directly (audience-filtered) from
+    their dashboards and inboxes. SMS/push delivery lands with the
+    notification gateway."""
     school = _school_of(request)
     data, err = _parse_body(request)
     if err:
@@ -810,6 +900,46 @@ def notice_delete(request, notice_id):
         return JsonResponse({"error": "Notice not found."}, status=404)
     notice.delete()
     return JsonResponse({"ok": True})
+
+
+@require_POST
+@login_required
+@school_admin_required
+def message_create(request):
+    """Send a direct message to one staff member — it lands in their
+    inbox at /teacher (the principal compose UI the Teachers inbox TODO
+    asked for; parents compose from their own portal)."""
+    from Teachers.models import TeacherMessage
+
+    school = _school_of(request)
+    data, err = _parse_body(request)
+    if err:
+        return err
+    staff = StaffMember.objects.filter(
+        school=school, pk=data.get("staff_id")
+    ).first()
+    if staff is None:
+        return JsonResponse(
+            {"error": "Staff member not found."}, status=404
+        )
+    subject = (data.get("subject") or "").strip()
+    body = (data.get("body") or "").strip()
+    if not subject or not body:
+        return JsonResponse(
+            {"error": "Subject and message are required."}, status=400
+        )
+    message = TeacherMessage.objects.create(
+        school=school,
+        staff=staff,
+        sender_type=TeacherMessage.SenderType.ADMIN,
+        sender_name=(
+            request.user.get_full_name() or request.user.get_username()
+        ),
+        subject=subject[:200],
+        body=body,
+        sent_by=request.user,
+    )
+    return JsonResponse({"message": message.as_dict()}, status=201)
 
 
 # ---------- complaints & front-desk log ----------

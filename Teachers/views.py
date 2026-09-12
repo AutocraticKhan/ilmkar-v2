@@ -737,8 +737,10 @@ def inbox(request):
             message.save(update_fields=["is_read"])
             return JsonResponse({"ok": True})
         if action == "reply":
-            # TODO(integration): route the reply to the parent portal /
-            # admin inbox when those exist; today it's stored on the row.
+            # Routing is live: for parent-sent rows the reply is stored on
+            # the same row and rendered back in the parent's message
+            # thread at /parent/messages. Admin-sent rows have no admin
+            # inbox surface yet — their replies are stored but unread.
             message.reply = ((body.get("reply") or "").strip())
             if not message.reply:
                 return JsonResponse({"error": "Reply is empty."}, status=400)

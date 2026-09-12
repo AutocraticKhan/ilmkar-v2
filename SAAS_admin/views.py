@@ -658,6 +658,12 @@ def _usage_risk(latest, prev):
 @login_required
 @superuser_required
 def usage(request):
+    # Capture TODAY'S numbers from live data on every page load (history
+    # is preserved; re-runs just upsert today's row). The cron-able
+    # ``refresh_usage_snapshots`` command does the same for scheduled runs.
+    from .services import refresh_snapshots
+
+    refresh_snapshots()
     rows = []
     for school in School.objects.all().order_by("name"):
         snaps = list(school.usage_snapshots.order_by("-date")[:2])

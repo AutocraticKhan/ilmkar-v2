@@ -76,30 +76,28 @@ class Command(BaseCommand):
 
     # --- chain demo data seeders (part 1) ---------------------------------
     def _seed_chain(self, schools, today):
-        """Seed one chain demo: owner login, 3 branches, students, staff,
-        classrooms, fee invoices, attendance, exams + chain features.
+        """Seed one chain demo: owner login, 3 branches, mirror students +
+        staff (for the transfers page) and chain features (policies, jobs,
+        announcements, sample approvals).
 
-        TODO(placeholder): student/staff/fee/attendance/exam rows feed the
-        chain owner dashboard. When the real school-side modules land they
-        will own this data — replace this seeding accordingly.
+        The owner dashboard's attendance/exam/fee METRICS read the real
+        ``School_Admin`` models now — seed those with ``seed_school_demo``
+        and ``seed_accountant_demo``; the legacy placeholder metric tables
+        (``school_owner.AttendanceSnapshot`` / ``ExamSummary`` /
+        ``FeeInvoice``) are intentionally NOT seeded anymore.
         """
         from django.contrib.auth.models import User
 
         from school_owner.models import (
             ApprovalRequest,
-            AttendanceSnapshot,
             BranchAnnouncement,
             Chain,
             Classroom,
-            ExamSummary,
-            FeeInvoice,
             GroupPolicy,
             JobPosting,
             Student,
             StaffMember,
         )
-
-        import datetime as dt
 
         from django.utils import timezone
 
@@ -165,48 +163,12 @@ class Command(BaseCommand):
                     full_name=f"{random.choice(FIRST)} {random.choice(LAST)}",
                     designation=random.choice(DESIG),
                 )
-            # 30 days of attendance with a different health per branch.
-            health = (0.96, 0.90, 0.86)[branches.index(s) % 3]
-            total = Student.objects.filter(school=s).count()
-            for back in range(30):
-                date = today - dt.timedelta(days=back)
-                present = int(total * min(1.0, health + random.uniform(-0.02, 0.02)))
-                AttendanceSnapshot.objects.get_or_create(
-                    school=s, date=date,
-                    defaults={"present": present, "absent": max(0, total - present)},
-                )
-            ExamSummary.objects.get_or_create(
-                school=s, term="Mid Term 2026",
-                defaults={
-                    "average_pct": round(random.uniform(52, 82), 1),
-                    "recorded_at": today - dt.timedelta(days=10),
-                },
-            )
             self.stdout.write(f"Chain demo rows seeded for {s.name}.")
-        # Fees for the current + previous periods across all branches.
-        periods = []
-        back = 0
-        while len(periods) < 4:
-            d = today - dt.timedelta(days=30 * back)
-            periods.append(d.strftime("%B %Y"))
-            back += 1
-        for s in branches:
-            students = list(Student.objects.filter(school=s))
-            if FeeInvoice.objects.filter(school=s, period=periods[0]).exists():
-                continue
-            for p_idx, period in enumerate(periods):
-                due = dt.date(today.year, today.month, 10) - dt.timedelta(days=30 * p_idx)
-                # Different branches collect at different rates.
-                rate = (0.92, 0.71, 0.55)[branches.index(s) % 3]
-                for student in students:
-                    paid = random.random() < rate * (1 - 0.05 * p_idx)
-                    FeeInvoice.objects.create(
-                        school=s, student=student, period=period,
-                        amount=student.monthly_fee, due_date=due,
-                        status=(FeeInvoice.Status.PAID if paid
-                                else FeeInvoice.Status.UNPAID),
-                        paid_at=due if paid else None,
-                    )
+        # NOTE: the owner dashboard's attendance / exams / fees metrics read
+        # the real School_Admin models (see school_owner.metrics) — the legacy
+        # school_owner.AttendanceSnapshot / ExamSummary / FeeInvoice tables
+        # are no longer seeded or read. Seed those surfaces with
+        # seed_school_demo + seed_accountant_demo instead.
         if not GroupPolicy.objects.filter(chain=chain).exists():
             GroupPolicy.objects.create(
                 chain=chain, name="Monthly tuition 2026",

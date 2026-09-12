@@ -1,23 +1,31 @@
 """Per-branch metric computation for the chain dashboard.
 
-TODO(placeholder): every function here reads from the placeholder models in
-``school_owner.models`` (Classroom/Student/StaffMember/FeeInvoice/
-AttendanceSnapshot/ExamSummary). When the real school-side modules land
-(Student Information, Fees, Attendance, Exams), swap the querysets inside
-these helpers — the shapes they return are the contract the dashboard UI
-is built on, so keep the returned dict keys stable.
+Every metric reads the REAL school-side models in ``School_Admin`` — the
+single source of truth the principal, teachers, accountant and portals all
+write to:
+
+- ``AttendanceSnapshot``  (kept live by ``Teachers.metrics.sync_attendance_snapshot``
+  every time a teacher saves the register);
+- ``ExamRecord``          (``average_pct`` recomputed on every marks-entry save);
+- ``StudentFeeInvoice`` + ``FeePayment`` (invoices the principal issues and
+  payments recorded by the accountant / parent / student portals);
+- ``Student`` / ``StaffMember`` / ``ClassSection`` (enrolment, staffing, seats).
+
+The returned dict shapes are the contract the dashboard UI is built on, so
+keep the keys stable.
 """
 import datetime
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Sum
 
-from .models import (
+from School_Admin.models import (
     AttendanceSnapshot,
-    Classroom,
-    ExamSummary,
-    FeeInvoice,
-    Student,
+    ClassSection,
+    ExamRecord,
+    FeePayment,
     StaffMember,
+    Student,
+    StudentFeeInvoice,
 )
 
 
@@ -28,43 +36,70 @@ def current_period(today=None):
 
 
 def attendance_pct(school, days=30, today=None):
-    """Average attendance % across the last ``days`` days of snapshots."""
+    """Average attendance % across the last ``days`` days of snapshots.
+
+    Per-section snapshots (the kind a teacher's register save upserts) are
+    preferred; school-wide rows (no section set) are only used as a
+    fallback, so a school with both shapes is never double-counted."""
     today = today or datetime.date.today()
-    qs = AttendanceSnapshot.objects.filter(
-        school=school, date__gte=today - datetime.timedelta(days=days)
-    ).aggregate(present=Sum("present"), absent=Sum("absent"))
-    total = (qs["present"] or 0) + (qs["absent"] or 0)
-    return round((qs["present"] or 0) / total * 100, 1) if total else None
+    since = today - datetime.timedelta(days=days)
+    rows = AttendanceSnapshot.objects.filter(
+        school=school, class_section__isnull=False,
+        date__gte=since, date__lte=today,
+    )
+    if not rows.exists():
+        rows = AttendanceSnapshot.objects.filter(
+            school=school, date__gte=since, date__lte=today,
+        )
+    agg = rows.aggregate(present=Sum("present"), absent=Sum("absent"))
+    total = (agg["present"] or 0) + (agg["absent"] or 0)
+    return round((agg["present"] or 0) / total * 100, 1) if total else None
 
 
 def exam_average(school):
-    """Most recent recorded exam average for the branch."""
-    latest = ExamSummary.objects.filter(school=school).first()
+    """Most recent recorded exam average for the branch — the latest
+    ``ExamRecord`` whose ``average_pct`` a teacher's marks entry filled in."""
+    latest = (
+        ExamRecord.objects.filter(school=school, average_pct__isnull=False)
+        .order_by("-exam_date", "-pk")
+        .first()
+    )
     return float(latest.average_pct) if latest else None
 
 
 def fee_metrics(school, today=None):
     """Collection stats for the current billing period plus overdue totals.
 
+    ``invoiced``  = ``StudentFeeInvoice`` amounts for the current period
+                    (issued by the principal, incl. the admission auto-invoice);
+    ``collected`` = ``FeePayment`` amounts recorded against those invoices
+                    (accountant receipts + parent/student online payments);
+    ``overdue``   = UNPAID/PARTIAL invoices past their due date, any period
+                    (the same defaulter definition the accountant uses).
+
     Returns a dict with: invoiced, collected, outstanding (unpaid in the
     current period), overdue_amount (any period, due date passed),
-    collection_pct (None when nothing was invoiced yet).
+    overdue_count, collection_pct (None when nothing was invoiced yet).
     """
     today = today or datetime.date.today()
     period = current_period(today)
 
-    period_agg = FeeInvoice.objects.filter(school=school, period=period).aggregate(
-        invoiced=Sum("amount"),
-        collected=Sum("amount", filter=Q(status=FeeInvoice.Status.PAID)),
-    )
-    overdue_agg = FeeInvoice.objects.filter(
+    period_agg = StudentFeeInvoice.objects.filter(
+        school=school, period=period
+    ).aggregate(invoiced=Sum("amount"))
+    collected_agg = FeePayment.objects.filter(
+        invoice__school=school, invoice__period=period
+    ).aggregate(collected=Sum("amount"))
+    overdue_agg = StudentFeeInvoice.objects.filter(
         school=school,
-        status=FeeInvoice.Status.UNPAID,
+        status__in=[
+            StudentFeeInvoice.Status.UNPAID, StudentFeeInvoice.Status.PARTIAL
+        ],
         due_date__lt=today,
     ).aggregate(amount=Sum("amount"), count=Count("pk"))
 
     invoiced = float(period_agg["invoiced"] or 0)
-    collected = float(period_agg["collected"] or 0)
+    collected = float(collected_agg["collected"] or 0)
     return {
         "period": period,
         "invoiced": invoiced,
@@ -77,13 +112,22 @@ def fee_metrics(school, today=None):
 
 
 def free_seats(school):
-    """Total unfilled seats across the branch's classrooms."""
+    """Total unfilled seats across the branch's class sections — each
+    section's capacity minus the students actually enrolled in it."""
+    enrolled = {
+        row["class_section_id"]: row["n"]
+        for row in (
+            Student.objects.filter(
+                school=school, status=Student.Status.ACTIVE,
+                class_section__isnull=False,
+            )
+            .values("class_section_id")
+            .annotate(n=Count("pk"))
+        )
+    }
     total = 0
-    for room in Classroom.objects.filter(school=school):
-        enrolled = Student.objects.filter(
-            school=school, classroom=room, status=Student.Status.ACTIVE
-        ).count()
-        total += max(0, room.capacity - enrolled)
+    for section in ClassSection.objects.filter(school=school):
+        total += max(0, section.capacity - enrolled.get(section.pk, 0))
     return total
 
 
@@ -124,7 +168,10 @@ def scorecard(school, today=None):
 
 
 def branch_metrics(school, today=None):
-    """Everything the side-by-side comparison table needs for one branch."""
+    """Everything the side-by-side comparison table needs for one branch.
+
+    Students/staff come from the school-side source of truth (the mirror
+    rows in ``school_owner`` are only used by the transfers page)."""
     today = today or datetime.date.today()
     fees = fee_metrics(school, today)
     return {
@@ -168,23 +215,34 @@ def consolidated(branches):
 
 
 def monthly_statement(schools, limit=6, today=None):
-    """Consolidated invoiced vs collected per billing period (newest first)."""
+    """Consolidated invoiced vs collected per billing period (newest first),
+    read from the school-side ``StudentFeeInvoice`` / ``FeePayment`` rows."""
     today = today or datetime.date.today()
-    periods = (
-        FeeInvoice.objects.filter(school__in=schools)
+    # NB: set() instead of .distinct() — the model's Meta.ordering can make
+    # DISTINCT return duplicate rows on SQLite.
+    periods = set(
+        StudentFeeInvoice.objects.filter(school__in=schools)
         .values_list("period", flat=True)
-        .distinct()
     )
+
+    def _key(row):
+        try:
+            return datetime.datetime.strptime(row, "%B %Y")
+        except ValueError:
+            return datetime.datetime.min
+
     rows = []
-    for period in periods:
-        agg = FeeInvoice.objects.filter(
-            school__in=schools, period=period
-        ).aggregate(
-            invoiced=Sum("amount"),
-            collected=Sum("amount", filter=Q(status=FeeInvoice.Status.PAID)),
+    for period in sorted(periods, key=_key, reverse=True):
+        invoiced = float(
+            StudentFeeInvoice.objects.filter(
+                school__in=schools, period=period
+            ).aggregate(invoiced=Sum("amount"))["invoiced"] or 0
         )
-        invoiced = float(agg["invoiced"] or 0)
-        collected = float(agg["collected"] or 0)
+        collected = float(
+            FeePayment.objects.filter(
+                invoice__school__in=schools, invoice__period=period
+            ).aggregate(collected=Sum("amount"))["collected"] or 0
+        )
         rows.append({
             "period": period,
             "invoiced": invoiced,
@@ -195,12 +253,5 @@ def monthly_statement(schools, limit=6, today=None):
             "current": period == current_period(today),
         })
 
-    def _key(row):
-        try:
-            return datetime.datetime.strptime(row["period"], "%B %Y")
-        except ValueError:
-            return datetime.datetime.min
-
-    rows.sort(key=_key, reverse=True)
     return rows[:limit]
 

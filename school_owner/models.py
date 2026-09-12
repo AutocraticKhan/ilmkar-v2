@@ -4,13 +4,14 @@ Two kinds of models live here:
 
 1. ``Chain`` — the permanent multi-tenancy link between an owner account and
    the schools they own. This stays; everything else hangs off it.
-2. Placeholder metric + feature models — ``Classroom``, ``Student``,
-   ``StaffMember``, ``FeeInvoice``, ``AttendanceSnapshot``, ``ExamSummary``
-   and the chain-feature models below. Each one carries a
-   ``TODO(placeholder):`` comment describing the real backend module it will
-   be replaced by. They exist only so the owner dashboard has data to show
-   and actions that persist today. When the real school-side modules land,
-   swap the FKs/aggregations over and delete these.
+2. ``Classroom`` + the mirror rows ``Student`` / ``StaffMember`` — light
+   chain-side copies of ``School_Admin`` rows kept in sync by
+   ``school_owner.services`` (admissions/status changes push updates). They
+   power the transfers page and cross-branch moves only.
+3. ``FeeInvoice`` / ``AttendanceSnapshot`` / ``ExamSummary`` — LEGACY
+   placeholder metric tables: the dashboard no longer reads them (the
+   metrics in ``school_owner.metrics`` read the real ``School_Admin``
+   models directly). They are kept only for admin/history until removed.
 
 Security note: the owner only ever sees schools attached to their own chain.
 Every view must resolve data through ``chain.schools`` — never query a
@@ -447,9 +448,10 @@ class ApprovalRequest(models.Model):
     """Approval workflow: a branch principal requests a budget / new hire /
     other exception; the group owner approves or rejects centrally.
 
-    TODO(placeholder): ``requested_by`` is free text because the principal
-    dashboard does not exist yet — swap it for a FK to the requesting
-    ``SchoolUser`` once branch logins land. The decide flow itself is final.
+    ``requested_by`` is still free text (School_Admin submissions fill it
+    with the principal's display name via ``school_owner.services``).
+    TODO(placeholder): swap it for a FK to the requesting ``SchoolUser``
+    once a migration window is acceptable. The decide flow itself is final.
     """
 
     class Type(models.TextChoices):

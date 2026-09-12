@@ -10,11 +10,19 @@ from django.test import TestCase
 from django.urls import reverse
 
 from SAAS_admin.models import School
+from School_Admin.models import (
+    AttendanceSnapshot as SchoolAttendanceSnapshot,
+    ClassSection,
+    ExamRecord,
+    FeePayment,
+    Student as SchoolStudent,
+    StudentFeeInvoice,
+)
 
 from .metrics import branch_metrics, consolidated, scorecard
 from .models import (
-    ApprovalRequest, AttendanceSnapshot, Chain, Classroom, ExamSummary,
-    FeeInvoice, GroupPolicy, JobPosting, Student, StaffMember, TransferLog,
+    ApprovalRequest, Chain, Classroom, GroupPolicy, JobPosting, Student,
+    StaffMember, TransferLog,
 )
 
 
@@ -203,21 +211,38 @@ class PolicyJobApprovalTests(ChainData):
 
 
 class MetricsTests(ChainData):
+    """The chain dashboard must read the REAL school-side data the
+    principal/teachers/portals create (School_Admin), not any parallel set."""
+
     def test_metrics_collection_attendance_exams_and_consolidation(self):
         today = datetime.date.today()
+        section = ClassSection.objects.create(
+            school=self.branch_a, grade="Grade 3", section="A", capacity=30)
         for i in range(10):
-            s = Student.objects.create(school=self.branch_a, full_name=f"S{i}")
-            FeeInvoice.objects.create(
+            s = SchoolStudent.objects.create(
+                school=self.branch_a, class_section=section,
+                admission_no=f"M-{i}", full_name=f"S{i}")
+            invoice = StudentFeeInvoice.objects.create(
                 school=self.branch_a, student=s,
                 period=today.strftime("%B %Y"), amount=1000,
-                due_date=today - datetime.timedelta(days=5),
-                status=FeeInvoice.Status.PAID if i < 8 else FeeInvoice.Status.UNPAID)
-        AttendanceSnapshot.objects.create(school=self.branch_a, date=today,
-                                          present=95, absent=5)
-        ExamSummary.objects.create(school=self.branch_a, term="T",
-                                   average_pct=72.5, recorded_at=today)
+                due_date=today - datetime.timedelta(days=5))
+            if i < 8:  # 8 of the 10 invoices fully collected
+                FeePayment.objects.create(
+                    invoice=invoice, amount=1000,
+                    paid_on=today - datetime.timedelta(days=2))
+        # A teacher's register save upserts this snapshot (Teachers.metrics).
+        SchoolAttendanceSnapshot.objects.create(
+            school=self.branch_a, class_section=section, date=today,
+            present=95, absent=5)
+        # Marks entries keep this average live (Teachers.metrics).
+        ExamRecord.objects.create(
+            school=self.branch_a, class_section=section,
+            exam_name="Mid Term", subject="Math", exam_date=today,
+            average_pct=72.5)
 
         m = branch_metrics(self.branch_a, today)
+        self.assertEqual(m["students"], 10)
+        self.assertEqual(m["free_seats"], 20)  # capacity 30, 10 enrolled
         self.assertEqual(m["collection_pct"], 80.0)
         self.assertEqual(m["attendance_pct"], 95.0)
         self.assertEqual(m["exam_avg"], 72.5)
@@ -228,3 +253,22 @@ class MetricsTests(ChainData):
 
         totals = consolidated([m, branch_metrics(self.branch_b, today)])
         self.assertEqual(totals["branches"], 2)
+
+    def test_per_section_snapshots_are_not_double_counted(self):
+        """A school with both per-section and school-wide snapshot rows must
+        count only one shape (teacher saves always upsert per-section rows)."""
+        today = datetime.date.today()
+        section = ClassSection.objects.create(
+            school=self.branch_a, grade="Grade 1", section="A")
+        SchoolAttendanceSnapshot.objects.create(
+            school=self.branch_a, class_section=section, date=today,
+            present=40, absent=10)
+        SchoolAttendanceSnapshot.objects.create(
+            school=self.branch_a, date=today, present=400, absent=100)
+        from .metrics import attendance_pct
+        self.assertEqual(attendance_pct(self.branch_a, today=today), 80.0)
+
+    def test_empty_branch_shows_no_data_not_zero_attendance(self):
+        from .metrics import attendance_pct, exam_average
+        self.assertIsNone(attendance_pct(self.branch_b, today=datetime.date.today()))
+        self.assertIsNone(exam_average(self.branch_b))

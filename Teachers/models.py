@@ -651,11 +651,12 @@ class TeacherMessage(models.Model):
     """A message in the teacher's one inbox — from the school admin or a
     parent — plus the teacher's reply.
 
-    TODO(placeholder): admin/parents currently send messages from the
-    Django admin console (see TeacherMessageAdmin). TODO(integration):
-    when the parent portal lands, parents compose here directly; when the
-    principal app grows a compose UI, it creates rows with
-    ``sender_type=ADMIN``. ``School_Admin.Notice`` rows with audience
+    TODO(integration): when the principal composes a message from the
+    school dashboard (School Admin → Notices → "Message a staff member")
+    it creates rows here with ``sender_type=ADMIN`` — live. Parents
+    compose from their portal (``sender_type=PARENT``) — live. The
+    teacher's reply is stored on the same row and rendered back in the
+    parent's message thread. ``School_Admin.Notice`` rows with audience
     staff/all are surfaced in the inbox as read-only notices.
     """
 
@@ -671,7 +672,9 @@ class TeacherMessage(models.Model):
         StaffMember, on_delete=models.CASCADE, related_name="inbox_messages"
     )
     # TODO(integration): the student this is about, when parents message
-    # about a specific child — kept nullable until the parent portal links.
+    # about a specific child — parent-portal messages set it; kept
+    # nullable because the principal compose UI sends staff-wide messages
+    # that are not about one child.
     about_student = models.ForeignKey(
         Student, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="teacher_messages",
@@ -680,9 +683,10 @@ class TeacherMessage(models.Model):
         max_length=10, choices=SenderType.choices, default=SenderType.ADMIN
     )
     sender_name = models.CharField(max_length=150)
-    # TODO(integration): set by the parent portal when a parent composes a
-    # message (sender_type=parent); lets the parent portal list this parent's
-    # own threads unambiguously. Null for admin-created / legacy rows.
+    # Set by the parent portal on parent-composed messages and by the
+    # principal compose UI on admin-sent ones — lets the parent portal
+    # list its own threads unambiguously and attributes admin messages.
+    # Null for legacy rows created from the admin console.
     sent_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="parent_sent_messages",

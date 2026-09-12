@@ -23,7 +23,10 @@
         <h1>Notices &amp; circulars</h1>
         <p id="subhead">{{ notices|length }} notice{{ notices|length|pluralize }} posted</p>
       </div>
-      <button class="btn" onclick="openNoticeDrawer()">Post a notice</button>
+      <div class="btn-row">
+        <button class="btn ghost" onclick="openMessageDrawer()">Message a staff member</button>
+        <button class="btn" onclick="openNoticeDrawer()">Post a notice</button>
+      </div>
     </div>
 
     {% for n in notices %}
@@ -52,6 +55,7 @@
 <div class="toast" id="toast"></div>
 
 {{ notices|json_script:"notices-data" }}
+{{ staff|json_script:"staff-data" }}
 <script src="{% static 'School_Admin/js/school_common.js' %}"></script>
 <script src="{% static 'School_Admin/js/notices.js' %}"></script>
 </body>

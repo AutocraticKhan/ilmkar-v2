@@ -35,7 +35,7 @@
 
     <div class="card">
       <h3>Inbox</h3>
-      <div class="sub">Unread first. Replies are stored until the parent/admin reply-routing lands (TODO).</div>
+      <div class="sub">Unread first. Replies to parent messages appear automatically in the parent's message thread; admin-sent messages reply in-app.</div>
       {% if messages %}
         <div class="feed-list">
           {% for m in messages %}
@@ -66,7 +66,7 @@
       {% else %}
         <div class="empty" style="padding:30px 10px">
           <h3>Inbox zero</h3>
-          <p>No messages right now. Admins can send you one from the console (TODO: principal compose UI).</p>
+          <p>No messages right now. The school admin can message you from the principal dashboard (Notices &rarr; &ldquo;Message a staff member&rdquo;), and parents write from their portal.</p>
         </div>
       {% endif %}
     </div>

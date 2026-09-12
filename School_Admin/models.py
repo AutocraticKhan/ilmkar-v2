@@ -27,9 +27,10 @@ from SAAS_admin.models import School
 
 class StaffMember(models.Model):
     """PLACEHOLDER — TODO(placeholder): replace with the real HR / Staff
-    module. TODO(integration): mirror rows into ``school_owner.StaffMember``
-    (or move the model there and keep a FK) so the owner dashboard's staff
-    counts keep working; same for the future payroll module."""
+    module. Mirroring is LIVE: creates/status toggles are pushed into
+    ``school_owner.StaffMember`` by ``school_owner.services`` so the owner
+    dashboard's staff counts / transfers keep working; when the real HR
+    module lands only the FK targets change."""
 
     school = models.ForeignKey(
         School, on_delete=models.CASCADE, related_name="school_staff"
@@ -116,10 +117,11 @@ class ClassSection(models.Model):
 class Student(models.Model):
     """PLACEHOLDER — TODO(placeholder): replace with the real Student
     Information module (core model: profiles, documents, guardian contacts).
-    TODO(integration): ``school_owner.Student`` is the owner-dashboard
-    mirror of this row — when the real module lands, point the chain
-    aggregations at this model (or sync the two) and keep field names
-    stable. Note: a single student can live in exactly one section here;
+    ``school_owner.Student`` is the owner-dashboard mirror of this row and
+    the sync is LIVE (create/status changes push through
+    ``school_owner.services.mirror_student_to_owner``; the chain
+    aggregations can be pointed at this model when the real module lands).
+    Note: a single student can live in exactly one section here;
     the owner dashboard's cross-branch transfers will move this FK."""
 
     class Status(models.TextChoices):
@@ -313,10 +315,9 @@ class LeaveRequest(models.Model):
 class ExpenseRequest(models.Model):
     """A school expense the principal approves (or escalates to the owner).
 
-    TODO(integration): approved expenses should be submitted to the owner
-    dashboard's ``school_owner.ApprovalRequest`` feed (type ``budget``)
-    when the two dashboards are wired together — today the school settles
-    them locally."""
+    Escalation is LIVE: approving an expense submits a ``budget``
+    ``school_owner.ApprovalRequest`` for the group owner (standalone
+    schools — no chain — simply settle locally)."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

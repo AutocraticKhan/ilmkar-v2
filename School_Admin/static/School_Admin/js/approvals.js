@@ -203,6 +203,48 @@ async function submitExpense(){
   }
 }
 
+function openOwnerRequestDrawer(){
+  openDrawer(`
+    ${drawerHead('Request owner approval', 'Sent to the group owner\u2019s approval feed — they decide centrally.')}
+    <label class="formlabel" for="orType">Type</label>
+    <select id="orType" style="width:100%">
+      <option value="budget">Budget</option>
+      <option value="new_hire">New hire</option>
+      <option value="other">Other</option>
+    </select>
+    <label class="formlabel" for="orTitle">Title</label>
+    <input type="text" id="orTitle" placeholder="e.g. Additional lab budget for Q3">
+    <label class="formlabel" for="orAmount">Amount (Rs, optional)</label>
+    <input type="number" id="orAmount" min="0" placeholder="e.g. 250000">
+    <label class="formlabel" for="orDetails">Details</label>
+    <textarea id="orDetails" rows="3" placeholder="What is needed and why..."></textarea>
+    <div class="btn-row" style="margin-top:22px">
+      <button class="btn" id="orBtn" onclick="submitOwnerRequest()">Send to owner</button>
+      <button class="btn ghost" onclick="closeDrawer()">Cancel</button>
+    </div>`);
+}
+
+async function submitOwnerRequest(){
+  const title = document.getElementById('orTitle').value.trim();
+  if(!title){ showToast('Request title is required'); return; }
+  const btn = document.getElementById('orBtn');
+  btn.disabled = true;
+  try{
+    await apiPost('/school/approvals/owner/create/', {
+      request_type: document.getElementById('orType').value,
+      title,
+      amount: document.getElementById('orAmount').value,
+      details: document.getElementById('orDetails').value.trim(),
+    });
+    flash('Request sent to the group owner');
+    closeDrawer();
+    location.reload();
+  }catch(err){
+    showToast(err.message);
+    btn.disabled = false;
+  }
+}
+
 function openAdmissionDrawer(){
   openDrawer(`
     ${drawerHead('Record admission application', 'For parents applying for the new term.')}
