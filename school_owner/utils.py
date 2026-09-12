@@ -24,7 +24,7 @@ def is_owner(user):
 
     return (
         Chain.objects.filter(owner=user).exists()
-        or School.objects.filter(owner=user).exists()
+        or School.objects.filter(owners=user).exists()
         or SchoolUser.objects.filter(
             user=user, role=SchoolUser.Role.OWNER
         ).exists()
@@ -34,7 +34,7 @@ def is_owner(user):
 def owner_schools(user):
     """All schools visible to an owner account (deduplicated).
 
-    * assigned via School.owner,
+    * assigned via School.owners,
     * or part of a chain they own,
     * or their single Owner-role membership (Users page).
 
@@ -43,7 +43,7 @@ def owner_schools(user):
     """
     return (
         School.objects.filter(
-            Q(owner=user)
+            Q(owners=user)
             | Q(chain__owner=user)
             | Q(
                 memberships__user=user,
@@ -72,20 +72,20 @@ def ensure_chain_for_owner(owner):
 
 
 def assign_owner(school, owner):
-    """Set (or clear) the account that owns ``school``.
+    """Add (or remove) ``owner`` among the accounts owning ``school``.
 
-    Assigning an owner auto-links the school into that owner's group so all
-    dashboard features (policies, transfers, \u2026) work. Reassigning moves
-    the school between owners; clearing makes it independent.
+    Multiple owners are allowed per school — the console warns before a
+    second owner is added. Chain membership is NOT touched here: linking a
+    school into a named chain is an explicit assignment (``chain_id``).
     """
     if owner is None:
-        school.owner = None
-        school.chain = None
-        school.save(update_fields=["owner", "chain"])
+        school.owners.clear()
         return school
+    school.owners.add(owner)
+    return school
 
-    chain = ensure_chain_for_owner(owner)
-    school.owner = owner
-    school.chain = chain
-    school.save(update_fields=["owner", "chain"])
+
+def remove_school_owner(school, owner):
+    """Remove one account from the school's owners."""
+    school.owners.remove(owner)
     return school

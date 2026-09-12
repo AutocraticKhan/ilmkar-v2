@@ -30,7 +30,7 @@ def _is_superuser(user):
 def _is_owner(user):
     """True when the user may use the owner dashboard.
 
-    Owners are accounts assigned to own one or more schools (school.owner),
+    Owners are accounts assigned among a school's owners (School.owners),
     accounts that own a chain/group, or accounts holding an Owner-role
     membership on a school (Users page). Implemented in school_owner.utils
     to keep the apps decoupled (imported lazily to avoid a cycle).
@@ -252,7 +252,12 @@ def dashboard(request):
             "id": u.pk,
             "username": u.get_username(),
             "email": u.email or "",
-            "is_owner": School.objects.filter(owner=u).exists(),
+            "is_owner": (
+                School.objects.filter(owners=u).exists()
+                or SchoolUser.objects.filter(
+                    user=u, role=SchoolUser.Role.OWNER
+                ).exists()
+            ),
         }
         for u in User.objects.filter(is_active=True)
         .exclude(is_superuser=True)
@@ -272,15 +277,61 @@ def dashboard(request):
 @login_required
 @superuser_required
 def users(request):
-    """User management page: pick a school, then manage its users."""
-    schools = [
-        s.as_dict() for s in School.objects.annotate(_user_count=Count("memberships"))
-    ]
+    """User management page: pick a school, then manage its users.
+
+    Also hydrates chains so each account can be assigned as a chain owner
+    straight from its table row.
+    """
+    from school_owner.models import Chain
+
+    # Chains the console can assign from the user table row (assign the
+    # account as a chain's owner).
+    chains = [c.as_dict() for c in Chain.objects.all()]
     return render(
         request,
         "SAAS_admin/users.html",
-        {"schools": schools},
+        {"schools": schools, "chains": chains},
     )
+
+
+@require_POST
+@superuser_required
+def user_chain_set(request, user_id):
+    """Assign an account as a chain's owner from the Users page row.
+
+    The picked chain must exist; assigning it here moves the account's
+    previous chain ownership (if any) — OneToOne on Chain.owner. Sending
+    ``chain_id: null`` clears the account's chain ownership.
+    """
+    u = User.objects.filter(pk=user_id).first()
+    if u is None:
+        return JsonResponse({"error": "User not found."}, status=404)
+    if u.is_superuser:
+        return JsonResponse(
+            {"error": "Operator accounts cannot own a chain."}, status=400
+        )
+    from school_owner.models import Chain
+
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    chain = None
+    chain_id = data.get("chain_id")
+    if chain_id not in (None, "", "null"):
+        chain = Chain.objects.filter(pk=chain_id).first()
+        if chain is None:
+            return JsonResponse({"error": "Chain not found."}, status=404)
+        # OneToOne: the account owns at most one chain — clear any previous
+        # ownership so the account becomes THIS chain's owner.
+        Chain.objects.filter(owner=u).exclude(pk=chain.pk).update(owner=None)
+    elif Chain.objects.filter(owner=u).exists():
+        Chain.objects.filter(owner=u).update(owner=None)
+
+    if chain is not None:
+        chain.owner = u
+        chain.save(update_fields=["owner"])
+    return JsonResponse({"ok": True, "chain": chain.as_dict() if chain else None})
 
 
 @require_POST
@@ -340,13 +391,21 @@ def school_create(request):
                 {"error": "Invalid renewal date. Use YYYY-MM-DD."}, status=400
             )
 
-    # Owner assignment: the superuser picks an EXISTING account (owner_id);
-    # that account owns the school and the school joins their group/chain.
-    owner = None
+    # Owner assignment: the superuser picks EXISTING account(s) (owner_id /
+    # owner_ids); those accounts own the school. Logins are never invented
+    # here — accounts are created on the Users page first.
+    owners_to_add = []
     owner_id = data.get("owner_id")
     if owner_id not in (None, "", "null"):
+        owners_to_add.append(owner_id)
+    for extra_id in (data.get("owner_ids") or []):
+        if extra_id not in (None, "", "null"):
+            owners_to_add.append(extra_id)
+
+    owners = []
+    for oid in owners_to_add:
         owner = (
-            User.objects.filter(pk=owner_id, is_active=True)
+            User.objects.filter(pk=oid, is_active=True)
             .exclude(is_superuser=True)
             .first()
         )
@@ -354,10 +413,11 @@ def school_create(request):
             return JsonResponse(
                 {"error": "Unknown owner account."}, status=400
             )
+        owners.append(owner)
 
     # Fallback: assign to an existing chain directly (Chains page flow).
     chain = None
-    if owner is None and data.get("chain_id") not in (None, "", "null"):
+    if data.get("chain_id") not in (None, "", "null"):
         chain, chain_err = _resolve_chain(data.get("chain_id"))
         if chain_err:
             return chain_err
@@ -373,10 +433,8 @@ def school_create(request):
         contact=(data.get("contact") or "").strip() or "\u2014",
         email=(data.get("email") or "").strip() or "\u2014",
     )
-    if owner is not None:
-        from school_owner.utils import assign_owner
-
-        assign_owner(school, owner)
+    if owners:
+        school.owners.add(*owners)
     return JsonResponse({"school": school.as_dict()}, status=201)
 
 
@@ -437,11 +495,12 @@ def school_status(request, school_id):
 @require_POST
 @superuser_required
 def school_owner_set(request, school_id):
-    """Assign an EXISTING account as the school's owner (or clear it).
+    """Add an EXISTING account among the school's owners (or remove one).
 
-    The account doesn't need any special role beforehand — assignment alone
-    makes it an owner. The school joins the owner's group so the owner
-    dashboard shows it alongside their other schools.
+    A school may have several owners; the client warns before a second
+    owner is added (the response carries ``had_owners`` for that). The
+    account doesn't need any special role beforehand — assignment alone
+    makes it an owner. Chain membership is NOT changed here.
     """
     school = _school_or_404(school_id)
     if school is None:
@@ -450,23 +509,24 @@ def school_owner_set(request, school_id):
     if err:
         return err
 
-    owner = None
     owner_id = data.get("owner_id")
-    if owner_id not in (None, "", "null"):
-        owner = (
-            User.objects.filter(pk=owner_id, is_active=True)
-            .exclude(is_superuser=True)
-            .first()
-        )
-        if owner is None:
-            return JsonResponse(
-                {"error": "Unknown owner account."}, status=400
-            )
+    if owner_id in (None, "", "null"):
+        return JsonResponse({"error": "owner_id is required."}, status=400)
+    owner = (
+        User.objects.filter(pk=owner_id, is_active=True)
+        .exclude(is_superuser=True)
+        .first()
+    )
+    if owner is None:
+        return JsonResponse({"error": "Unknown owner account."}, status=400)
 
-    from school_owner.utils import assign_owner
+    if data.get("remove"):
+        school.owners.remove(owner)
+        return JsonResponse({"school": school.as_dict(), "removed": True})
 
-    assign_owner(school, owner)
-    return JsonResponse({"school": school.as_dict()})
+    had_owners = school.owners.count()
+    school.owners.add(owner)
+    return JsonResponse({"school": school.as_dict(), "had_owners": had_owners})
 
 
 @require_POST
@@ -511,7 +571,19 @@ def school_users(request, school_id):
     school = _school_or_404(school_id)
     if school is None:
         return JsonResponse({"error": "School not found."}, status=404)
-    users = [m.as_dict() for m in school.memberships.select_related("user")]
+    from school_owner.models import Chain
+
+    # Chain ownership per account so the users table can show/assign it.
+    chain_by_user = {
+        c.owner_id: c.as_dict() for c in Chain.objects.filter(owner__isnull=False)
+    }
+    users = []
+    for m in school.memberships.select_related("user"):
+        entry = m.as_dict()
+        chain = chain_by_user.get(m.user_id)
+        entry["chain_id"] = chain["id"] if chain else None
+        entry["chain_name"] = chain["name"] if chain else None
+        users.append(entry)
     return JsonResponse({"school": school.as_dict(), "users": users})
 
 
@@ -953,22 +1025,37 @@ def chains(request):
         s.as_dict() for s in School.objects.select_related("chain")
         .annotate(_user_count=Count("memberships"))
     ]
+    # Existing accounts the superuser can pick as a chain's owner from the
+    # chain drawer. Any active non-operator account is eligible.
+    users = [
+        {
+            "id": u.pk,
+            "username": u.get_username(),
+            "email": u.email or "",
+            "chain_id": (
+                Chain.objects.filter(owner=u).values_list("pk", flat=True).first()
+            ),
+        }
+        for u in User.objects.filter(is_active=True)
+        .exclude(is_superuser=True)
+        .order_by("username")
+    ]
     return render(
         request,
         "SAAS_admin/chains.html",
-        {"chains": chains_, "schools": schools},
+        {"chains": chains_, "schools": schools, "users": users},
     )
 
 
 @require_POST
 @superuser_required
 def chain_create(request):
-    """Create a chain and (optionally) its owner login in one step.
+    """Create a chain with just a name.
 
-    If ``owner_username`` is given and does not exist yet, the account is
-    created (with ``owner_password``). If the username exists, that account
-    becomes the owner — best practice for reusing an existing staff account.
-    The owner must not already own another chain or be a superuser.
+    The superuser picks an existing account as the owner afterwards (Users
+    page or the chain drawer) — no login is invented inline any more.
+    ``owner_username`` / ``owner_password`` are still accepted for backward
+    compatibility with older callers.
     """
     from school_owner.models import Chain
 
@@ -980,42 +1067,79 @@ def chain_create(request):
     if not name:
         return JsonResponse({"error": "Chain name is required."}, status=400)
 
+    owner = None
     username = (data.get("owner_username") or "").strip()
-    if not username:
-        return JsonResponse({"error": "Owner username is required."}, status=400)
-
-    owner = User.objects.filter(username__iexact=username).first()
-    if owner is None:
-        password = data.get("owner_password") or ""
-        if not password:
-            return JsonResponse(
-                {"error": "Password is required for a new owner account."},
-                status=400,
+    if username:
+        owner = User.objects.filter(username__iexact=username).first()
+        if owner is None:
+            password = data.get("owner_password") or ""
+            if not password:
+                return JsonResponse(
+                    {"error": "Password is required for a new owner account."},
+                    status=400,
+                )
+            owner = User(
+                username=username,
+                email=(data.get("owner_email") or "").strip(),
+                first_name=(data.get("owner_first_name") or "").strip(),
+                last_name=(data.get("owner_last_name") or "").strip(),
             )
-        owner = User(
-            username=username,
-            email=(data.get("owner_email") or "").strip(),
-            first_name=(data.get("owner_first_name") or "").strip(),
-            last_name=(data.get("owner_last_name") or "").strip(),
-        )
-        try:
-            validate_password(password, owner)
-        except ValidationError as e:
-            return JsonResponse({"error": " ".join(e.messages)}, status=400)
-        owner.set_password(password)
-        owner.save()
-    elif owner.is_superuser:
-        return JsonResponse(
-            {"error": "Operator accounts cannot own a chain."}, status=400
-        )
+            try:
+                validate_password(password, owner)
+            except ValidationError as e:
+                return JsonResponse({"error": " ".join(e.messages)}, status=400)
+            owner.set_password(password)
+            owner.save()
+        elif owner.is_superuser:
+            return JsonResponse(
+                {"error": "Operator accounts cannot own a chain."}, status=400
+            )
 
-    if getattr(owner, "owned_chain", None) is not None:
-        return JsonResponse(
-            {"error": f"@{owner.get_username()} already owns a chain."}, status=400
-        )
+        if getattr(owner, "owned_chain", None) is not None:
+            return JsonResponse(
+                {"error": f"@{owner.get_username()} already owns a chain."}, status=400
+            )
 
     chain = Chain.objects.create(name=name, owner=owner)
     return JsonResponse({"chain": chain.as_dict()}, status=201)
+
+
+@require_POST
+@superuser_required
+def chain_owner_set(request, chain_id):
+    """Assign an EXISTING account as the chain's owner (or clear it).
+
+    The account is never created here — operators create logins on the
+    Users page and then assign the chain. If the picked account already
+    owns a different chain, that ownership is moved here (the client
+    confirms before calling).
+    """
+    from school_owner.models import Chain
+
+    chain = Chain.objects.filter(pk=chain_id).first()
+    if chain is None:
+        return JsonResponse({"error": "Chain not found."}, status=404)
+    data, err = _parse_body(request)
+    if err:
+        return err
+
+    owner = None
+    owner_id = data.get("owner_id")
+    if owner_id not in (None, "", "null"):
+        owner = (
+            User.objects.filter(pk=owner_id, is_active=True)
+            .exclude(is_superuser=True)
+            .first()
+        )
+        if owner is None:
+            return JsonResponse({"error": "Unknown user account."}, status=400)
+        # OneToOne: an account owns at most one chain — clear any previous
+        # ownership so the picked account becomes THIS chain's owner.
+        Chain.objects.filter(owner=owner).exclude(pk=chain.pk).update(owner=None)
+
+    chain.owner = owner
+    chain.save(update_fields=["owner"])
+    return JsonResponse({"chain": chain.as_dict()})
 
 
 @require_POST
@@ -1068,7 +1192,9 @@ def chain_delete(request, chain_id):
     if chain is None:
         return JsonResponse({"error": "Chain not found."}, status=404)
     name = chain.name
-    owner_username = chain.owner.get_username()
+    owner_username = (
+        chain.owner.get_username() if chain.owner_id else None
+    )
     chain.delete()
     return JsonResponse({"ok": True, "name": name, "owner_username": owner_username})
 
@@ -1089,6 +1215,10 @@ def chain_owner_password(request, chain_id):
     password = data.get("password") or ""
     if not password:
         return JsonResponse({"error": "Password is required."}, status=400)
+    if chain.owner_id is None:
+        return JsonResponse(
+            {"error": "This chain has no owner login yet."}, status=400
+        )
     try:
         validate_password(password, chain.owner)
     except ValidationError as e:

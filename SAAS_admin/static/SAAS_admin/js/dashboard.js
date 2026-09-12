@@ -7,6 +7,10 @@ let schools = schoolsEl ? JSON.parse(schoolsEl.textContent) : [];
 const chainsEl = document.getElementById('chains-data');
 let chains = chainsEl ? JSON.parse(chainsEl.textContent) : [];
 
+// Existing accounts the superuser can assign as owners (school or chain).
+const ownersEl = document.getElementById('owners-data');
+let owners = ownersEl ? JSON.parse(ownersEl.textContent) : [];
+
 const CSRF = document.body.dataset.csrfToken || '';
 
 function esc(value){
@@ -45,6 +49,48 @@ async function apiPost(url, payload){
 function replaceSchool(updated){
   const i = schools.findIndex(s => s.id === updated.id);
   if(i !== -1) schools[i] = updated;
+}
+
+// ---------- owners (school can have several; warn before a 2nd) ----------
+async function addSchoolOwner(id){
+  const s = schools.find(x=>x.id===id);
+  if(!s) return;
+  const pick = document.getElementById('ownerPick');
+  const ownerId = parseInt(pick.value, 10);
+  if(!ownerId){ showToast('Pick a user account first'); return; }
+  const o = owners.find(x => x.id === ownerId);
+  // Warning before creating a second owner on this school.
+  if((s.owner_ids || []).length > 0 && !confirm(
+    `${s.name} already has ${s.owner_ids.length} owner${s.owner_ids.length===1?'':'s'} (${(s.owner_usernames||[]).map(u=>`@${u}`).join(', ')}). Add @${o ? o.username : ownerId} as an additional owner?`
+  )){
+    return;
+  }
+  try{
+    const data = await apiPost(`/schools/${id}/owner/`, { owner_id: ownerId });
+    replaceSchool(data.school);
+    renderAll();
+    openDetail(id);
+    showToast(`@${o ? o.username : ownerId} is now an owner of ${s.name}`);
+  }catch(err){
+    showToast(err.message);
+  }
+}
+
+async function removeSchoolOwner(id, ownerId){
+  const s = schools.find(x=>x.id===id);
+  const o = owners.find(x => x.id === ownerId);
+  if(s && !confirm(`Remove @${o ? o.username : ownerId} as owner of ${s.name}? The account itself is not deleted.`)){
+    return;
+  }
+  try{
+    const data = await apiPost(`/schools/${id}/owner/`, { owner_id: ownerId, remove: true });
+    replaceSchool(data.school);
+    renderAll();
+    openDetail(id);
+    showToast(`@${o ? o.username : ownerId} removed from ${s.name}`);
+  }catch(err){
+    showToast(err.message);
+  }
 }
 
 // ---------- rendering ----------
@@ -175,6 +221,28 @@ function openDetail(id){
       <div class="field"><span class="k">Primary contact</span><span class="v">${esc(s.contact)}</span></div>
     </div>
     <div class="field"><span class="k">Contact email</span><span class="v mono" style="font-weight:400">${esc(s.email)}</span></div>
+
+    <div class="section-title">Owners</div>
+    <div class="override-list">
+      ${(s.owner_usernames || []).map((uname, i) => `
+        <div class="override-row">
+          <span class="school">@${esc(uname)}</span>
+          <span style="flex:1"></span>
+          <button class="btn small ghost" onclick="removeSchoolOwner(${s.id}, ${s.owner_ids[i]})">Remove</button>
+        </div>`).join('') || '<p style="color:var(--muted);font-size:13px">No owners assigned.</p>'}
+    </div>
+    <div class="btn-row" style="margin-top:8px">
+      <select id="ownerPick" style="flex:1">
+        <option value="">Pick a user&hellip;</option>
+        ${owners.filter(o => !(s.owner_ids || []).includes(o.id))
+          .map(o => `<option value="${o.id}">@${esc(o.username)}${o.email ? ` \u00b7 ${esc(o.email)}` : ''}</option>`).join('')}
+      </select>
+      <button class="btn small" onclick="addSchoolOwner(${s.id})">Add owner</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin:6px 0 0">
+      Accounts are created on the Users page. A school can have several
+      owners &mdash; a warning appears before a second owner is added.
+    </p>
 
     <div class="section-title">Change package</div>
     <select id="pkgChange" style="width:100%">
@@ -324,11 +392,17 @@ function openNewSchoolDrawer(){
     <input type="text" id="nEmail" placeholder="e.g. a.rossi@school.edu">
 
     <label class="formlabel" for="nChain">Chain / owner group</label>
-    <select id="nChain" style="width:100%">
+    <select id="nChain" style="width:100%" onchange="onChainSelect(this.value)">
       <option value="">No chain (independent school)</option>
-      ${chains.map(c => `<option value="${c.id}">${esc(c.name)} — owner @${esc(c.owner_username)}</option>`).join('')}
+      ${chains.map(c => `<option value="${c.id}">${esc(c.name)}${c.owner_username ? ` — owner @${esc(c.owner_username)}` : ' — no owner yet'}</option>`).join('')}
+      <option value="__new__">+ New chain&hellip;</option>
     </select>
-    ${chains.length === 0 ? '<p style="font-size:12px;color:var(--muted);margin:4px 0 0">No chains yet — create one on the Chains page.</p>' : ''}
+    <div id="newChainBox" style="display:none">
+      <label class="formlabel" for="nNewChainName">New chain name</label>
+      <input type="text" id="nNewChainName" placeholder="e.g. Ilmkar Group of Schools">
+      <p style="font-size:12px;color:var(--muted);margin:4px 0 0">Only a name — the owner account is picked later from the Users page.</p>
+    </div>
+    ${chains.length === 0 ? '<p style="font-size:12px;color:var(--muted);margin:4px 0 0">No chains yet — pick &ldquo;+ New chain&hellip;&rdquo; above to create one.</p>' : ''}
 
     <div class="btn-row" style="margin-top:22px">
       <button class="btn" id="createSchoolBtn" onclick="createSchool()">Add to registry</button>
@@ -336,6 +410,11 @@ function openNewSchoolDrawer(){
     </div>
   `;
   overlay.classList.add('open');
+}
+
+function onChainSelect(value){
+  const box = document.getElementById('newChainBox');
+  if(box){ box.style.display = value === '__new__' ? 'block' : 'none'; }
 }
 
 async function createSchool(){
@@ -347,7 +426,23 @@ async function createSchool(){
   const renewal = document.getElementById('nRenewal').value || null;
   const contact = document.getElementById('nContact').value.trim();
   const email = document.getElementById('nEmail').value.trim();
-  const chainId = document.getElementById('nChain').value || null;
+
+  // Chain: an existing one, or a brand-new name-only chain created inline.
+  let chainId = document.getElementById('nChain').value || null;
+  if(chainId === '__new__'){
+    const newName = document.getElementById('nNewChainName').value.trim();
+    if(!newName){ showToast('Enter the new chain name'); return; }
+    try{
+      const chainData = await apiPost('/chains/create/', { name: newName });
+      chains.unshift(chainData.chain);
+      chainId = chainData.chain.id;
+    }catch(err){
+      showToast(err.message);
+      return;
+    }
+  } else {
+    chainId = chainId || null;
+  }
 
   const btn = document.getElementById('createSchoolBtn');
   if(btn){ btn.disabled = true; btn.textContent = 'Adding\u2026'; }

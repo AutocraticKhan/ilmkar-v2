@@ -1,13 +1,47 @@
-// Chains page: create groups, create/pick owner logins, assign schools.
+// Chains page: create groups (name only), pick an owner account, assign schools.
 const chains = hydrate('chains-data', []);
 const schools = hydrate('schools-data', []);
+const users = hydrate('users-data', []);
 
 const CSRF = document.body.dataset.csrfToken || '';
+
+// ---------- shared helpers (self-contained, like every other page script) ----------
+function esc(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function hydrate(id, fallback){
+  const el = document.getElementById(id);
+  if(!el){ return fallback; }
+  try{ return JSON.parse(el.textContent); }catch(e){ return fallback; }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t){ return; }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
 
 const overlay = document.getElementById('overlay');
 const drawerEl = document.getElementById('drawer');
 
-function closeDrawer(){ overlay.classList.remove('open'); }
+// School remembered when the drawer was opened from the “Assign to chain…
+// → + New chain…” dropdown; it is assigned to the chain as soon as the
+// chain is created. Cleared whenever the drawer closes for any reason.
+let pendingAssignSchoolId = null;
+
+function closeDrawer(){
+  pendingAssignSchoolId = null;
+  overlay.classList.remove('open');
+}
 overlay.addEventListener('click', e => { if(e.target === overlay) closeDrawer(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
 
@@ -39,11 +73,11 @@ function renderStats(){
     <div class="stat"><div class="label">Chains</div><div class="value">${chains.length}</div></div>
     <div class="stat"><div class="label">Branches in groups</div><div class="value">${branchTotal}</div></div>
     <div class="stat"><div class="label">Independent schools</div><div class="value">${freeSchools().length}</div></div>
-    <div class="stat"><div class="label">Owner logins</div><div class="value">${chains.length}</div></div>
+    <div class="stat"><div class="label">Chains with an owner</div><div class="value">${chains.filter(c => c.owner_username).length}</div></div>
   `;
   document.getElementById('subhead').textContent = chains.length
-    ? `${chains.length} chain${chains.length===1?'':'s'} \u00b7 owners see only their own branches`
-    : 'Create a chain, give it an owner login, then assign schools';
+    ? `${chains.length} chain${chains.length===1?'':'s'} \u00b7 assign an owner login from here or the Users page`
+    : 'Create a chain, assign schools to it, then pick an owner account';
 }
 
 function renderTable(){
@@ -58,7 +92,7 @@ function renderTable(){
   body.innerHTML = chains.map(c => `
     <tr onclick="openChainDrawer(${c.id})">
       <td class="school-name">${esc(c.name)}<span class="loc">${c.school_count} branch${c.school_count===1?'':'es'}</span></td>
-      <td>@${esc(c.owner_username)}<span class="loc">${esc(c.owner_email)}</span></td>
+      <td>${c.owner_username ? `@${esc(c.owner_username)}<span class="loc">${esc(c.owner_email)}</span>` : '<span style="color:var(--muted)">no owner yet</span>'}</td>
       <td>${c.school_count}</td>
       <td class="mono">${esc(c.created_at)}</td>
     </tr>`).join('');
@@ -79,9 +113,10 @@ function renderFreeSchools(){
       <td class="school-name">${esc(s.name)}<span class="loc">${esc(s.city)}</span></td>
       <td><span class="badge ${s.package.toLowerCase()}">${esc(s.package)}</span></td>
       <td class="cell-actions">
-        <select onchange="assignSchool(${s.id}, this.value)" style="width:auto">
+        <select onchange="onAssignSelect(${s.id}, this.value)" style="width:auto">
           <option value="">Assign to chain\u2026</option>
           ${chains.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+          <option value="__new__">+ New chain\u2026</option>
         </select>
       </td>
     </tr>`).join('');
@@ -89,28 +124,26 @@ function renderFreeSchools(){
 
 // ---------- drawers ----------
 
-function openNewChainDrawer(){
+function openNewChainDrawer(presetSchoolId){
+  pendingAssignSchoolId = presetSchoolId || null;
+  const presetSchool = pendingAssignSchoolId
+    ? schools.find(s => s.id === pendingAssignSchoolId) : null;
   drawerEl.innerHTML = `
     <div class="drawer-head">
-      <div><h2>New chain</h2><div class="loc">a group of schools with one owner login</div></div>
+      <div><h2>New chain</h2><div class="loc">a group of schools under one name</div></div>
       <button class="close-btn" onclick="closeDrawer()">&times;</button>
     </div>
+
+    ${presetSchool ? `<p style="font-size:13px;color:var(--muted);margin:0 0 14px"><strong>${esc(presetSchool.name)}</strong> will be assigned to this chain as soon as it is created.</p>` : ''}
 
     <label class="formlabel" for="cName">Chain name</label>
     <input type="text" id="cName" placeholder="e.g. Ilmkar Group of Schools">
 
-    <label class="formlabel" for="cUsername">Owner username</label>
-    <input type="text" id="cUsername" placeholder="e.g. groupowner" autocomplete="off">
-    <p style="font-size:12px;color:var(--muted);margin:4px 0 0">
-      If this username already exists, that account becomes the owner.
-      Otherwise a new account is created with the password below.
+    <p style="font-size:12px;color:var(--muted);margin:14px 0 0">
+      Only a name is needed. Create the owner account on the Users page,
+      then assign it to this chain afterwards (from that account's row or
+      this chain's page).
     </p>
-
-    <label class="formlabel" for="cPassword">Password <span style="color:var(--muted)">(new accounts only)</span></label>
-    <input type="password" id="cPassword" placeholder="min. 8 characters" autocomplete="new-password">
-
-    <label class="formlabel" for="cEmail">Owner email</label>
-    <input type="text" id="cEmail" placeholder="e.g. owner@group.edu">
 
     <div class="btn-row" style="margin-top:22px">
       <button class="btn" id="createChainBtn" onclick="createChain()">Create chain</button>
@@ -124,17 +157,39 @@ function openChainDrawer(chainId){
   const c = chains.find(x => x.id === chainId);
   if(!c){ return; }
   const memberIds = c.school_ids;
-  drawerEl.innerHTML = `
-    <div class="drawer-head">
-      <div><h2>${esc(c.name)}</h2><div class="loc">owner: @${esc(c.owner_username)} \u00b7 ${c.school_count} branch${c.school_count===1?'':'es'}</div></div>
-      <button class="close-btn" onclick="closeDrawer()">&times;</button>
-    </div>
-
+  const ownerBlock = c.owner_username ? `
+    <div class="section-title" style="border-top:none;padding-top:10px">Owner login</div>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
+      @${esc(c.owner_username)} &middot; ${esc(c.owner_email)}
+    </p>
     <label class="formlabel" for="cwPassword">Set a new password for @${esc(c.owner_username)}</label>
     <div class="btn-row">
       <input type="password" id="cwPassword" placeholder="min. 8 characters" autocomplete="new-password">
       <button class="btn small" onclick="resetOwnerPassword(${c.id})">Set</button>
     </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn small ghost" onclick="clearChainOwner(${c.id})">Remove owner</button>
+    </div>
+  ` : `
+    <div class="section-title" style="border-top:none;padding-top:10px">Owner login</div>
+    <p style="font-size:13px;color:var(--muted);margin:0 0 10px">
+      No owner yet &mdash; pick an account created on the Users page.
+    </p>
+    <div class="btn-row">
+      <select id="cwOwner" style="flex:1">
+        <option value="">Pick a user&hellip;</option>
+        ${users.map(u => `<option value="${u.id}">@${esc(u.username)}${u.chain_id ? ' (owns another chain \u2014 moves it here)' : ''}</option>`).join('')}
+      </select>
+      <button class="btn small" onclick="setChainOwner(${c.id})">Assign owner</button>
+    </div>
+  `;
+  drawerEl.innerHTML = `
+    <div class="drawer-head">
+      <div><h2>${esc(c.name)}</h2><div class="loc">${c.owner_username ? `owner: @${esc(c.owner_username)}` : 'no owner yet'} \u00b7 ${c.school_count} branch${c.school_count===1?'':'es'}</div></div>
+      <button class="close-btn" onclick="closeDrawer()">&times;</button>
+    </div>
+
+    ${ownerBlock}
 
     <div class="section-title" style="border-top:none;padding-top:10px">Branches in this chain</div>
     <div class="override-list">
@@ -175,26 +230,38 @@ function openChainDrawer(chainId){
 
 async function createChain(){
   const name = document.getElementById('cName').value.trim();
-  const username = document.getElementById('cUsername').value.trim();
-  if(!name || !username){ showToast('Chain name and owner username are required'); return; }
+  if(!name){ showToast('Chain name is required'); return; }
   const btn = document.getElementById('createChainBtn');
   btn.disabled = true; btn.textContent = 'Creating\u2026';
   try{
-    const data = await apiPost('/chains/create/', {
-      name,
-      owner_username: username,
-      owner_password: document.getElementById('cPassword').value,
-      owner_email: document.getElementById('cEmail').value.trim(),
-    });
+    const data = await apiPost('/chains/create/', { name });
     chains.unshift(data.chain);
+
+    // If the drawer was opened from the “+ New chain…” dropdown option,
+    // attach that school to the fresh chain right away.
+    let extra = '';
+    if(pendingAssignSchoolId){
+      const schoolId = pendingAssignSchoolId;
+      pendingAssignSchoolId = null;
+      try{
+        const a = await apiPost(`/chains/${data.chain.id}/assign/`, { school_id: schoolId });
+        replaceSchool(a.school);
+        const c = chains.find(x => x.id === data.chain.id);
+        if(c){ c.school_count = (c.school_count || 0) + 1; c.school_ids.push(schoolId); }
+        extra = ` \u00b7 ${a.school.name} assigned`;
+      }catch(assignErr){
+        showToast(assignErr.message);  // chain exists — just report the assign failure
+      }
+    }
+
     renderStats();
     renderTable();
     renderFreeSchools();
     closeDrawer();
-    showToast(`${name} created \u2014 @${data.chain.owner_username} can sign in now`);
+    showToast(`${name} created \u2014 assign schools and an owner login next${extra}`);
   }catch(err){
     showToast(err.message);
-    btn.disabled = false; btn.textContent = 'Create chain';
+    if(btn){ btn.disabled = false; btn.textContent = 'Create chain'; }
   }
 }
 
@@ -217,7 +284,16 @@ async function assignToChain(chainId){
   }
 }
 
+function onAssignSelect(schoolId, value){
+  if(value === '__new__'){
+    openNewChainDrawer(schoolId);
+    return;
+  }
+  if(value){ assignSchool(schoolId, parseInt(value, 10)); }
+}
+
 async function assignSchool(schoolId, chainId){
+  chainId = parseInt(chainId, 10);  // select values arrive as strings
   if(!chainId){ return; }
   try{
     const data = await apiPost(`/chains/${chainId}/assign/`, { school_id: schoolId });
@@ -257,6 +333,61 @@ async function resetOwnerPassword(chainId){
     const data = await apiPost(`/chains/${chainId}/owner-password/`, { password });
     showToast(`Password updated for @${data.owner}`);
     document.getElementById('cwPassword').value = '';
+  }catch(err){
+    showToast(err.message);
+  }
+}
+
+function replaceChain(updated){
+  const i = chains.findIndex(c => c.id === updated.id);
+  if(i !== -1){ chains[i] = { ...chains[i], ...updated }; }
+}
+
+async function setChainOwner(chainId){
+  const select = document.getElementById('cwOwner');
+  const userId = parseInt(select.value, 10);
+  if(!userId){ showToast('Pick a user account first'); return; }
+  const u = users.find(x => x.id === userId);
+  const c = chains.find(x => x.id === chainId);
+  // Warn when the account already owns another chain, or when the chain
+  // already has an owner picked from a different account.
+  if(u && u.chain_id && u.chain_id !== chainId){
+    const prev = chains.find(x => x.id === u.chain_id);
+    if(!confirm(`@${u.username} already owns "${prev ? prev.name : 'another chain'}". Move that ownership to "${c ? c.name : 'this chain'}"?`)){
+      return;
+    }
+  } else if(c && c.owner_id){
+    if(!confirm(`"${c.name}" is currently owned by @${c.owner_username}. Replace that owner?`)){
+      return;
+    }
+  }
+  try{
+    const data = await apiPost(`/chains/${chainId}/owner/`, { owner_id: userId });
+    replaceChain(data.chain);
+    if(u){ u.chain_id = chainId; }
+    renderStats();
+    renderTable();
+    openChainDrawer(chainId);
+    showToast(`${data.chain.name} owner is now @${data.chain.owner_username}`);
+  }catch(err){
+    showToast(err.message);
+  }
+}
+
+async function clearChainOwner(chainId){
+  const c = chains.find(x => x.id === chainId);
+  if(c && c.owner_username && !confirm(`Remove @${c.owner_username} as owner of "${c.name}"? The account itself is not deleted.`)){
+    return;
+  }
+  try{
+    const data = await apiPost(`/chains/${chainId}/owner/`, { owner_id: null });
+    replaceChain(data.chain);
+    const u = users.find(x => x.id === data.chain.owner_id);
+    if(u){ u.chain_id = null; }
+    renderStats();
+    renderTable();
+    openChainDrawer(chainId);
+    showToast(`${data.chain.name} has no owner now`);
   }catch(err){
     showToast(err.message);
   }

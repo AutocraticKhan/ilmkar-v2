@@ -31,6 +31,9 @@ class Chain(models.Model):
     member of any single school). They sign in at ``/`` and are redirected
     to their chain dashboard at ``/chain/``.
 
+    Nullable owner: chains are now created with just a name; the superuser
+    picks an existing account as the owner afterwards (Users / Chains pages).
+
     TODO(later): the platform currently assumes one User owns exactly one
     chain (OneToOne). If an owner ever runs two separate groups, relax this
     to a ForeignKey/ManyToMany and move the role checks accordingly.
@@ -38,7 +41,8 @@ class Chain(models.Model):
 
     name = models.CharField(max_length=200)
     owner = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="owned_chain"
+        User, on_delete=models.CASCADE, null=True, blank=True,
+        related_name="owned_chain",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -46,6 +50,8 @@ class Chain(models.Model):
         ordering = ["name"]
 
     def __str__(self):
+        if self.owner_id is None:
+            return f"{self.name} (no owner yet)"
         return f"{self.name} (owner: {self.owner.get_username()})"
 
     @property
@@ -57,8 +63,8 @@ class Chain(models.Model):
             "id": self.pk,
             "name": self.name,
             "owner_id": self.owner_id,
-            "owner_username": self.owner.get_username(),
-            "owner_email": self.owner.email or "\u2014",
+            "owner_username": self.owner.get_username() if self.owner_id else None,
+            "owner_email": (self.owner.email or "\u2014") if self.owner_id else "\u2014",
             "school_count": self.schools.count(),
             "school_ids": [s.pk for s in self.schools.all()],
             "created_at": self.created_at.date().isoformat(),

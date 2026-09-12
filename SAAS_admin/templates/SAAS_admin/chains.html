@@ -41,7 +41,7 @@
       </table>
       <div class="empty" id="emptyState" style="display:none">
         <h3>No chains yet</h3>
-        <p>Create a chain, give it an owner login, then assign schools to it. The owner sees only those schools.</p>
+        <p>Create a chain with just a name, assign schools to it, then pick an owner account (Users page or the chain's page). The owner sees only those schools.</p>
       </div>
     </div>
 
@@ -70,6 +70,7 @@
 
 {{ chains|json_script:"chains-data" }}
 {{ schools|json_script:"schools-data" }}
+{{ users|json_script:"users-data" }}
 <script src="{% static 'SAAS_admin/js/chains.js' %}"></script>
 
 </body>

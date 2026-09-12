@@ -2,6 +2,9 @@
 const schoolsEl = document.getElementById('schools-data');
 let schools = schoolsEl ? JSON.parse(schoolsEl.textContent) : [];
 
+const chainsEl = document.getElementById('chains-data');
+let chains = chainsEl ? JSON.parse(chainsEl.textContent) : [];
+
 const CSRF = document.body.dataset.csrfToken || '';
 
 // keep in sync with SAAS_admin.models.SchoolUser.Role
@@ -153,9 +156,54 @@ function renderUsers(){
           ${ROLES.map(([v, l]) => `<option value="${v}" ${v===u.role ? 'selected' : ''}>${l}</option>`).join('')}
         </select>
       </td>
+      <td>
+        <select class="role-select" onchange="setUserChain(${u.user_id}, this.value)" aria-label="Chain for ${esc(u.username)}">
+          <option value="">No chain</option>
+          ${chains.map(c => `<option value="${c.id}" ${c.id===u.chain_id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </td>
       <td>${fmtDate(u.created_at)}</td>
       <td class="cell-actions"><button class="btn small danger" id="del-${u.user_id}" onclick="removeUser(${u.user_id})">Delete</button></td>
     </tr>`).join('');
+}
+
+// ---------- chain ownership (from the account's row) ----------
+async function setUserChain(userId, value){
+  const u = users.find(x => x.user_id === userId);
+  if(!u) return;
+  if(value){
+    const c = chains.find(x => x.id === parseInt(value, 10));
+    // Warn before a second owner takes a chain someone else already owns.
+    if(c && c.owner_id && c.owner_id !== userId){
+      if(!confirm(`"${c.name}" is already owned by @${c.owner_username}. Make @${u.username} the owner instead?`)){
+        renderUsers();
+        return;
+      }
+    } else if(u.chain_id && u.chain_id !== parseInt(value, 10)){
+      const prev = chains.find(x => x.id === u.chain_id);
+      if(!confirm(`@${u.username} already owns "${prev ? prev.name : 'another chain'}". Move that ownership to "${c ? c.name : 'this chain'}"?`)){
+        renderUsers();
+        return;
+      }
+    }
+  } else if(u.chain_id && !confirm(`Remove @${u.username} as chain owner? The account itself is not deleted.`)){
+    renderUsers();
+    return;
+  }
+  try{
+    const data = await apiPost(`/users/${userId}/chain/`, { chain_id: value || null });
+    u.chain_id = data.chain ? data.chain.id : null;
+    u.chain_name = data.chain ? data.chain.name : null;
+    // Keep the chains cache in sync (owner moved between chains/accounts).
+    chains.forEach(c => {
+      if(data.chain && c.id === data.chain.id){ c.owner_id = userId; c.owner_username = u.username; }
+      else if(c.owner_id === userId){ c.owner_id = null; c.owner_username = null; }
+    });
+    showToast(data.chain ? `@${u.username} now owns ${data.chain.name}` : `@${u.username} is no longer a chain owner`);
+  }catch(err){
+    showToast(err.message);
+    renderUsers(); // restore the previous selection
+  }
 }
 
 // ---------- actions ----------

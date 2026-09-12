@@ -23,13 +23,13 @@ class School(models.Model):
 
     name = models.CharField(max_length=200)
     city = models.CharField(max_length=200)
-    # The account that owns this school. One account can own many schools —
-    # the owner dashboard shows exactly these schools (plus anything in their
-    # group/chain). Assigned by the superuser; setting it auto-links the
-    # school into the owner's chain (school_owner.utils.assign_owner).
-    owner = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name="owned_schools",
+    # The account that owns this school — one account can own many schools,
+    # and a school can have several owners (the console warns before a
+    # second owner is added). The owner dashboard shows exactly these
+    # schools (plus anything in their chain/group). Assigned by the
+    # superuser from the Users / Chains pages.
+    owners = models.ManyToManyField(
+        User, blank=True, related_name="owned_schools",
     )
     # Optional chain/group membership: several schools owned by one owner
     # account (managed from the operator console, used by school_owner).
@@ -69,12 +69,16 @@ class School(models.Model):
         return annotated if annotated is not None else self.memberships.count()
 
     def as_dict(self):
+        owners = list(self.owners.all())
         return {
             "id": self.pk,
             "name": self.name,
             "city": self.city,
-            "owner_id": self.owner_id,
-            "owner_username": self.owner.get_username() if self.owner_id else None,
+            "owner_ids": [u.pk for u in owners],
+            "owner_usernames": [u.get_username() for u in owners],
+            # First owner kept for compatibility with older UI text.
+            "owner_id": owners[0].pk if owners else None,
+            "owner_username": owners[0].get_username() if owners else None,
             "chain_id": self.chain_id,
             "chain_name": self.chain.name if self.chain_id else None,
             "package": self.package,

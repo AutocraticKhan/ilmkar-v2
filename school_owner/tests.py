@@ -90,6 +90,132 @@ class AccessControlTests(ChainData):
         self.assertEqual(self.client.get("/chain/").status_code, 302)
 
 
+class NameOnlyChainTests(ChainData):
+    """Chains are created with just a name; the owner account is picked after."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            "operator", "operator@x.io", "operator-pass-123"
+        )
+        self.client.force_login(self.admin)
+
+    def test_chain_created_with_name_only(self):
+        self.assertEqual(Chain.objects.count(), 2)
+        resp = self.json("/chains/create/", {"name": "Group Three"}, 201)
+        chain = resp.json()["chain"]
+        self.assertEqual(chain["name"], "Group Three")
+        self.assertIsNone(chain["owner_username"])
+        self.assertIsNone(chain["owner_id"])
+        self.assertEqual(Chain.objects.count(), 3)
+        self.assertIsNone(Chain.objects.get(pk=chain["id"]).owner_id)
+
+    def test_chain_requires_a_name(self):
+        resp = self.json("/chains/create/", {}, 400)
+        self.assertEqual(Chain.objects.count(), 2)
+
+    def test_chain_owner_can_be_assigned(self):
+        u3 = User.objects.create_user("owner3", password="ilmkar-owner-pass-3")
+        resp = self.json(f"/chains/{self.other_chain.id}/owner/", {"owner_id": u3.pk})
+        data = resp.json()
+        self.assertEqual(data["chain"]["owner_id"], u3.pk)
+        self.assertEqual(data["chain"]["owner_username"], "owner3")
+        self.other_chain.refresh_from_db()
+        self.assertEqual(self.other_chain.owner_id, u3.pk)
+
+    def test_chain_owner_can_be_moved_between_chains(self):
+        u3 = User.objects.create_user("owner3", password="ilmkar-owner-pass-3")
+        Chain.objects.filter(pk=self.other_chain.id).update(owner=u3)
+        self.other_chain.refresh_from_db()
+        self.assertEqual(self.other_chain.owner_id, u3.pk)
+        resp = self.json(f"/chains/{self.chain.id}/owner/", {"owner_id": u3.pk})
+        self.assertEqual(resp.json()["chain"]["owner_id"], u3.pk)
+        self.other_chain.refresh_from_db()
+        self.assertIsNone(self.other_chain.owner_id)
+
+    def test_chain_owner_can_be_cleared(self):
+        resp = self.json(f"/chains/{self.chain.id}/owner/", {"owner_id": None})
+        self.assertIsNone(resp.json()["chain"]["owner_id"])
+        self.chain.refresh_from_db()
+        self.assertIsNone(self.chain.owner_id)
+
+    def test_owner_password_requires_an_owner(self):
+        self.json(f"/chains/{self.chain.id}/owner/", {"owner_id": None})
+        resp = self.json(
+            f"/chains/{self.chain.id}/owner-password/",
+            {"password": "ilmkar-new-owner-pass-9"},
+            expect=400,
+        )
+        self.assertEqual(resp.json().get("error"), "This chain has no owner login yet.")
+        self.json(f"/chains/{self.chain.id}/owner/", {"owner_id": self.owner.pk})
+        resp = self.json(
+            f"/chains/{self.chain.id}/owner-password/",
+            {"password": "ilmkar-new-owner-pass-9"},
+        )
+        self.assertEqual(resp.json()["owner"], "owner1")
+
+    def test_chain_delete_without_an_owner(self):
+        self.assertEqual(Chain.objects.count(), 2)
+        self.json(f"/chains/{self.chain.id}/owner/", {"owner_id": None})
+        resp = self.json(f"/chains/{self.chain.id}/delete/", {})
+        data = resp.json()
+        self.assertEqual(data["name"], "Group One")
+        self.assertIsNone(data["owner_username"])
+        self.assertEqual(Chain.objects.count(), 1)
+
+
+class SchoolOwnerTests(ChainData):
+    """A school can have several owners; the console warns before a 2nd."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            "operator", "operator@x.io", "operator-pass-123"
+        )
+        self.client.force_login(self.admin)
+
+    def test_school_can_have_several_owners(self):
+        u3 = User.objects.create_user("owner3", password="ilmkar-owner-pass-3")
+        resp = self.json(f"/schools/{self.branch_a.id}/owner/", {"owner_id": u3.pk})
+        self.assertEqual(resp.json()["had_owners"], 0)
+        resp = self.json(
+            f"/schools/{self.branch_a.id}/owner/", {"owner_id": self.other.pk}
+        )
+        self.assertEqual(resp.json()["had_owners"], 1)
+
+        data = School.objects.get(pk=self.branch_a.id).as_dict()
+        self.assertEqual(sorted(data["owner_usernames"]), ["owner2", "owner3"])
+        self.assertEqual(sorted(data["owner_ids"]), [self.other.pk, u3.pk])
+
+        # Removing one owner keeps the other.
+        resp = self.json(
+            f"/schools/{self.branch_a.id}/owner/",
+            {"owner_id": u3.pk, "remove": True},
+        )
+        data = resp.json()["school"]
+        self.assertEqual(data["owner_usernames"], ["owner2"])
+
+    def test_school_owner_requires_a_known_account(self):
+        resp = self.json(f"/schools/{self.branch_a.id}/owner/", {"owner_id": 9999}, 400)
+        self.assertEqual(resp.json().get("error"), "Unknown owner account.")
+
+    def test_school_owners_do_not_move_the_chain(self):
+        self.assertEqual(self.branch_a.chain_id, self.chain.id)
+        self.json(
+            f"/schools/{self.branch_a.id}/owner/", {"owner_id": self.other.pk}
+        )
+        self.branch_a.refresh_from_db()
+        self.assertEqual(self.branch_a.chain_id, self.chain.id)
+
+    def test_user_chain_ownership_from_users_page(self):
+        resp = self.json(
+            f"/users/{self.owner.pk}/chain/", {"chain_id": self.other_chain.id}
+        )
+        self.assertEqual(resp.json()["chain"]["id"], self.other_chain.id)
+        self.other_chain.refresh_from_db()
+        self.assertEqual(self.other_chain.owner_id, self.owner.pk)
+        self.chain.refresh_from_db()
+        self.assertIsNone(self.chain.owner_id)
+
+
 class IsolationTests(ChainData):
     def setUp(self):
         self.client.force_login(self.owner)
@@ -98,6 +224,30 @@ class IsolationTests(ChainData):
         resp = self.client.get("/chain/")
         self.assertContains(resp, "G1-A")
         self.assertNotContains(resp, "G2-X")
+
+    def test_owner_sees_all_chain_schools(self):
+        """Regression: a chain owner must see EVERY school linked to their
+        chain, even though none of them is assigned via School.owner —
+        the chain link alone grants visibility of the whole group."""
+        # Sanity: the chain link is the only tie to these schools.
+        self.assertFalse(
+            School.objects.filter(chain=self.chain, owners=self.owner).exists()
+        )
+        resp = self.client.get("/chain/")
+        self.assertContains(resp, "G1-A")
+        self.assertContains(resp, "G1-B")
+        self.assertNotContains(resp, "G2-X")
+
+    def test_owner_scope_matches_chain_schools(self):
+        """The owner_schools tenant scope returns exactly the chain's
+        schools for a chain owner with no direct assignments."""
+        from school_owner.utils import owner_schools
+
+        self.assertQuerySetEqual(
+            owner_schools(self.owner),
+            [self.branch_a, self.branch_b],
+            ordered=False,
+        )
 
     def test_transfer_rejects_foreign_source_and_target(self):
         self.json("/chain/transfers/move/", {
